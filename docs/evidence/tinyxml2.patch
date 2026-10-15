@@ -1,0 +1,19 @@
+--- a/xmltest.cpp
++++ b/xmltest.cpp
+@@ -5,7 +5,6 @@
+ #endif
+ 
+ #include "tinyxml2.h"
+-#include <cerrno>
+ #include <cstdlib>
+ #include <cstring>
+ #include <ctime>
+@@ -17,8 +16,6 @@
+ 	_CrtMemState startMemState;
+ 	_CrtMemState endMemState;
+ #else
+-	#include <sys/stat.h>
+-	#include <sys/types.h>
+ #endif
+ 
+ using namespace tinyxml2;

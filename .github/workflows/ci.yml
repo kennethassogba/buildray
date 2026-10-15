@@ -1,0 +1,64 @@
+name: C++26 CLI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - build_type: Release
+            sanitizers: "OFF"
+          - build_type: Debug
+            sanitizers: "ON"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install CMake and LLVM 21
+        run: |
+          python -m pip install cmake==4.2.3
+          curl -fsSL https://apt.llvm.org/llvm-snapshot.gpg.key | sudo tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc > /dev/null
+          echo "deb https://apt.llvm.org/noble/ llvm-toolchain-noble-21 main" | sudo tee /etc/apt/sources.list.d/llvm21.list
+          sudo apt-get update
+          sudo apt-get install -y clang-21 clang-tools-21 clang-tidy-21 llvm-21-dev libclang-rt-21-dev ninja-build libzstd-dev
+      - name: Configure C++26
+        run: >-
+          cmake -S . -B build -G Ninja
+          -DCMAKE_CXX_COMPILER=clang++-21
+          -DLLVM_DIR=/usr/lib/llvm-21/lib/cmake/llvm
+          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+          -DBUILDRAY_ENABLE_SANITIZERS=${{ matrix.sanitizers }}
+      - name: Build
+        run: cmake --build build --parallel 2
+      - name: Unit and integration tests
+        run: ctest --test-dir build --output-on-failure
+      - name: Real C++ project
+        if: matrix.build_type == 'Release'
+        run: |
+          git clone https://github.com/leethomason/tinyxml2.git "$RUNNER_TEMP/tinyxml2"
+          git -C "$RUNNER_TEMP/tinyxml2" checkout 9148bdf719e997d1f474be6bcc7943881046dba1
+          build/buildray optimize --source "$RUNNER_TEMP/tinyxml2" --work-dir "$RUNNER_TEMP/tinyxml2-result" --compiler clang++-21 --clang-tidy clang-tidy-21 --runs 3 --jobs 2 -- -Dtinyxml2_BUILD_TESTING=ON
+          git -C "$RUNNER_TEMP/tinyxml2" apply --check "$RUNNER_TEMP/tinyxml2-result/includes.patch"
+          python tests/check_real_project.py "$RUNNER_TEMP/tinyxml2-result/report.json"
+      - name: Retain evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: evidence-${{ matrix.build_type }}
+          include-hidden-files: true
+          path: |
+            build/Testing/Temporary/
+            ${{ runner.temp }}/tinyxml2-result/report.json
+            ${{ runner.temp }}/tinyxml2-result/includes.patch
+            ${{ runner.temp }}/tinyxml2-result/logs/

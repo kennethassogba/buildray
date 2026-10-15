@@ -31,6 +31,8 @@ _skbuild
 /dist
 __pycache__
 .cache
+.buildray/
+build-*/
 *.pyd
 *.egg-info
 pyenv

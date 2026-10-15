@@ -1,0 +1,162 @@
+{
+  "baseline": {
+    "mad_seconds": 0.45319429399999978,
+    "max_seconds": 2.1998406149999998,
+    "median_seconds": 1.7466463210000001,
+    "min_seconds": 1.2267257460000001,
+    "samples": [
+      {
+        "compiler_cpu_seconds": 2.1606550000000002,
+        "compiler_wall_sum_seconds": 2.1625469280000003,
+        "max_compiler_rss_kib": 127484,
+        "wall_seconds": 1.261684719
+      },
+      {
+        "compiler_cpu_seconds": 2.0963560000000001,
+        "compiler_wall_sum_seconds": 2.0977484999999998,
+        "max_compiler_rss_kib": 126972,
+        "wall_seconds": 1.2267257460000001
+      },
+      {
+        "compiler_cpu_seconds": 2.1387130000000001,
+        "compiler_wall_sum_seconds": 2.1400338799999998,
+        "max_compiler_rss_kib": 127208,
+        "wall_seconds": 1.253968389
+      },
+      {
+        "compiler_cpu_seconds": 3.7631300000000003,
+        "compiler_wall_sum_seconds": 3.793996516,
+        "max_compiler_rss_kib": 127732,
+        "wall_seconds": 2.1998406149999998
+      },
+      {
+        "compiler_cpu_seconds": 2.9925839999999999,
+        "compiler_wall_sum_seconds": 3.0197360089999998,
+        "max_compiler_rss_kib": 128864,
+        "wall_seconds": 1.7466463210000001
+      },
+      {
+        "compiler_cpu_seconds": 3.0564460000000002,
+        "compiler_wall_sum_seconds": 3.0720359840000002,
+        "max_compiler_rss_kib": 127784,
+        "wall_seconds": 1.7966399159999999
+      },
+      {
+        "compiler_cpu_seconds": 3.0505129999999996,
+        "compiler_wall_sum_seconds": 3.0661578189999998,
+        "max_compiler_rss_kib": 125656,
+        "wall_seconds": 1.8042723039999999
+      }
+    ]
+  },
+  "baseline_tests_passed": 1,
+  "buildray_version": "0.1.0",
+  "candidate": {
+    "mad_seconds": 0.44171532899999999,
+    "max_seconds": 2.2079972699999999,
+    "median_seconds": 1.7662819409999999,
+    "min_seconds": 1.224132963,
+    "samples": [
+      {
+        "compiler_cpu_seconds": 2.086436,
+        "compiler_wall_sum_seconds": 2.0881149539999999,
+        "max_compiler_rss_kib": 127352,
+        "wall_seconds": 1.224132963
+      },
+      {
+        "compiler_cpu_seconds": 2.12819,
+        "compiler_wall_sum_seconds": 2.1343270380000003,
+        "max_compiler_rss_kib": 127568,
+        "wall_seconds": 1.227492115
+      },
+      {
+        "compiler_cpu_seconds": 2.2779780000000001,
+        "compiler_wall_sum_seconds": 2.279399685,
+        "max_compiler_rss_kib": 127088,
+        "wall_seconds": 1.3208668889999999
+      },
+      {
+        "compiler_cpu_seconds": 3.674245,
+        "compiler_wall_sum_seconds": 3.699891847,
+        "max_compiler_rss_kib": 128108,
+        "wall_seconds": 2.2079972699999999
+      },
+      {
+        "compiler_cpu_seconds": 3.023965,
+        "compiler_wall_sum_seconds": 3.0448975699999998,
+        "max_compiler_rss_kib": 128044,
+        "wall_seconds": 1.774421772
+      },
+      {
+        "compiler_cpu_seconds": 3.00535,
+        "compiler_wall_sum_seconds": 3.0247296180000003,
+        "max_compiler_rss_kib": 127692,
+        "wall_seconds": 1.7662819409999999
+      },
+      {
+        "compiler_cpu_seconds": 3.046916,
+        "compiler_wall_sum_seconds": 3.0568673909999999,
+        "max_compiler_rss_kib": 127312,
+        "wall_seconds": 1.770436573
+      }
+    ]
+  },
+  "candidate_tests_passed": 1,
+  "clang_tidy_version": "Ubuntu LLVM version 21.1.8\n  Optimized build.\n",
+  "cmake_args": [
+    "-Dtinyxml2_BUILD_TESTING=ON",
+    "-DCMAKE_CXX_FLAGS=--gcc-install-dir=/usr/lib/gcc/x86_64-linux-gnu/15"
+  ],
+  "cmake_version": "cmake version 4.2.3\n\nCMake suite maintained and supported by Kitware (kitware.com/cmake).\n",
+  "command": "optimize",
+  "compile_commands_analyzed": 2,
+  "compiler_version": "Ubuntu clang version 21.1.8 (6ubuntu1)\nTarget: x86_64-pc-linux-gnu\nThread model: posix\nInstalledDir: /usr/lib/llvm-21/bin\n",
+  "findings": [
+    {
+      "compile_configurations": 1,
+      "directive": "#include <cerrno>\r\n",
+      "file": "xmltest.cpp",
+      "length": 19,
+      "line": 8,
+      "offset": 193
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "\t#include <sys/stat.h>\r\n",
+      "file": "xmltest.cpp",
+      "length": 24,
+      "line": 20,
+      "offset": 456
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "\t#include <sys/types.h>\r\n",
+      "file": "xmltest.cpp",
+      "length": 25,
+      "line": 21,
+      "offset": 480
+    }
+  ],
+  "jobs": 2,
+  "measurement": "clean builds; warm filesystem cache; compiler caches disabled; alternating order",
+  "ninja_version": "1.13.2\n",
+  "noise_threshold_seconds": 1.3595828819999993,
+  "patch_recommended": false,
+  "patch_validated": true,
+  "performance_result": "inconclusive",
+  "performance_rule": "heuristic: difference exceeds max(2% baseline, 3x max MAD); not a significance test",
+  "phase": "complete",
+  "precompiled_headers": false,
+  "removed_includes": 3,
+  "runs": 7,
+  "schema_version": 1,
+  "source": "/tmp/buildray-tinyxml2",
+  "status": "passed",
+  "tests_required": true,
+  "translation_units_analyzed": 2,
+  "unity_build": false,
+  "validation": "build_and_tests_passed",
+  "validation_scope": "one configured CMake build; project C++ source files only",
+  "wall_change_percent": 1.1241898124376981,
+  "work_dir": "/home/kenn/Documents/ChatGPT/career/buildray/.buildray/tinyxml2-final"
+}
