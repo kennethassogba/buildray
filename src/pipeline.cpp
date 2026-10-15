@@ -1,3 +1,4 @@
+#include <llvm/Support/CommandLine.h>
 #include <unistd.h>
 
 #include <algorithm>
@@ -280,6 +281,24 @@ std::pair<json::Array, json::Array> paired_samples(const Options& options, const
 using Changes = std::map<fs::path, std::vector<Replacement>>;
 using SourceFiles = std::map<fs::path, std::string>;
 
+std::vector<std::string> compiler_arguments(const json::Object& entry) {
+    std::vector<std::string> result;
+    if (const auto* arguments = entry.getArray("arguments")) {
+        for (const auto& argument : *arguments) {
+            if (!argument.getAsString()) throw std::runtime_error("Invalid compiler argument");
+            result.emplace_back(*argument.getAsString());
+        }
+    } else if (const auto command = entry.getString("command")) {
+        llvm::BumpPtrAllocator allocator;
+        llvm::StringSaver saver(allocator);
+        llvm::SmallVector<const char*, 32> tokens;
+        llvm::cl::TokenizeGNUCommandLine(*command, saver, tokens);
+        for (const auto* argument : tokens) result.emplace_back(argument);
+    }
+    if (result.empty()) throw std::runtime_error("Missing compiler command");
+    return result;
+}
+
 Changes analyze(const Options& options, const Variant& variant, const fs::path& work,
                 const SourceFiles& originals, json::Object& report) {
     const auto database = read_json(variant.build / "compile_commands.json");
@@ -309,9 +328,12 @@ Changes analyze(const Options& options, const Variant& variant, const fs::path& 
     if (groups.empty()) throw std::runtime_error("No project C++ translation units to analyze");
     Changes changes;
     json::Array findings;
+    json::Array rejected;
     unsigned invocation = 0;
+    unsigned preflight = 0;
     for (const auto& [file, entries] : groups) {
         std::optional<std::set<Replacement>> consensus;
+        bool needs_insertions = false;
         for (const auto& entry : entries) {
             const auto analysis = work / "analysis" / std::to_string(invocation++);
             fs::create_directories(analysis);
@@ -320,13 +342,14 @@ Changes analyze(const Options& options, const Variant& variant, const fs::path& 
             // Use the user's suppression comments, but run only this milestone's
             // check. Never ask clang-tidy to edit any source file.
             const std::string config =
-                R"({"Checks":"-*,misc-include-cleaner","WarningsAsErrors":"","CheckOptions":{"misc-include-cleaner.MissingIncludes":"false","misc-include-cleaner.UnusedIncludes":"true"}})";
+                R"({"Checks":"-*,misc-include-cleaner","WarningsAsErrors":"","CheckOptions":{"misc-include-cleaner.MissingIncludes":"true","misc-include-cleaner.UnusedIncludes":"true"}})";
             checked({options.tidy, "--config=" + config, "--quiet", "-p", analysis.string(),
                      "--export-fixes=" + fixes.string(), file.string()},
                     variant.source, analysis / "clang-tidy.log");
             std::set<Replacement> removals;
             const auto source = read_file(file);
             for (auto replacement : read_fixes(fixes)) {
+                needs_insertions = needs_insertions || !replacement.text.empty();
                 fs::path path = replacement.file;
                 if (path.is_relative()) {
                     const auto* object = entry.getAsObject();
@@ -348,6 +371,38 @@ Changes analyze(const Options& options, const Variant& variant, const fs::path& 
         }
         if (!consensus || consensus->empty()) continue;
         const auto relative = file.lexically_relative(variant.source);
+        if (needs_insertions) {
+            // An "unused directly" header may still supply a transitive declaration.
+            // Include-cleaner expects new direct includes to accompany such removals.
+            // We only delete: compile that proposal in every configuration first.
+            const auto original = read_file(file);
+            write_file(file, apply_removals(original, {consensus->begin(), consensus->end()}));
+            bool valid = true;
+            try {
+                for (const auto& entry : entries) {
+                    const auto* object = entry.getAsObject();
+                    const auto log =
+                        work / "analysis" / ("preflight-" + std::to_string(preflight++) + ".log");
+                    const auto result = run(compiler_arguments(*object),
+                                            std::string(*object->getString("directory")), log);
+                    if (interrupted()) throw std::runtime_error("Interrupted during preflight");
+                    if (result.code != 0) {
+                        rejected.push_back(
+                            json::Object{{"file", relative.generic_string()},
+                                         {"reason", "deletion-only proposal failed compilation"},
+                                         {"compiler_exit_code", result.code},
+                                         {"log", log.lexically_relative(work).generic_string()}});
+                        valid = false;
+                        break;
+                    }
+                }
+            } catch (...) {
+                write_file(file, original);
+                throw;
+            }
+            write_file(file, original);
+            if (!valid) continue;
+        }
         if (relative.string().find_first_of("\n\r\t") != std::string::npos)
             throw std::runtime_error("Patch paths may not contain control characters");
         const auto source = read_file(file);
@@ -369,6 +424,8 @@ Changes analyze(const Options& options, const Variant& variant, const fs::path& 
     report["translation_units_analyzed"] = static_cast<std::int64_t>(groups.size());
     report["compile_commands_analyzed"] = invocation;
     report["generated_compile_commands_skipped"] = generated_commands;
+    report["preflight_rejected_files"] = std::move(rejected);
+    report["preflight_compile_commands"] = preflight;
     report["removed_includes"] = static_cast<std::int64_t>(findings.size());
     report["findings"] = std::move(findings);
     return changes;

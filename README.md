@@ -83,6 +83,9 @@ configuration or machine context. [Comparison details and limits](docs/ci.md).
    Files generated or downloaded during configuration are excluded from edits.
    Suppression comments are respected. If several targets compile a file, a
    removal must be suggested for every compilation command.
+   When the analyzer also requests provider includes, proposed deletions are
+   compiled in each configuration first. Files that fail this check stay intact;
+   rejected proposals are recorded in `preflight_rejected_files`.
 5. Writes `includes.patch`, performs a clean candidate build and runs its tests.
    A compile or test failure marks the run failed and the patch unvalidated.
 6. Measures repeated clean builds of both variants, alternating which runs first.

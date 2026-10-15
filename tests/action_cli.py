@@ -70,4 +70,16 @@ add_test(NAME works COMMAND sample)
     assert failed["result"] == failure["status"] == "failed"
     assert "does not exist" in failure["error"]
 
+    # A real project test failure retains diagnostics even on an ephemeral runner.
+    (source / "main.cpp").write_text("int main() { return 1; }\n")
+    native_outputs = root / "native-failure-outputs"
+    execute([sys.executable, script], env={**environment, "GITHUB_OUTPUT": str(native_outputs)}, expected=1)
+    native = dict(line.split("=", 1) for line in native_outputs.read_text().splitlines())
+    native_artifacts = Path(native["artifact-path"])
+    state = json.loads((native_artifacts / "action-status.json").read_text())
+    assert native["result"] == state["status"] == "failed" and state["exit_code"] == 1
+    logs = list((native_artifacts / "failure-logs").glob("*.log"))
+    assert 1 <= len(logs) <= 3 and all(p.stat().st_size <= 65536 for p in logs)
+    assert any("FAILED" in p.read_text() for p in logs)
+
 print("Action entry point: Git archive, paired builds, failure outputs, summary and source preservation passed")

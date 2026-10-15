@@ -114,8 +114,7 @@ std::vector<Replacement> read_fixes(const fs::path& path) {
     for (auto& diagnostic : document.diagnostics) {
         if (diagnostic.name != "misc-include-cleaner") continue;
         for (auto& replacement : diagnostic.message.replacements) {
-            if (replacement.text.empty() && replacement.length > 0)
-                result.push_back(std::move(replacement));
+            result.push_back(std::move(replacement));
         }
     }
     return result;

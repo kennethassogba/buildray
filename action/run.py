@@ -93,15 +93,32 @@ def bootstrap(action, work, compiler, binary_input, jobs):
 @contextmanager
 def evidence(artifacts):
     status = artifacts / "action-status.json"
-    status.write_text(json.dumps({"status": "running"}) + "\n")
+    state = {"status": "running"}
+    status.write_text(json.dumps(state) + "\n")
     try:
-        yield
+        yield state
     except Exception as error:
-        status.write_text(json.dumps({"status": "failed", "error": str(error)}) + "\n")
+        state.update(status="failed", error=str(error))
+        status.write_text(json.dumps(state) + "\n")
         output("result", "failed")
         raise
     else:
-        status.write_text(json.dumps({"status": "complete"}) + "\n")
+        status.write_text(json.dumps(state) + "\n")
+
+
+def retain_failure_logs(run, artifacts):
+    logs = [p for p in (run / "logs").glob("*.log") if p.is_file() and not p.is_symlink()]
+    logs.sort(key=lambda p: p.stat().st_mtime_ns)
+    for path in logs[-3:]:
+        destination = artifacts / "failure-logs" / path.name
+        destination.parent.mkdir(exist_ok=True)
+        with path.open("rb") as stream:
+            stream.seek(max(0, path.stat().st_size - 65536))
+            tail = stream.read(65536)
+        destination.write_bytes(tail)
+        if path == logs[-1]:
+            print(f"\nBuildray failure log: {path.name}\n" + tail[-16384:].decode(errors="replace"),
+                  file=sys.stderr, flush=True)
 
 
 def main():
@@ -132,7 +149,7 @@ def main():
     output("artifact-path", work / "artifacts")
     artifacts = work / "artifacts"
     artifacts.mkdir()
-    with evidence(artifacts):
+    with evidence(artifacts) as action_status:
         binary = bootstrap(action, work, compiler, os.environ.get("BUILDRAY_BINARY", ""), jobs)
         command = [binary, mode, "--source", source, "--work-dir", work / "run",
                    "--compiler", compiler, "--runs", str(runs), "--jobs", str(jobs),
@@ -149,6 +166,10 @@ def main():
         result = subprocess.run([str(item) for item in command], check=False)
         report_file = work / "run/report.json"
         report = json.loads(report_file.read_text()) if report_file.is_file() else {"status": "failed"}
+        action_status.update(status="complete" if report["status"] == "passed" else "failed",
+                             exit_code=result.returncode)
+        if report["status"] != "passed":
+            retain_failure_logs(work / "run", artifacts)
         output("result", report.get("performance_result", "passed")
                if report["status"] == "passed" else report["status"])
         for name, key in [("report.json", "report"), ("comparison.json", "comparison"),

@@ -136,6 +136,10 @@ Diagnostics:
           Offset: 0
           Length: 18
           ReplacementText: ''
+        - FilePath: '/a.cpp'
+          Offset: 0
+          Length: 0
+          ReplacementText: '#include <cstdint>'
     Notes: []
     Level: Warning
     BuildDirectory: '/tmp'
@@ -149,7 +153,8 @@ Diagnostics:
 ...
 )");
         const auto fixes = read_fixes(temporary / "fixes.yaml");
-        require(fixes.size() == 1 && fixes[0].length == 18, "structured fixes filtered by check");
+        require(fixes.size() == 2 && fixes[0].length == 18 && !fixes[1].text.empty(),
+                "read provider insertions too; only removable_include authorizes deletions");
         write_file(temporary / "fixes.yaml", "Diagnostics: [unterminated");
         rejects([&] { read_fixes(temporary / "fixes.yaml"); }, "malformed YAML rejected");
         const auto success = run({"/bin/sh", "-c", "exit 0"}, temporary);

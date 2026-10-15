@@ -117,6 +117,21 @@ with tempfile.TemporaryDirectory(prefix="buildray integration ") as directory:
     assert multi_report["compile_commands_analyzed"] == 2
     assert multi_report["removed_includes"] == 0, multi_report
 
+    # Include-cleaner can call a wrapper unused while proposing a new direct
+    # provider include. Deleting only the wrapper breaks the real compilation.
+    provider = root / "transitive provider"
+    project(provider)
+    (provider / "provider.hpp").write_text("#pragma once\ninline int answer() { return 0; }\n")
+    (provider / "wrapper.hpp").write_text('#pragma once\n#include "provider.hpp"\nstruct Unused {};\n')
+    (provider / "main file.cpp").write_text('#include "wrapper.hpp"\nint main() { return answer(); }\n')
+    provider_work = root / "provider-result"
+    optimize(provider, provider_work)
+    provider_report = json.loads((provider_work / "report.json").read_text())
+    assert provider_report["preflight_compile_commands"] >= 1, provider_report
+    assert len(provider_report["preflight_rejected_files"]) == 1, provider_report
+    assert provider_report["removed_includes"] == 0 and provider_report["patch_validated"]
+    assert (provider_work / "candidate-source/main file.cpp").read_bytes() == (provider / "main file.cpp").read_bytes()
+
     # Reject launcher overrides and targets absent from the default build:
     # every C++ compilation in the database must actually be measured.
     override = root / "override"
