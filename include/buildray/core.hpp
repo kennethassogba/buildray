@@ -51,14 +51,33 @@ struct Options {
     std::string command;
     fs::path source = ".";
     fs::path work;
+    fs::path baseline_source;
     std::string compiler = "clang++";
     std::string tidy = "clang-tidy";
     std::vector<std::string> cmake_args;
     unsigned runs = 3;
     unsigned jobs = 2;
     bool allow_no_tests = false;
+    double max_regression_percent = 5.0;
+    std::string session;
 };
 
+struct CheckOptions {
+    fs::path baseline;
+    fs::path current;
+    fs::path output = "buildray-comparison.json";
+    double max_regression_percent = 5.0;
+};
+
+struct Comparison {
+    json::Object report;
+    int exit_code{};
+};
+
+json::Object measurement_context(const Options& options, const fs::path& build);
+Comparison compare_reports(const json::Value& baseline, const json::Value& current, double budget);
+std::string comparison_markdown(const json::Object& report);
+int check_reports(const CheckOptions& options);
 int pipeline(const Options& options, const fs::path& executable);
 int launch(const std::vector<std::string>& args);
 }  // namespace buildray

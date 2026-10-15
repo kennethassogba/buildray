@@ -258,14 +258,35 @@ json::Object summarize(const json::Array& samples) {
                         {"samples", json::Array(samples)}};
 }
 
+std::pair<json::Array, json::Array> paired_samples(const Options& options, const Variant& baseline,
+                                                   const Variant& candidate, const fs::path& logs) {
+    json::Array before;
+    json::Array after;
+    for (unsigned i = 0; i < options.runs; ++i) {
+        std::cout << "Measuring pair " << i + 1 << '/' << options.runs
+                  << (i % 2 ? " (candidate first)...\n" : " (baseline first)...\n") << std::flush;
+        const auto suffix = std::to_string(i);
+        if (i % 2 == 0) {
+            before.push_back(sample(options, baseline, logs, "baseline-" + suffix));
+            after.push_back(sample(options, candidate, logs, "candidate-" + suffix));
+        } else {
+            after.push_back(sample(options, candidate, logs, "candidate-" + suffix));
+            before.push_back(sample(options, baseline, logs, "baseline-" + suffix));
+        }
+    }
+    return {std::move(before), std::move(after)};
+}
+
 using Changes = std::map<fs::path, std::vector<Replacement>>;
+using SourceFiles = std::map<fs::path, std::string>;
 
 Changes analyze(const Options& options, const Variant& variant, const fs::path& work,
-                json::Object& report) {
+                const SourceFiles& originals, json::Object& report) {
     const auto database = read_json(variant.build / "compile_commands.json");
     const auto* commands = database.getAsArray();
     if (!commands || commands->empty()) throw std::runtime_error("Empty compilation database");
     std::map<fs::path, std::vector<json::Value>> groups;
+    std::int64_t generated_commands = 0;
     for (const auto& entry : *commands) {
         const auto* object = entry.getAsObject();
         if (!object || !object->getString("file") || !object->getString("directory"))
@@ -276,6 +297,13 @@ Changes analyze(const Options& options, const Variant& variant, const fs::path& 
         file = absolute_path(file);
         if (!within(file, variant.source) || !fs::is_regular_file(file)) continue;
         if (!cpp_source(file)) continue;
+        const auto original = originals.find(file.lexically_relative(variant.source));
+        if (original == originals.end()) {
+            ++generated_commands;
+            continue;
+        }
+        if (read_file(file) != original->second)
+            throw std::runtime_error("Configuration rewrote an input source: " + file.string());
         groups[file].push_back(entry);
     }
     if (groups.empty()) throw std::runtime_error("No project C++ translation units to analyze");
@@ -340,6 +368,7 @@ Changes analyze(const Options& options, const Variant& variant, const fs::path& 
     }
     report["translation_units_analyzed"] = static_cast<std::int64_t>(groups.size());
     report["compile_commands_analyzed"] = invocation;
+    report["generated_compile_commands_skipped"] = generated_commands;
     report["removed_includes"] = static_cast<std::int64_t>(findings.size());
     report["findings"] = std::move(findings);
     return changes;
@@ -392,14 +421,18 @@ void print_summary(const json::Object& report, const fs::path& work) {
 int pipeline(const Options& options, const fs::path& executable) {
     check_cmake_args(options.cmake_args);
     const auto source = absolute_path(options.source);
+    const auto base_source =
+        options.command == "compare" ? absolute_path(options.baseline_source) : source;
     if (!fs::is_regular_file(source / "CMakeLists.txt"))
         throw std::runtime_error("--source must contain CMakeLists.txt: " + source.string());
+    if (!fs::is_regular_file(base_source / "CMakeLists.txt"))
+        throw std::runtime_error("--baseline-source must contain CMakeLists.txt");
     const auto stamp = std::chrono::system_clock::now().time_since_epoch().count();
     const auto work =
         options.work.empty()
             ? source / ".buildray" / (std::to_string(stamp) + "-" + std::to_string(::getpid()))
             : absolute_path(options.work);
-    if (within(source, work))
+    if (within(source, work) || within(base_source, work))
         throw std::runtime_error("Work directory must not contain the source directory");
     fs::create_directories(work.parent_path());
     if (!fs::create_directory(work))
@@ -410,7 +443,7 @@ int pipeline(const Options& options, const fs::path& executable) {
     for (const auto& arg : options.cmake_args) extra.push_back(arg);
     json::Object report{
         {"schema_version", 1},
-        {"buildray_version", "0.1.0"},
+        {"buildray_version", BUILDRAY_VERSION},
         {"status", "running"},
         {"command", options.command},
         {"source", source.string()},
@@ -419,13 +452,16 @@ int pipeline(const Options& options, const fs::path& executable) {
         {"runs", options.runs},
         {"cmake_args", std::move(extra)},
         {"measurement",
-         "clean builds; warm filesystem cache; compiler caches disabled; alternating order"},
+         options.command == "measure"
+             ? "clean builds; warm filesystem cache; compiler caches disabled"
+             : "clean builds; warm filesystem cache; compiler caches disabled; alternating order"},
         {"unity_build", false},
         {"precompiled_headers", false},
         {"patch_validated", false},
         {"validation_scope", "one configured CMake build; project C++ source files only"},
         {"tests_required", !options.allow_no_tests}};
     write_json(work / "report.json", json::Object(report));
+    int pipeline_exit = 0;
     try {
         std::cout << "Workspace: " << work << '\n' << std::flush;
         checked({options.compiler, "--version"}, source, logs / "compiler-version.log");
@@ -454,14 +490,71 @@ int pipeline(const Options& options, const fs::path& executable) {
                           work / "candidate-records"};
         report["phase"] = "baseline_validation";
         std::cout << "Configuring baseline, warming build, running tests...\n" << std::flush;
-        snapshot(source, baseline.source, work);
+        snapshot(base_source, baseline.source, work);
+        // Configure scripts can write generated links or files into their source tree.
+        // Prepare both inputs before either configure runs; optimize uses identical bytes.
+        if (options.command == "optimize") snapshot(baseline.source, candidate.source, work);
+        if (options.command == "compare") snapshot(source, candidate.source, work);
+        SourceFiles originals;
+        if (options.command == "optimize") {
+            for (const auto& entry : fs::recursive_directory_iterator(candidate.source)) {
+                if (entry.is_regular_file() && cpp_source(entry.path()))
+                    originals[entry.path().lexically_relative(candidate.source)] =
+                        read_file(entry.path());
+            }
+        }
         configure(options, baseline, executable, logs / "baseline-configure.log");
+        report["measurement_context"] = measurement_context(options, baseline.build);
         clear_records(baseline.records);
         build(options, baseline, logs / "baseline-warmup.log");
         verify_coverage(baseline);
         const auto baseline_tests = test(options, baseline, logs, "baseline");
         report["baseline_tests_passed"] = static_cast<std::int64_t>(baseline_tests);
-        if (options.command == "measure") {
+        if (options.command == "compare") {
+            report["baseline_source"] = base_source.string();
+            report["phase"] = "candidate_validation";
+            std::cout << "Configuring current revision, warming build, running tests...\n"
+                      << std::flush;
+            configure(options, candidate, executable, logs / "candidate-configure.log");
+            auto current_context = measurement_context(options, candidate.build);
+            if (json::Value(json::Object(current_context)) != *report.get("measurement_context"))
+                throw std::runtime_error(
+                    "Revisions have different measurement context or CMake flags");
+            clear_records(candidate.records);
+            build(options, candidate, logs / "candidate-warmup.log");
+            verify_coverage(candidate);
+            const auto current_tests = test(options, candidate, logs, "candidate");
+            report["candidate_tests_passed"] = static_cast<std::int64_t>(current_tests);
+            report["validation"] =
+                baseline_tests && current_tests ? "build_and_tests_passed" : "build_only";
+            report["phase"] = "measurement";
+            const auto [before, after] = paired_samples(options, baseline, candidate, logs);
+            auto base_report = json::Object(report);
+            base_report["command"] = "measure";
+            base_report["phase"] = "complete";
+            base_report["status"] = "passed";
+            base_report["source"] = base_source.string();
+            base_report["baseline"] = summarize(before);
+            auto current_report = json::Object(base_report);
+            current_report["source"] = source.string();
+            current_report["baseline_tests_passed"] = static_cast<std::int64_t>(current_tests);
+            current_report["baseline"] = summarize(after);
+            current_report["measurement_context"] = std::move(current_context);
+            auto comparison =
+                compare_reports(json::Object(base_report), json::Object(current_report),
+                                options.max_regression_percent);
+            write_json(work / "baseline-report.json", std::move(base_report));
+            write_json(work / "current-report.json", std::move(current_report));
+            write_file(work / "comparison.md", comparison_markdown(comparison.report));
+            write_json(work / "comparison.json", json::Object(comparison.report));
+            report["baseline"] = summarize(before);
+            report["candidate"] = summarize(after);
+            report["performance_result"] = comparison.report.getString("performance_result")->str();
+            report["wall_change_percent"] = *comparison.report.getNumber("wall_change_percent");
+            report["gate_passed"] = *comparison.report.getBoolean("gate_passed");
+            report["comparison"] = std::move(comparison.report);
+            pipeline_exit = comparison.exit_code;
+        } else if (options.command == "measure") {
             json::Array samples;
             report["phase"] = "measurement";
             for (unsigned i = 0; i < options.runs; ++i) {
@@ -471,15 +564,13 @@ int pipeline(const Options& options, const fs::path& executable) {
             report["baseline"] = summarize(samples);
         } else {
             report["phase"] = "analysis";
-            // Copy the same snapshot, not a second read of the user's moving tree.
-            snapshot(baseline.source, candidate.source, work);
             configure(options, candidate, executable, logs / "candidate-configure.log");
             // Generated headers must exist before clang-tidy parses sources.
             clear_records(candidate.records);
             build(options, candidate, logs / "candidate-initial-build.log");
             verify_coverage(candidate);
             std::cout << "Analyzing unused includes with clang-tidy...\n" << std::flush;
-            const auto changes = analyze(options, candidate, work, report);
+            const auto changes = analyze(options, candidate, work, originals, report);
             patch(changes, baseline, candidate, work);
             write_json(work / "report.json", json::Object(report));
             report["phase"] = "candidate_validation";
@@ -495,21 +586,7 @@ int pipeline(const Options& options, const fs::path& executable) {
             report["validation"] = baseline_tests ? "build_and_tests_passed" : "build_only";
             report["patch_validated"] = true;
             report["phase"] = "measurement";
-            json::Array before;
-            json::Array after;
-            for (unsigned i = 0; i < options.runs; ++i) {
-                std::cout << "Measuring pair " << i + 1 << '/' << options.runs
-                          << (i % 2 ? " (candidate first)...\n" : " (baseline first)...\n")
-                          << std::flush;
-                const auto suffix = std::to_string(i);
-                if (i % 2 == 0) {
-                    before.push_back(sample(options, baseline, logs, "baseline-" + suffix));
-                    after.push_back(sample(options, candidate, logs, "candidate-" + suffix));
-                } else {
-                    after.push_back(sample(options, candidate, logs, "candidate-" + suffix));
-                    before.push_back(sample(options, baseline, logs, "baseline-" + suffix));
-                }
-            }
+            const auto [before, after] = paired_samples(options, baseline, candidate, logs);
             auto before_summary = summarize(before);
             auto after_summary = summarize(after);
             const double before_median = *before_summary.getNumber("median_seconds");
@@ -538,7 +615,7 @@ int pipeline(const Options& options, const fs::path& executable) {
         report["status"] = "passed";
         write_json(work / "report.json", json::Object(report));
         print_summary(report, work);
-        return 0;
+        return pipeline_exit;
     } catch (const std::exception& error) {
         report["status"] = interrupted() ? "interrupted" : "failed";
         report["error"] = error.what();

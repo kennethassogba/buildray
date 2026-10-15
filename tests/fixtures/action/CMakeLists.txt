@@ -1,0 +1,7 @@
+cmake_minimum_required(VERSION 3.30)
+project(buildray_action_smoke LANGUAGES CXX)
+set(CMAKE_CXX_STANDARD 26)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+add_executable(sample main.cpp)
+enable_testing()
+add_test(NAME works COMMAND sample)

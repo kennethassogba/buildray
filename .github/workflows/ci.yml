@@ -4,6 +4,11 @@ on:
   push:
   pull_request:
   workflow_dispatch:
+    inputs:
+      ai_corpus:
+        description: Run the pinned SentencePiece benchmark (several clean builds).
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -21,17 +26,12 @@ jobs:
           - build_type: Debug
             sanitizers: "ON"
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - name: Install CMake and LLVM 21
-        run: |
-          python -m pip install cmake==4.2.3
-          curl -fsSL https://apt.llvm.org/llvm-snapshot.gpg.key | sudo tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc > /dev/null
-          echo "deb https://apt.llvm.org/noble/ llvm-toolchain-noble-21 main" | sudo tee /etc/apt/sources.list.d/llvm21.list
-          sudo apt-get update
-          sudo apt-get install -y clang-21 clang-tools-21 clang-tidy-21 llvm-21-dev libclang-rt-21-dev ninja-build libzstd-dev
+        run: bash action/install.sh
       - name: Configure C++26
         run: >-
           cmake -S . -B build -G Ninja
@@ -43,6 +43,25 @@ jobs:
         run: cmake --build build --parallel 2
       - name: Unit and integration tests
         run: ctest --test-dir build --output-on-failure
+      - name: Composite action bootstrap and comparison
+        if: matrix.build_type == 'Release'
+        id: action
+        uses: ./
+        with:
+          source: tests/fixtures/action
+          baseline-ref: ${{ github.sha }}
+          install-dependencies: 'false'
+          max-regression-percent: '1000'
+          artifact-name: action-smoke
+      - name: Check action outputs
+        if: matrix.build_type == 'Release'
+        env:
+          COMPARISON: ${{ steps.action.outputs.comparison }}
+          BASELINE: ${{ steps.action.outputs.baseline-sha }}
+          EXPECTED: ${{ github.sha }}
+        run: |
+          test -f "$COMPARISON"
+          test "$BASELINE" = "$EXPECTED"
       - name: Real C++ project
         if: matrix.build_type == 'Release'
         run: |
@@ -53,7 +72,7 @@ jobs:
           python tests/check_real_project.py "$RUNNER_TEMP/tinyxml2-result/report.json"
       - name: Retain evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: evidence-${{ matrix.build_type }}
           include-hidden-files: true
@@ -62,3 +81,26 @@ jobs:
             ${{ runner.temp }}/tinyxml2-result/report.json
             ${{ runner.temp }}/tinyxml2-result/includes.patch
             ${{ runner.temp }}/tinyxml2-result/logs/
+
+  ai-corpus:
+    if: github.event_name == 'workflow_dispatch' && inputs.ai_corpus
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Fetch SentencePiece v0.2.2
+        run: |
+          git clone --depth 1 --branch v0.2.2 https://github.com/google/sentencepiece.git fixtures/sentencepiece
+          test "$(git -C fixtures/sentencepiece rev-parse HEAD)" = e0cce7d37b065b5140349dbe12c6bcf6192fdd78
+      - name: Validate cleanup on the AI corpus
+        uses: ./
+        with:
+          source: fixtures/sentencepiece
+          command: optimize
+          runs: '3'
+          jobs: '2'
+          cmake-args: '["-DSPM_BUILD_TEST=ON", "-DSPM_ENABLE_SHARED=OFF", "-DSPM_ENABLE_TCMALLOC=OFF"]'
+          artifact-name: sentencepiece-v0.2.2

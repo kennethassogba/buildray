@@ -1,0 +1,104 @@
+name: Buildray
+description: Measure C++ builds, validate include cleanup, and check build-time regressions.
+author: Kenneth Assogba
+branding:
+  icon: clock
+  color: blue
+inputs:
+  source:
+    description: CMake source directory relative to the checkout.
+    default: '.'
+  command:
+    description: measure (with a paired baseline on PRs), or optimize (validated include patch).
+    default: measure
+  baseline-ref:
+    description: Base Git revision for measure. Empty outside PRs means a standalone measurement.
+    default: ${{ github.event.pull_request.base.sha }}
+  cmake-args:
+    description: JSON array of project CMake -D options. No shell evaluation.
+    default: '[]'
+  runs:
+    description: Clean build samples per revision. At least 3 for comparisons.
+    default: '3'
+  jobs:
+    description: Fixed build parallelism.
+    default: '2'
+  max-regression-percent:
+    description: Budget for measure with a baseline. Fail when slowdown exceeds budget and noise.
+    default: '5'
+  compiler:
+    description: Clang C++ compiler for the project and tool bootstrap.
+    default: clang++-21
+  clang-tidy:
+    description: Include analyzer for optimize.
+    default: clang-tidy-21
+  allow-no-tests:
+    description: Explicitly allow build-only validation when no CTest tests exist.
+    default: 'false'
+  install-dependencies:
+    description: Install Clang/LLVM 21, Ninja and CMake on an Ubuntu runner.
+    default: 'true'
+  buildray-path:
+    description: Optional prebuilt CLI path. Otherwise build the action source in C++26.
+    default: ''
+  artifact-name:
+    description: Name for retained reports and the optional patch.
+    default: buildray-${{ github.job }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ github.action }}
+  retention-days:
+    description: Artifact retention (1-90 days).
+    default: '30'
+outputs:
+  baseline-sha:
+    description: Resolved baseline commit when comparing revisions.
+    value: ${{ steps.run.outputs.baseline-sha }}
+  report:
+    description: Full measurement report path.
+    value: ${{ steps.run.outputs.report }}
+  comparison:
+    description: Comparison JSON path when a baseline was used.
+    value: ${{ steps.run.outputs.comparison }}
+  baseline-report:
+    description: Base revision measurement for history or offline checks.
+    value: ${{ steps.run.outputs.baseline-report }}
+  current-report:
+    description: Current revision measurement for history or offline checks.
+    value: ${{ steps.run.outputs.current-report }}
+  patch:
+    description: Validated or rejected candidate patch from optimize; inspect report before applying.
+    value: ${{ steps.run.outputs.patch }}
+  result:
+    description: Performance classification or failure status.
+    value: ${{ steps.run.outputs.result }}
+runs:
+  using: composite
+  steps:
+    - name: Install Buildray dependencies
+      if: inputs.install-dependencies == 'true'
+      shell: bash
+      run: bash "$GITHUB_ACTION_PATH/action/install.sh"
+    - name: Measure and validate
+      id: run
+      shell: bash
+      env:
+        BUILDRAY_SOURCE: ${{ inputs.source }}
+        BUILDRAY_COMMAND: ${{ inputs.command }}
+        BUILDRAY_BASELINE_REF: ${{ inputs.baseline-ref }}
+        BUILDRAY_CMAKE_ARGS: ${{ inputs.cmake-args }}
+        BUILDRAY_RUNS: ${{ inputs.runs }}
+        BUILDRAY_JOBS: ${{ inputs.jobs }}
+        BUILDRAY_MAX_REGRESSION_PERCENT: ${{ inputs.max-regression-percent }}
+        BUILDRAY_COMPILER: ${{ inputs.compiler }}
+        BUILDRAY_CLANG_TIDY: ${{ inputs.clang-tidy }}
+        BUILDRAY_ALLOW_NO_TESTS: ${{ inputs.allow-no-tests }}
+        BUILDRAY_INSTALL_DEPENDENCIES: ${{ inputs.install-dependencies }}
+        BUILDRAY_BINARY: ${{ inputs.buildray-path }}
+        BUILDRAY_RETENTION_DAYS: ${{ inputs.retention-days }}
+      run: python3 "$GITHUB_ACTION_PATH/action/run.py"
+    - name: Retain Buildray history
+      if: always() && steps.run.outputs.artifact-path != ''
+      uses: actions/upload-artifact@v7
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: ${{ steps.run.outputs.artifact-path }}
+        retention-days: ${{ inputs.retention-days }}
+        if-no-files-found: error

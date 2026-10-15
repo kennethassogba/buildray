@@ -2,14 +2,14 @@
 
 Measure C++ builds, remove unused includes, validate the patch, and compare build times.
 
-Buildray is written in **C++26**. This first release supports Linux, Clang, CMake and Ninja.
+Buildray is written in **C++26**. It supports Linux, Clang, CMake and Ninja.
 
 ## Build
 
 Requirements: a compiler with C++26 mode (tested with Clang 21), CMake 3.30+,
 Ninja, LLVM development libraries 20+, clang-tidy with `misc-include-cleaner`,
-clang-scan-deps (for CMake's C++ module scanning), and GNU diff. Python 3 is used
-by the integration tests; the CLI itself is native C++.
+clang-scan-deps (for CMake's C++ module scanning), and GNU diff. Python 3.12+ is used
+by the integration tests and GitHub Action; the CLI itself is native C++.
 Keep the matching LLVM runtime installed for the executable.
 
 ```bash
@@ -47,18 +47,40 @@ under `SOURCE/.buildray/`. For measurement without include analysis:
 buildray measure --source /path/to/project --runs 5 --jobs 2
 ```
 
+For a build-time regression check between two revisions:
+
+```bash
+buildray compare --baseline-source /path/to/base --source /path/to/current \
+  --compiler clang++-21 --runs 5 --jobs 2 --max-regression-percent 5
+```
+
+Both revisions build and pass tests before their clean builds alternate on the
+same machine. Exit code `3` means a slowdown exceeds both the budget and measured
+noise. Reports and a Markdown comparison are kept even when the gate fails.
+
+The [GitHub Action](docs/ci.md) compares PRs with their base revision and retains
+reports as workflow artifacts. For an offline check of compatible saved reports:
+
+```bash
+buildray check --baseline base/report.json --current current/report.json \
+  --output comparison.json --max-regression-percent 5
+```
+
+`check` recomputes statistics from raw samples and rejects incompatible tool,
+configuration or machine context. [Comparison details and limits](docs/ci.md).
 `buildray --help` lists all options and exit codes.
 
 ## What optimize does
 
-1. Copies the source tree into an isolated baseline, excluding `.git`, `.cache`,
+1. Copies the source tree into isolated baseline and candidate trees, excluding `.git`, `.cache`,
    `.buildray`, the current work directory and existing CMake build directories.
 2. Configures a fresh Release build, builds it and runs its CTest tests. Project
    `-D` options can override the build type and enable the project's test suite.
-3. Copies the baseline source into a candidate, configures and builds it to
-   generate any headers needed for analysis.
+3. Configures and builds the candidate to generate any headers needed for
+   analysis. Both source copies are prepared before CMake can modify either one.
 4. Runs `clang-tidy misc-include-cleaner` using the real compilation commands.
    Only whole-line include deletions in project C++ source files are eligible.
+   Files generated or downloaded during configuration are excluded from edits.
    Suppression comments are respected. If several targets compile a file, a
    removal must be suggested for every compilation command.
 5. Writes `includes.patch`, performs a clean candidate build and runs its tests.
@@ -78,6 +100,9 @@ git apply /path/to/run/includes.patch
 
 ```text
 report.json                    Result, findings and measurements
+comparison.json, comparison.md Comparison and CI gate (compare)
+baseline-report.json           Base measurement for history (compare)
+current-report.json            Current measurement for history (compare)
 includes.patch                 Unified patch (optimize only)
 logs/*-compilers.json           Duration, CPU time, RSS and argv per C++ compilation
 logs/*-build.log                Build output for each sample
@@ -92,7 +117,7 @@ baseline-build/, candidate-build/
 when a nonempty validated patch also has an `improved` performance result. A
 failed candidate can leave a patch for diagnosis: its existence is not validation.
 
-`performance_result` is `improved`, `regressed`, `inconclusive`,
+For `optimize`, `performance_result` is `improved`, `regressed`, `inconclusive`,
 `insufficient_samples` (fewer than three runs), or `no_changes`. The noise
 threshold is the larger of 2% of baseline time and three times the larger MAD.
 This is a reporting heuristic, not a statistical significance test. A noisy
@@ -123,11 +148,13 @@ time. RSS is the maximum of individual compiler peaks, not aggregate build memor
 - Project CMake scripts and tests execute normally. Buildray uses no network
   service; project dependency downloads remain the project's responsibility.
 - CMake rewrites, forward declarations, PCH selection, trace analysis,
-  incremental builds and Marketplace packaging are later work.
+  incremental builds and a tagged Marketplace release are later work. The
+  composite Action can already be used by its commit SHA.
 
 Exit codes: `0` completed, `1` pipeline or validation failure, `2` CLI syntax
-error, `130` interrupted. CI can inspect `report.json` to enforce a performance
-policy independently of validation success.
+error, `3` regression over budget and noise, `4` incompatible saved reports,
+`130` interrupted. A completed comparison has `status: passed`; inspect
+`gate_passed` for its performance policy result.
 
 ## Development
 
@@ -148,3 +175,4 @@ failure-path tests.
 
 The real-project check uses unmodified tinyxml2 11.0.0. See
 [validation evidence](docs/validation.md) for commands, scope and observed results.
+[AI corpus](docs/corpus.md) records the next projects and their contribution constraints.

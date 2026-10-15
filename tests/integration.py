@@ -167,6 +167,30 @@ with tempfile.TemporaryDirectory(prefix="buildray integration ") as directory:
     optimize(linked, root / "linked-result", expected=1)
     assert external.read_text() == "int main() {}\n"
 
+    # Some projects (SentencePiece) create source links to fetched dependencies
+    # during configure. Both copies must start before those mutations happen.
+    generated = root / "generated-link"
+    project(generated)
+    with (generated / "CMakeLists.txt").open("a") as stream:
+        stream.write('file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/dependency")\n'
+                     'file(CREATE_LINK "${CMAKE_BINARY_DIR}/dependency" '
+                     '"${CMAKE_CURRENT_SOURCE_DIR}/generated" SYMBOLIC)\n'
+                     'file(WRITE "${CMAKE_CURRENT_SOURCE_DIR}/generated.cpp" '
+                     '"#include <vector>\\nint generated() { return 0; }\\n")\n'
+                     'add_library(generated OBJECT generated.cpp)\n')
+    generated_work = root / "generated-link-result"
+    optimize(generated, generated_work)
+    assert not (generated / "generated").exists()
+    assert not (generated / "generated.cpp").exists()
+    generated_report = json.loads((generated_work / "report.json").read_text())
+    assert generated_report["generated_compile_commands_skipped"] == 1
+    assert generated_report["translation_units_analyzed"] == 1
+    assert "generated.cpp" not in (generated_work / "includes.patch").read_text()
+    run("git", "apply", "--check", str(generated_work / "includes.patch"), cwd=generated)
+    for variant in ["baseline", "candidate"]:
+        assert (generated_work / f"{variant}-source/generated").resolve() == (
+            generated_work / f"{variant}-build/dependency")
+
     # Force a plausible include-cleaner false positive, then ensure validation
     # catches it. The fake analyzer is only used in this failure-path test.
     broken = root / "broken-candidate"
