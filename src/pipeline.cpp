@@ -763,6 +763,7 @@ int pipeline(const Options& options, const fs::path& executable) {
                 "test";
             report["patch_recommended"] = changed && verdict == "improved";
         }
+        if (interrupted()) throw std::runtime_error("Interrupted");
         report["phase"] = "complete";
         report["status"] = "passed";
         write_json(work / "report.json", json::Object(report));

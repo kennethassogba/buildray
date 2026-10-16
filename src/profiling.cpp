@@ -71,6 +71,7 @@ json::Object header_profile(const fs::path& records, const fs::path& source,
     std::map<std::string, std::map<std::string, Cost>> targets;
     std::size_t count = 0;
     for (const auto& entry : fs::directory_iterator(records)) {
+        if (interrupted()) throw std::runtime_error("Interrupted");
         if (entry.path().extension() != ".json") continue;
         const auto document = read_json(entry.path());
         const auto* record = document.getAsObject();

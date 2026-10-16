@@ -1,6 +1,7 @@
 #include <unistd.h>
 
 #include <cmath>
+#include <csignal>
 #include <cstdint>
 #include <iostream>
 #include <stdexcept>
@@ -203,6 +204,12 @@ Diagnostics:
         require(
             run({"/no/such/buildray-command"}, temporary, temporary / "missing.log").code == 127,
             "missing executable");
+        write_file(records / "one.trace", R"({"traceEvents":[]})");
+        install_signal_handlers();
+        std::raise(SIGINT);
+        require(interrupted(), "interrupt handler records cancellation");
+        rejects([&] { header_profile(records, temporary, temporary / "build"); },
+                "profile aggregation must honor interrupts without starting another child");
         fs::remove_all(temporary);
         std::cout << "Unit checks passed\n";
         return 0;
