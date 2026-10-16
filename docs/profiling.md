@@ -42,6 +42,8 @@ System headers use angle brackets; project paths are relative to the source root
 Paths with spaces are accepted. Paths outside the source tree, CMake expressions,
 duplicate headers, imported targets, aliases, and targets with an existing direct
 PCH or `REUSE_FROM` are refused. Selection is explicit in this release.
+The generated PCH wrapper must contain exactly the requested includes; inherited
+interface PCH headers are refused rather than silently added to the experiment.
 
 The candidate appends a guarded `target_precompile_headers(... PRIVATE ...)` block
 to its root `CMakeLists.txt`. It enables C++ PCH only for the selected target; C

@@ -114,6 +114,16 @@ int main() { return answer() + second(); }
         assert not (root / "invalid").exists()
     run(binary, "pch", "--source", source, expected=2)
     run(binary, "measure", "--target", "sample", expected=2)
+    library_cmake = source / "lib/CMakeLists.txt"
+    original_library = library_cmake.read_text()
+    library_cmake.write_text(original_library.replace(" helper.c", "") + '''
+add_library(pch_interface INTERFACE)
+target_precompile_headers(pch_interface INTERFACE <map>)
+target_link_libraries(sample PRIVATE pch_interface)
+''')
+    inherited = invoke("pch", "inherited", "--target", "sample", "--header", "<vector>", expected=1)
+    assert "inherited PCHs" in json.loads((inherited / "report.json").read_text())["error"]
+    library_cmake.write_text(original_library)
     # Existing PCHs stay disabled in profile, and cannot be silently mixed into an experiment.
     with (source / "lib/CMakeLists.txt").open("a") as stream:
         stream.write('target_precompile_headers(sample PRIVATE <string>)\n')

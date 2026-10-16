@@ -3,6 +3,10 @@
 Buildray 0.2 adds a composite GitHub Action and two native C++26 commands:
 `compare` for paired builds, and `check` for saved reports.
 
+Buildray 0.3 also exposes [header profiling and PCH experiments](profiling.md)
+through the CLI and Action. Those modes ignore `baseline-ref`; only `measure`
+compares Git revisions and enforces a regression budget.
+
 ## GitHub Action
 
 Use Ubuntu 24.04 for automatic dependency installation. The action installs

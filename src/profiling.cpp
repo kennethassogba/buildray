@@ -155,8 +155,8 @@ std::string profile_markdown(const json::Object& profile) {
     for (std::size_t i = 0; i < std::min<std::size_t>(30, headers->size()); ++i) {
         const auto& row = *(*headers)[i].getAsObject();
         std::string label = row.getString("header")->str();
-        for (auto& c : label) if (c == '|' || c == '\n' || c == '\r') c = ' ';
-        out << "| " << label << " | " << std::fixed << std::setprecision(6)
+        for (auto& c : label) if (c == '|' || c == '\n' || c == '\r' || c == '`') c = ' ';
+        out << "| `" << label << "` | " << std::fixed << std::setprecision(6)
             << *row.getNumber("inclusive_seconds") << " | " << *row.getInteger("compilations") << " |\n";
     }
     out << "\nFull rankings by target are in headers.json. Choose stable, repeated headers for a PCH experiment.\n";
@@ -190,8 +190,8 @@ std::string pch_cmake(const Options& options, const fs::path& source) {
            "get_target_property(_buildray_pch_type " + target + " TYPE)\n"
            "get_target_property(_buildray_pch_imported " + target + " IMPORTED)\n"
            "get_target_property(_buildray_pch_alias " + target + " ALIASED_TARGET)\n"
-           "get_target_property(_buildray_pch_existing " + target + " PRECOMPILE_HEADERS)\n"
-           "get_target_property(_buildray_pch_reuse " + target + " PRECOMPILE_HEADERS_REUSE_FROM)\n"
+           "get_property(_buildray_pch_existing TARGET " + target + " PROPERTY PRECOMPILE_HEADERS SET)\n"
+           "get_property(_buildray_pch_reuse TARGET " + target + " PROPERTY PRECOMPILE_HEADERS_REUSE_FROM SET)\n"
            "if(_buildray_pch_imported OR _buildray_pch_alias OR _buildray_pch_existing OR _buildray_pch_reuse\n"
            "   OR NOT _buildray_pch_type MATCHES \"^(EXECUTABLE|STATIC_LIBRARY|SHARED_LIBRARY|MODULE_LIBRARY|OBJECT_LIBRARY)$\")\n"
            "  message(FATAL_ERROR \"Buildray requires a local compiled target without an existing PCH\")\nendif()\n"

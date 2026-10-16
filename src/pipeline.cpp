@@ -11,6 +11,7 @@
 #include <map>
 #include <optional>
 #include <set>
+#include <sstream>
 #include <stdexcept>
 #include <utility>
 
@@ -24,6 +25,7 @@ struct Variant {
     fs::path records;
     bool trace = false;
     std::string pch_target;
+    std::vector<std::string> pch_headers;
 };
 
 void checked(const std::vector<std::string>& args, const fs::path& cwd, const fs::path& log) {
@@ -196,6 +198,7 @@ void verify_coverage(const Variant& variant) {
             object->getInteger("exit_code") != 0)
             throw std::runtime_error("Invalid compiler record");
         fs::path file = object->getString("source")->str();
+        if (file.is_relative()) file = fs::path(object->getString("directory")->str()) / file;
         if (file.parent_path().filename() == "Unity" &&
             file.filename().string().starts_with("unity_"))
             throw std::runtime_error(
@@ -218,7 +221,23 @@ void verify_coverage(const Variant& variant) {
             }
             if ((creation || use) && !selected)
                 throw std::runtime_error("PCH enabled outside the selected target");
-            if (creation) ++pch_creations;
+            if (creation) {
+                ++pch_creations;
+                auto wrapper = file;
+                wrapper.replace_extension();  // cmake_pch.hxx.cxx -> cmake_pch.hxx
+                std::set<std::string> actual;
+                std::istringstream lines(read_file(wrapper));
+                std::string line;
+                while (std::getline(lines, line)) {
+                    if (line.starts_with("#include ")) actual.insert(line.substr(9));
+                }
+                std::set<std::string> requested;
+                for (const auto& header : variant.pch_headers)
+                    requested.insert(header.starts_with('<') ? header :
+                        "\"" + (variant.source / fs::path(header).lexically_normal()).string() + "\"");
+                if (actual != requested)
+                    throw std::runtime_error("Generated PCH includes differ from the requested headers; inherited PCHs are unsupported");
+            }
             if (use) ++pch_uses;
         }
         if (!cpp_source(file)) continue;
@@ -566,10 +585,10 @@ int pipeline(const Options& options, const fs::path& executable) {
                 throw std::runtime_error("clang-tidy does not provide misc-include-cleaner");
         }
         Variant baseline{work / "baseline-source", work / "baseline-build",
-                         work / "baseline-records", options.command == "profile", {}};
+                         work / "baseline-records", options.command == "profile", {}, {}};
         Variant candidate{work / "candidate-source", work / "candidate-build",
                           work / "candidate-records", false,
-                          options.command == "pch" ? options.target : ""};
+                          options.command == "pch" ? options.target : "", options.headers};
         report["phase"] = "baseline_validation";
         std::cout << "Configuring baseline, warming build, running tests...\n" << std::flush;
         snapshot(base_source, baseline.source, work);
@@ -603,6 +622,15 @@ int pipeline(const Options& options, const fs::path& executable) {
         if (options.command == "profile") {
             report["phase"] = "profiling";
             auto profile = header_profile(baseline.records, baseline.source, baseline.build);
+            std::cout << "Header parse time (inclusive; nested costs overlap):\n";
+            const auto& headers = *profile.getArray("headers");
+            for (std::size_t i = 0; i < std::min<std::size_t>(8, headers.size()); ++i) {
+                const auto& header = *headers[i].getAsObject();
+                std::cout << "  " << std::fixed << std::setprecision(3)
+                          << *header.getNumber("inclusive_seconds") << " s  "
+                          << *header.getInteger("compilations") << " compilations  "
+                          << header.getString("header")->str() << '\n';
+            }
             write_file(work / "headers.md", profile_markdown(profile));
             write_json(work / "headers.json", std::move(profile));
             report["measurement"] = "one Clang time-trace build; profiling overhead; not a benchmark";
