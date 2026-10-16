@@ -132,8 +132,18 @@ bool removable_include(const std::string& source, const Replacement& item) {
     // In particular, do not remove a macro include or a continued directive.
     static const std::regex directive(
         R"(^[ \t]*#[ \t]*include[ \t]*([<][^>\r\n]+[>]|["][^"\r\n]+["])[ \t]*(//[^\r\n]*)?\r?\n?$)");
-    return line.find("IWYU pragma:") == std::string::npos && line.find('\\') == std::string::npos &&
-           std::regex_match(line, directive);
+    std::smatch match;
+    if (line.find("IWYU pragma:") != std::string::npos || line.find('\\') != std::string::npos ||
+        !std::regex_match(line, match, directive))
+        return false;
+    const auto spelling = match[1].str();
+    const auto header = spelling.substr(1, spelling.size() - 2);
+    // Implementation headers can supply template definitions or instantiations
+    // without a directly used declaration. Keep these conventional spellings.
+    for (const auto* suffix : {".inc", ".inl", ".ipp", ".tpp", "_inl.h", "-inl.h", ".inl.h"}) {
+        if (header.ends_with(suffix)) return false;
+    }
+    return true;
 }
 
 std::string apply_removals(std::string source, std::vector<Replacement> items) {

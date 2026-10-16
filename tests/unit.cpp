@@ -120,6 +120,12 @@ int main() {
                 "continued include");
         const std::string macro = "#include SOME_HEADER\n";
         require(!removable_include(macro, {"a", 0, macro.size(), ""}), "macro include");
+        for (const auto* header : {"body.inc", "body.inl", "body.ipp", "body.tpp", "body_inl.h",
+                                   "body-inl.h", "body.inl.h"}) {
+            const std::string implementation = std::string("#include \"") + header + "\"\n";
+            require(!removable_include(implementation, {"a", 0, implementation.size(), ""}),
+                    "keep implementation headers that may provide template definitions");
+        }
         rejects([&] { apply_removals(source, {first, {"a.cpp", 0, 41, ""}}); },
                 "overlap must fail");
         fs::create_directory(temporary);

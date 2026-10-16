@@ -148,6 +148,8 @@ time. RSS is the maximum of individual compiler peaks, not aggregate build memor
   are refused. Each test has a 120-second timeout.
 - Headers are not edited. Macro includes, continued directives and directives
   carrying IWYU pragmas are not automatically removed. Source symlinks are refused.
+  Implementation includes ending in `.inc`, `.inl`, `.ipp`, `.tpp`, `_inl.h`,
+  `-inl.h` or `.inl.h` are kept because they can supply template definitions.
 - Project CMake scripts and tests execute normally. Buildray uses no network
   service; project dependency downloads remain the project's responsibility.
 - CMake rewrites, forward declarations, PCH selection, trace analysis,

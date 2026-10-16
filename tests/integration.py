@@ -233,6 +233,27 @@ else:
     assert broken_report["patch_recommended"] is False and "baseline" not in broken_report
     assert "#include <vector>" in (broken / "main file.cpp").read_text()
 
+    # A declaration can survive while a template definition disappears. The
+    # compiler accepts the file, but the complete build must reject the link.
+    linking = root / "link-failure"
+    project(linking)
+    (linking / "declaration.hpp").write_text("#pragma once\ntemplate<class T> int compute(T);\n")
+    (linking / "implementation.hpp").write_text('#pragma once\n#include "declaration.hpp"\n'
+                                               'template<class T> int compute(T) { return 0; }\n')
+    prefix = '#include "declaration.hpp"\n'
+    implementation = '#include "implementation.hpp"\n'
+    (linking / "main file.cpp").write_text(prefix + implementation + 'int main() { return compute(0); }\n')
+    link_tidy = root / "link-tidy"
+    link_tidy.write_text(fake.read_text().replace("'Offset': 0, 'Length': 18",
+                                                f"'Offset': {len(prefix)}, 'Length': {len(implementation)}"))
+    link_tidy.chmod(0o755)
+    link_work = root / "link-result"
+    optimize(linking, link_work, "--clang-tidy", str(link_tidy), expected=1)
+    link_report = json.loads((link_work / "report.json").read_text())
+    assert link_report["phase"] == "candidate_validation" and not link_report["patch_validated"]
+    link_log = (link_work / "logs/candidate-validation-build.log").read_text()
+    assert "undefined reference" in link_log or "undefined symbol" in link_log
+
     # Some headers have runtime registration side effects: compilation alone
     # would pass. A candidate test failure must also invalidate the patch.
     runtime = root / "runtime"
