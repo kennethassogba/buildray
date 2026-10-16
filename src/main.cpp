@@ -15,6 +15,8 @@ Usage:
   buildray optimize --source DIR [options] [-- -DNAME=VALUE ...]
   buildray measure  --source DIR [options] [-- -DNAME=VALUE ...]
   buildray profile --source DIR [options] [-- -DNAME=VALUE ...]
+  buildray deps --source DIR [--c-compiler PATH] [--fail-on-cycles] [options]
+                [-- -DNAME=VALUE ...]
   buildray pch --source DIR --target NAME --header HEADER [--header HEADER ...]
                [options] [-- -DNAME=VALUE ...]
   buildray compare --baseline-source DIR --source DIR [options] [-- -DNAME=VALUE ...]
@@ -25,6 +27,8 @@ Options:
   --source DIR          CMake source tree (default: current directory)
   --work-dir DIR        New output directory (default: SOURCE/.buildray/unique-id)
   --compiler PATH       Clang C++ compiler (default: clang++)
+  --c-compiler PATH     Clang C compiler for deps (default: clang)
+  --fail-on-cycles      deps: return 5 if include or target-link cycles exist
   --clang-tidy PATH     clang-tidy with misc-include-cleaner (default: clang-tidy)
   --runs N              Clean build samples per variant, 1..100 (default: 3)
   --jobs N              Fixed build parallelism, 1..1024 (default: 2)
@@ -52,9 +56,13 @@ headers by inclusive parse time and target. Profiling overhead is not a benchmar
 pch tests a private C++ PCH on one target, validates it, and alternates clean
 builds against a baseline with PCH disabled. Outputs: pch.patch and report.json.
 PCH generation is included in candidate timings. Neither command edits your tree.
+deps captures C/C++ include edges (including guarded/skipped includes), reports
+cycles, header fan-out, and CMake target relationships. Requires CMake 4.2+ and
+Ninja 1.13+. Outputs: dependencies.json, dependencies.md, dependencies.dot.
+Cycles are structural findings; guarded includes and static link cycles can be valid.
 
 Exit codes: 0 completed, 1 pipeline/validation failure, 2 invalid arguments,
-3 regression over budget and noise, 4 incomparable reports, 130 interrupted.
+3 regression over budget and noise, 4 incomparable reports, 5 cycles, 130 interrupted.
 No patch is applied automatically.
 )";
 
@@ -103,7 +111,8 @@ buildray::Options parse(const std::vector<std::string>& args) {
     buildray::Options options;
     options.command = args.front();
     if (options.command != "optimize" && options.command != "measure" &&
-        options.command != "compare" && options.command != "profile" && options.command != "pch")
+        options.command != "compare" && options.command != "profile" && options.command != "pch" &&
+        options.command != "deps")
         throw std::runtime_error("Unknown command: " + options.command);
     for (std::size_t i = 1; i < args.size(); ++i) {
         const auto& arg = args[i];
@@ -116,10 +125,14 @@ buildray::Options parse(const std::vector<std::string>& args) {
             options.allow_no_tests = true;
             continue;
         }
+        if (arg == "--fail-on-cycles") {
+            options.fail_on_cycles = true;
+            continue;
+        }
         if (arg != "--source" && arg != "--work-dir" && arg != "--compiler" &&
             arg != "--clang-tidy" && arg != "--runs" && arg != "--jobs" &&
             arg != "--baseline-source" && arg != "--max-regression-percent" && arg != "--session" &&
-            arg != "--target" && arg != "--header")
+            arg != "--target" && arg != "--header" && arg != "--c-compiler")
             throw std::runtime_error("Unknown option: " + arg);
         if (++i == args.size() || args[i].starts_with("--"))
             throw std::runtime_error("Missing value for " + arg);
@@ -131,6 +144,8 @@ buildray::Options parse(const std::vector<std::string>& args) {
             options.work = value;
         else if (arg == "--compiler")
             options.compiler = value;
+        else if (arg == "--c-compiler")
+            options.c_compiler = value;
         else if (arg == "--clang-tidy")
             options.tidy = value;
         else if (arg == "--runs")
@@ -156,8 +171,10 @@ buildray::Options parse(const std::vector<std::string>& args) {
         throw std::runtime_error("pch requires --target and at least one --header");
     if (options.command != "pch" && (!options.target.empty() || !options.headers.empty()))
         throw std::runtime_error("--target and --header are supported only by pch");
+    if (options.command != "deps" && (options.fail_on_cycles || options.c_compiler != "clang"))
+        throw std::runtime_error("--c-compiler and --fail-on-cycles require deps");
     // Tools run from the snapshot; resolve explicit relative executable paths now.
-    for (auto* tool : {&options.compiler, &options.tidy}) {
+    for (auto* tool : {&options.compiler, &options.c_compiler, &options.tidy}) {
         // The driver name is semantic: clang++ can be a symlink to clang.
         // Resolving the link would lose C++ linking behavior (and wrapper names).
         if (tool->find('/') != std::string::npos)
@@ -194,9 +211,10 @@ int main(int argc, char** argv) {
             return 1;
         }
     }
-    if (args.front() == "_launch" || args.front() == "_trace-launch") {
+    if (args.front() == "_launch" || args.front() == "_trace-launch" || args.front() == "_deps-launch") {
         try {
-            return buildray::launch({args.begin() + 1, args.end()}, args.front() == "_trace-launch");
+            return buildray::launch({args.begin() + 1, args.end()}, args.front() == "_trace-launch",
+                                    args.front() == "_deps-launch");
         } catch (const std::exception& error) {
             std::cerr << "buildray launcher: " << error.what() << '\n';
             return 1;

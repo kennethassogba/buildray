@@ -20,5 +20,5 @@ sudo apt-get install -y clang-21 clang-tools-21 clang-tidy-21 llvm-21-dev libcla
 
 buildray_venv=$(mktemp -d "$RUNNER_TEMP/buildray-python-XXXXXX")
 python3 -m venv "$buildray_venv"
-"$buildray_venv/bin/python" -m pip install --disable-pip-version-check cmake==4.2.3
+"$buildray_venv/bin/python" -m pip install --disable-pip-version-check cmake==4.2.3 ninja==1.13.0
 echo "$buildray_venv/bin" >> "$GITHUB_PATH"

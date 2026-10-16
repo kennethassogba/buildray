@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <filesystem>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace buildray {
@@ -53,11 +54,13 @@ struct Options {
     fs::path work;
     fs::path baseline_source;
     std::string compiler = "clang++";
+    std::string c_compiler = "clang";
     std::string tidy = "clang-tidy";
     std::vector<std::string> cmake_args;
     unsigned runs = 3;
     unsigned jobs = 2;
     bool allow_no_tests = false;
+    bool fail_on_cycles = false;
     double max_regression_percent = 5.0;
     std::string session;
     std::string target;
@@ -81,7 +84,13 @@ Comparison compare_reports(const json::Value& baseline, const json::Value& curre
 std::string comparison_markdown(const json::Object& report);
 int check_reports(const CheckOptions& options);
 int pipeline(const Options& options, const fs::path& executable);
-int launch(const std::vector<std::string>& args, bool trace = false);
+int launch(const std::vector<std::string>& args, bool trace = false, bool includes = false);
+// Returns a trace line's depth and path; a zero depth means ordinary diagnostics.
+std::pair<std::size_t, std::string> include_line(const std::string& line);
+json::Object dependency_graph(const fs::path& records, const fs::path& source,
+                              const fs::path& build, const std::vector<fs::path>& originals);
+std::string dependencies_markdown(const json::Object& graph);
+std::string dependencies_dot(const json::Object& graph);
 json::Object header_profile(const fs::path& records, const fs::path& source,
                             const fs::path& build);
 std::string profile_markdown(const json::Object& profile);

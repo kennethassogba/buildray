@@ -21,6 +21,10 @@ on:
         description: JSON array of PCH headers for the SentencePiece experiment.
         type: string
         default: '["<string>", "<vector>", "<memory>", "<algorithm>", "<unordered_map>"]'
+      dependency_corpus:
+        description: Build, test and capture dependency graphs on pinned MuJoCo and XGrammar.
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -139,3 +143,48 @@ jobs:
           jobs: '2'
           cmake-args: '["-DSPM_BUILD_TEST=ON", "-DSPM_ENABLE_SHARED=OFF", "-DSPM_ENABLE_TCMALLOC=OFF"]'
           artifact-name: sentencepiece-v0.2.2-pch
+
+  dependency-corpus:
+    if: github.event_name == 'workflow_dispatch' && inputs.dependency_corpus
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: mujoco
+            repository: google-deepmind/mujoco
+            revision: f640345f72b773e7ec52cd9426a57335cf9c6c28
+            cmake_args: '["-DMUJOCO_BUILD_EXAMPLES=OFF", "-DMUJOCO_BUILD_SIMULATE=OFF", "-DMUJOCO_BUILD_TESTS=ON", "-DMUJOCO_TEST_PYTHON_UTIL=OFF"]'
+          - name: xgrammar
+            repository: mlc-ai/xgrammar
+            revision: 7e269d56c74c89de52bc8c31e42191155416371f
+            cmake_args: '[]'
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - uses: actions/checkout@v6
+        with:
+          repository: ${{ matrix.repository }}
+          ref: ${{ matrix.revision }}
+          path: fixtures/${{ matrix.name }}
+          persist-credentials: false
+      - name: Prepare XGrammar C++ configuration
+        if: matrix.name == 'xgrammar'
+        working-directory: fixtures/xgrammar
+        run: |
+          git submodule update --init --depth 1 3rdparty/dlpack 3rdparty/googletest
+          printf '%s\n' 'set(XGRAMMAR_BUILD_PYTHON_BINDINGS OFF)' 'set(XGRAMMAR_BUILD_CXX_TESTS ON)' > config.cmake
+      - name: Prepare MuJoCo test locale
+        if: matrix.name == 'mujoco'
+        run: sudo locale-gen de_DE.UTF-8
+      - name: Capture dependencies and run CTest
+        uses: ./
+        with:
+          command: deps
+          source: fixtures/${{ matrix.name }}
+          cmake-args: ${{ matrix.cmake_args }}
+          jobs: '2'
+          artifact-name: ${{ matrix.name }}-dependencies

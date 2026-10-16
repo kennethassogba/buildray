@@ -128,8 +128,11 @@ def main():
     if not source.is_relative_to(workspace) or not (source / "CMakeLists.txt").is_file():
         raise ValueError("Source must be a CMake tree inside GITHUB_WORKSPACE")
     mode = os.environ.get("BUILDRAY_COMMAND", "measure")
-    if mode not in ("measure", "optimize", "profile", "pch"):
-        raise ValueError("command must be measure, optimize, profile or pch")
+    if mode not in ("measure", "optimize", "profile", "pch", "deps"):
+        raise ValueError("command must be measure, optimize, profile, pch or deps")
+    fail_on_cycles = boolean("BUILDRAY_FAIL_ON_CYCLES", "false")
+    if fail_on_cycles and mode != "deps":
+        raise ValueError("fail-on-cycles requires command deps")
     target = os.environ.get("BUILDRAY_PCH_TARGET", "")
     headers = json.loads(os.environ.get("BUILDRAY_PCH_HEADERS", "[]"))
     if not isinstance(headers, list) or not all(isinstance(item, str) and item for item in headers):
@@ -168,6 +171,10 @@ def main():
                             "--max-regression-percent", str(budget)])
         if mode == "optimize":
             command.extend(["--clang-tidy", os.environ.get("BUILDRAY_CLANG_TIDY", "clang-tidy-21")])
+        if mode == "deps":
+            command.extend(["--c-compiler", os.environ.get("BUILDRAY_C_COMPILER", "clang-21")])
+            if fail_on_cycles:
+                command.append("--fail-on-cycles")
         if mode == "pch":
             command.extend(["--target", target])
             for header in headers:
@@ -182,17 +189,19 @@ def main():
                              exit_code=result.returncode)
         if report["status"] != "passed":
             retain_failure_logs(work / "run", artifacts)
-        output("result", report.get("performance_result", "passed")
+        output("result", ("cycles" if result.returncode == 5 else report.get("performance_result", "passed"))
                if report["status"] == "passed" else report["status"])
         for name, key in [("report.json", "report"), ("comparison.json", "comparison"),
                           ("baseline-report.json", "baseline-report"), ("current-report.json", "current-report"),
                           ("includes.patch", "patch"), ("pch.patch", "patch"),
-                          ("headers.json", "headers")]:
+                          ("headers.json", "headers"), ("dependencies.json", "dependencies"),
+                          ("dependencies.dot", "dependency-dot")]:
             item = work / "run" / name
             if item.is_file():
                 shutil.copyfile(item, artifacts / name)
                 output(key, artifacts / name)
-        summary = work / ("run/headers.md" if mode == "profile" else "run/comparison.md")
+        summary = work / ("run/headers.md" if mode == "profile" else
+                          "run/dependencies.md" if mode == "deps" else "run/comparison.md")
         if summary.is_file():
             text = summary.read_text()
             shutil.copyfile(summary, artifacts / summary.name)

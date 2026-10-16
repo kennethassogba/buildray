@@ -26,6 +26,7 @@ struct Variant {
     bool trace = false;
     std::string pch_target;
     std::vector<std::string> pch_headers;
+    bool dependencies = false;
 };
 
 void checked(const std::vector<std::string>& args, const fs::path& cwd, const fs::path& log) {
@@ -80,16 +81,18 @@ void check_cmake_args(const std::vector<std::string>& args) {
     }
 }
 
-std::string launcher(const fs::path& executable, const fs::path& records, bool trace) {
+std::string launcher(const fs::path& executable, const fs::path& records, bool trace, bool deps) {
     if (executable.string().find(';') != std::string::npos ||
         records.string().find(';') != std::string::npos)
         throw std::runtime_error("Semicolons in launcher paths are unsupported by CMake lists");
-    return executable.string() + (trace ? ";_trace-launch;" : ";_launch;") + records.string() + ";--";
+    return executable.string() + (deps ? ";_deps-launch;" : trace ? ";_trace-launch;" : ";_launch;") + records.string() + ";--";
 }
 
 void configure(const Options& options, const Variant& variant, const fs::path& executable,
                const fs::path& log) {
     fs::create_directories(variant.records);
+    if (variant.dependencies)
+        write_file(variant.build / ".cmake/api/v1/query/codemodel-v2", "");
     std::vector<std::string> args{"cmake",
                                   "-S",
                                   variant.source.string(),
@@ -103,11 +106,18 @@ void configure(const Options& options, const Variant& variant, const fs::path& e
     const std::vector<std::string> controlled{
         "-DCMAKE_CXX_COMPILER=" + options.compiler, "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
         "-DCMAKE_UNITY_BUILD=OFF", "-DCMAKE_DISABLE_PRECOMPILE_HEADERS=ON",
-        "-DCMAKE_CXX_COMPILER_LAUNCHER=" + launcher(executable, variant.records, variant.trace)};
+        "-DCMAKE_CXX_COMPILER_LAUNCHER=" + launcher(executable, variant.records, variant.trace, variant.dependencies)};
     args.insert(args.end(), controlled.begin(), controlled.end());
+    if (variant.dependencies) {
+        args.push_back("-DCMAKE_C_COMPILER=" + options.c_compiler);
+        args.push_back("-DCMAKE_C_COMPILER_LAUNCHER=" + launcher(executable, variant.records, false, true));
+    }
     checked(args, variant.source, log);
     if (!fs::exists(variant.build / "compile_commands.json"))
         throw std::runtime_error("Project did not generate compile_commands.json");
+    if (variant.dependencies)
+        checked({"ninja", "-C", variant.build.string(), "-t", "compdb-targets", "all"},
+                variant.source, variant.build / "active-commands.json");
 }
 
 void clean(const Variant& variant, const fs::path& log) {
@@ -179,6 +189,20 @@ void verify_coverage(const Variant& variant) {
     std::size_t pch_creations = 0;
     std::size_t pch_uses = 0;
     std::map<fs::path, std::size_t> expected;
+    std::set<fs::path> active;
+    if (variant.dependencies) {
+        const auto document = read_json(variant.build / "active-commands.json");
+        const auto* commands = document.getAsArray();
+        if (!commands) throw std::runtime_error("Invalid Ninja default-target compilation database");
+        for (const auto& item : *commands) {
+            const auto* object = item.getAsObject();
+            if (!object || !object->getString("output") || !object->getString("directory"))
+                throw std::runtime_error("Invalid Ninja command");
+            fs::path output = object->getString("output")->str();
+            if (output.is_relative()) output = fs::path(object->getString("directory")->str()) / output;
+            active.insert(absolute_path(output));
+        }
+    }
     const auto database = read_json(variant.build / "compile_commands.json");
     const auto* commands = database.getAsArray();
     if (!commands) throw std::runtime_error("Invalid compilation database");
@@ -187,7 +211,13 @@ void verify_coverage(const Variant& variant) {
         if (!object || !object->getString("file") || !object->getString("directory"))
             throw std::runtime_error("Invalid compilation database entry");
         fs::path file = object->getString("file")->str();
-        if (!cpp_source(file)) continue;
+        if (!cpp_source(file) && !(variant.dependencies && file.extension() == ".c")) continue;
+        if (variant.dependencies) {
+            if (!object->getString("output")) throw std::runtime_error("Missing compilation output");
+            fs::path output = object->getString("output")->str();
+            if (output.is_relative()) output = fs::path(object->getString("directory")->str()) / output;
+            if (!active.contains(absolute_path(output))) continue;
+        }
         if (file.is_relative()) file = fs::path(object->getString("directory")->str()) / file;
         ++expected[absolute_path(file)];
     }
@@ -240,13 +270,13 @@ void verify_coverage(const Variant& variant) {
             }
             if (use) ++pch_uses;
         }
-        if (!cpp_source(file)) continue;
+        if (!cpp_source(file) && !(variant.dependencies && file.extension() == ".c")) continue;
         if (file.is_relative()) file = fs::path(object->getString("directory")->str()) / file;
         ++measured[absolute_path(file)];
     }
     if (expected.empty() || measured != expected)
         throw std::runtime_error(
-            "Compiler coverage does not match compile_commands.json. "
+            "Compiler coverage does not match the expected compilation database. "
             "Build all C++ targets by default (disable EXCLUDE_FROM_ALL targets), and do not "
             "override the compiler launcher. Partial validation is refused.");
     if (!variant.pch_target.empty() && (pch_creations == 0 || pch_uses == 0))
@@ -549,7 +579,7 @@ int pipeline(const Options& options, const fs::path& executable) {
         {"source", source.string()},
         {"work_dir", work.string()},
         {"jobs", options.jobs},
-        {"runs", options.command == "profile" ? 1u : options.runs},
+        {"runs", options.command == "profile" || options.command == "deps" ? 1u : options.runs},
         {"cmake_args", std::move(extra)},
         {"measurement",
          options.command == "measure"
@@ -574,6 +604,19 @@ int pipeline(const Options& options, const fs::path& executable) {
         checked({"ninja", "--version"}, source, logs / "ninja-version.log");
         report["cmake_version"] = read_file(logs / "cmake-version.log");
         report["ninja_version"] = read_file(logs / "ninja-version.log");
+        if (options.command == "deps") {
+            checked({options.c_compiler, "--version"}, source, logs / "c-compiler-version.log");
+            report["c_compiler_version"] = read_file(logs / "c-compiler-version.log");
+            if (report.getString("c_compiler_version")->find("clang") == llvm::StringRef::npos)
+                throw std::runtime_error("deps requires Clang for C as well as C++");
+            checked({"cmake", "-E", "capabilities"}, source, logs / "cmake-capabilities.json");
+            const auto capabilities = read_json(logs / "cmake-capabilities.json");
+            const auto* object = capabilities.getAsObject();
+            const auto* version = object ? object->getObject("version") : nullptr;
+            if (!version || version->getInteger("major").value_or(0) < 4 ||
+                (version->getInteger("major") == 4 && version->getInteger("minor").value_or(0) < 2))
+                throw std::runtime_error("deps requires CMake 4.2+ for direct target relationships");
+        }
         if (options.command == "optimize") {
             checked({options.tidy, "--version"}, source, logs / "tidy-version.log");
             report["clang_tidy_version"] = read_file(logs / "tidy-version.log");
@@ -585,13 +628,19 @@ int pipeline(const Options& options, const fs::path& executable) {
                 throw std::runtime_error("clang-tidy does not provide misc-include-cleaner");
         }
         Variant baseline{work / "baseline-source", work / "baseline-build",
-                         work / "baseline-records", options.command == "profile", {}, {}};
+                         work / "baseline-records", options.command == "profile", {}, {}, options.command == "deps"};
         Variant candidate{work / "candidate-source", work / "candidate-build",
                           work / "candidate-records", false,
                           options.command == "pch" ? options.target : "", options.headers};
         report["phase"] = "baseline_validation";
         std::cout << "Configuring baseline, warming build, running tests...\n" << std::flush;
         snapshot(base_source, baseline.source, work);
+        std::vector<fs::path> dependency_originals;
+        if (options.command == "deps") {
+            for (const auto& entry : fs::recursive_directory_iterator(baseline.source))
+                if (entry.is_regular_file())
+                    dependency_originals.push_back(entry.path().lexically_relative(baseline.source));
+        }
         // Configure scripts can write generated links or files into their source tree.
         // Prepare both inputs before either configure runs; optimize uses identical bytes.
         if (options.command == "optimize" || options.command == "pch")
@@ -607,8 +656,8 @@ int pipeline(const Options& options, const fs::path& executable) {
         }
         configure(options, baseline, executable, logs / "baseline-configure.log");
         auto initial_context = measurement_context(options, baseline.build);
-        if (options.command == "profile") {
-            initial_context["method"] = "clang-time-trace-v1";
+        if (options.command == "profile" || options.command == "deps") {
+            initial_context["method"] = options.command == "deps" ? "clang-include-tree-cmake-codemodel-v1" : "clang-time-trace-v1";
             initial_context["sampling"] = "single-instrumented-build";
             report["profiling_context"] = std::move(initial_context);
         } else {
@@ -619,7 +668,25 @@ int pipeline(const Options& options, const fs::path& executable) {
         verify_coverage(baseline);
         const auto baseline_tests = test(options, baseline, logs, "baseline");
         report["baseline_tests_passed"] = static_cast<std::int64_t>(baseline_tests);
-        if (options.command == "profile") {
+        if (options.command == "deps") {
+            report["phase"] = "dependency_analysis";
+            auto graph = dependency_graph(baseline.records, baseline.source, baseline.build, dependency_originals);
+            const auto include_cycles = graph.getArray("include_cycles")->size();
+            const auto target_cycles = graph.getObject("cmake")->getArray("link_cycles")->size();
+            const bool cycles = include_cycles || target_cycles;
+            report["include_cycles"] = static_cast<std::int64_t>(include_cycles);
+            report["target_link_cycles"] = static_cast<std::int64_t>(target_cycles);
+            report["cycle_gate_passed"] = !options.fail_on_cycles || !cycles;
+            report["validation_scope"] = "default Ninja all target; C and C++; original snapshot include graph; configured CMake targets";
+            report["validation"] = baseline_tests ? "build_and_tests_passed" : "build_only";
+            report["measurement"] = "one include-instrumented build; not a performance benchmark";
+            std::cout << "Dependency graph: " << *graph.getInteger("compilations") << " compilations, "
+                      << include_cycles << " include cycles, " << target_cycles << " target-link cycles.\n";
+            write_file(work / "dependencies.md", dependencies_markdown(graph));
+            write_file(work / "dependencies.dot", dependencies_dot(graph));
+            write_json(work / "dependencies.json", std::move(graph));
+            if (options.fail_on_cycles && cycles) pipeline_exit = 5;
+        } else if (options.command == "profile") {
             report["phase"] = "profiling";
             auto profile = header_profile(baseline.records, baseline.source, baseline.build);
             std::cout << "Header parse time (inclusive; nested costs overlap):\n";

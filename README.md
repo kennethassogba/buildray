@@ -91,6 +91,23 @@ candidate time. The patch is recommended only when the measured gain exceeds noi
 See [the workflow and limitations](docs/profiling.md). Both modes are also available
 through the GitHub Action.
 
+## Dependency graphs
+
+```bash
+buildray deps --source /path/to/project --compiler clang++-21 --c-compiler clang-21
+# Optional CI policy: exit 5 when structural cycles are found.
+buildray deps --source /path/to/project --fail-on-cycles
+```
+
+`deps` runs a C/C++ build and CTest, captures direct includes even when include
+guards skip a header, and reports cycles and header fan-out. It also records CMake
+target relationships and their declaration locations. JSON, Markdown and Graphviz
+outputs are retained. It requires CMake 4.2+ and Ninja 1.13+.
+
+Guarded include cycles and static-library link cycles can be valid. The graph
+helps choose changes to investigate; it does not remove dependencies or estimate
+a speedup. [Scope, CI usage and corpus reproduction](docs/dependencies.md).
+
 ## What optimize does
 
 1. Copies the source tree into isolated baseline and candidate trees, excluding `.git`, `.cache`,
@@ -130,6 +147,7 @@ current-report.json            Current measurement for history (compare)
 includes.patch                 Unified patch (optimize only)
 pch.patch                      CMake PCH patch (pch only)
 headers.json, headers.md        Inclusive header costs and target rankings (profile)
+dependencies.json, .md, .dot    Include graph, cycles and CMake relationships (deps)
 logs/*-compilers.json           Duration, CPU time, RSS and argv per C++ compilation
 logs/*-build.log                Build output for each sample
 logs/*-tests.xml                CTest validation results
@@ -166,6 +184,9 @@ time. RSS is the maximum of individual compiler peaks, not aggregate build memor
   Launcher overrides and `EXCLUDE_FROM_ALL` C++ targets cause a coverage error.
   Disable optional targets that are not part of the build you want to validate.
   Active unity compilation and unexpected PCH are refused, including target overrides.
+  `deps` instead checks every C/C++ object reachable from Ninja's default `all`
+  target, allowing optional excluded targets. Its CMake graph still lists configured
+  excluded targets; their includes are not claimed as observed.
 - CTest tests are required. Missing tests fail unless `--allow-no-tests` is
   explicit; that report says `build_only`. Disabled, skipped and failing tests
   are refused. Each test has a 120-second timeout.
@@ -181,6 +202,7 @@ time. RSS is the maximum of individual compiler peaks, not aggregate build memor
 
 Exit codes: `0` completed, `1` pipeline or validation failure, `2` CLI syntax
 error, `3` regression over budget and noise, `4` incompatible saved reports,
+`5` dependency cycles with the explicit cycle policy,
 `130` interrupted. A completed comparison has `status: passed`; inspect
 `gate_passed` for its performance policy result.
 
@@ -206,3 +228,4 @@ The real-project check uses unmodified tinyxml2 11.0.0. See
 [AI corpus](docs/corpus.md) records the next projects and their contribution constraints.
 [Profiling and PCH evidence](docs/profiling-validation.md) covers the new commands,
 including candidates with no measured benefit.
+[Dependency graph evidence](docs/dependency-validation.md) covers MuJoCo and XGrammar.

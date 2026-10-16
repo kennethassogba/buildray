@@ -3,6 +3,7 @@
 #include <cmath>
 #include <csignal>
 #include <cstdint>
+#include <cstdlib>
 #include <iostream>
 #include <stdexcept>
 
@@ -54,8 +55,10 @@ buildray::json::Value measurement(std::vector<double> times) {
 
 int main() {
     using namespace buildray;
-    const auto temporary =
-        fs::temp_directory_path() / ("buildray-unit-" + std::to_string(::getpid()));
+    auto pattern = (fs::temp_directory_path() / "buildray-unit-XXXXXX").string();
+    const auto* directory = ::mkdtemp(pattern.data());
+    if (!directory) return 1;
+    const fs::path temporary = directory;
     try {
         require(median({8, 1, 3}) == 3, "odd median");
         require(median({8, 1, 3, 4}) == 3.5, "even median");
@@ -190,6 +193,43 @@ Diagnostics:
         ]})");
         rejects([&] { header_profile(records, temporary, temporary / "build"); },
                 "unpaired trace events cannot produce partial rankings");
+        require(include_line("diagnostic: not a trace").first == 0 &&
+                    include_line("...").first == 0 && include_line(". ").first == 0,
+                "ordinary diagnostics must remain visible");
+        require(include_line(".. /path with spaces/header.h") ==
+                    std::pair<std::size_t, std::string>{2, "/path with spaces/header.h"},
+                "include depth and spaced paths");
+        const auto dependency_build = temporary / "dependency-build";
+        const auto replies = dependency_build / ".cmake/api/v1/reply";
+        write_json(replies / "index-test.json", json::Object{{"reply", json::Object{
+            {"codemodel-v2", json::Object{{"jsonFile", "codemodel.json"}}}}}});
+        write_json(replies / "codemodel.json", json::Object{
+            {"version", json::Object{{"major", 2}, {"minor", 9}}},
+            {"configurations", json::Array{json::Object{{"targets", json::Array{}}}}}});
+        const auto dependency_records = temporary / "dependency-records";
+        const auto include_trace = dependency_records / "one.includes";
+        write_json(dependency_records / "one.json", json::Object{
+            {"exit_code", 0}, {"directory", temporary.string()}, {"source", "main.cpp"},
+            {"include_file", include_trace.string()}});
+        std::vector<fs::path> originals{"main.cpp"};
+        std::string large_trace;
+        // Long, shallowly emitted edges form one 10,000-node SCC without relying
+        // on Clang's nesting limit. This exercises the graph's stack safety.
+        for (unsigned i = 0; i < 10000; ++i) {
+            const auto from = "header" + std::to_string(i) + ".h";
+            const auto to = "header" + std::to_string((i + 1) % 10000) + ".h";
+            originals.emplace_back(from);
+            large_trace += ". " + (temporary / from).string() + "\n.. " +
+                           (temporary / to).string() + "\n";
+        }
+        write_file(include_trace, large_trace);
+        const auto dependencies = dependency_graph(dependency_records, temporary, dependency_build, originals);
+        require(dependencies.getArray("include_cycles")->size() == 1 &&
+                    dependencies.getArray("include_cycles")->front().getAsObject()->getArray("members")->size() == 10000,
+                "large cyclic graphs must not overflow the process stack");
+        write_file(include_trace, "... impossible-depth.h\n");
+        rejects([&] { dependency_graph(dependency_records, temporary, dependency_build, originals); },
+                "malformed traces must not produce partial graphs");
         const auto success = run({"/bin/sh", "-c", "exit 0"}, temporary);
         require(success.code == 0 && success.seconds > 0, "process success and timing");
         require(run({"/bin/sh", "-c", "exit 7"}, temporary).code == 7, "exit status preserved");

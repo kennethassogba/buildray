@@ -59,21 +59,36 @@ add_test(NAME works COMMAND sample)
         {"BUILDRAY_ALLOW_NO_TESTS": "yes"},
         {"BUILDRAY_COMMAND": "pch", "BUILDRAY_PCH_HEADERS": "<vector>"},
         {"BUILDRAY_COMMAND": "profile", "BUILDRAY_PCH_TARGET": "sample"},
+        {"BUILDRAY_FAIL_ON_CYCLES": "true"},
     ]:
         execute([sys.executable, script], env={**environment, **changes}, expected=1)
     assert not (source / "injected").exists()
 
-    for mode in ["profile", "pch"]:
+    for mode in ["profile", "pch", "deps"]:
         output_file = root / (mode + "-outputs")
         extra = {"BUILDRAY_PCH_TARGET": "sample", "BUILDRAY_PCH_HEADERS": '["<vector>"]'} if mode == "pch" else {}
         execute([sys.executable, script], env={**environment, **extra,
                 "BUILDRAY_COMMAND": mode, "BUILDRAY_RUNS": "1", "GITHUB_OUTPUT": str(output_file)})
         result_fields = dict(line.split("=", 1) for line in output_file.read_text().splitlines())
         assert "baseline-sha" not in result_fields, "PR baseline applies only to measure"
-        assert Path(result_fields["headers" if mode == "profile" else "patch"]).is_file()
+        key = "headers" if mode == "profile" else "dependencies" if mode == "deps" else "patch"
+        assert Path(result_fields[key]).is_file()
+        if mode == "deps":
+            assert Path(result_fields["dependency-dot"]).is_file()
         state = json.loads(Path(result_fields["report"]).read_text())
         assert state["status"] == "passed"
         assert execute(["git", "status", "--porcelain"], cwd=source) == status
+
+    # The explicit cycle policy fails CI while retaining the completed graph.
+    (source / "cycle.h").write_text('#pragma once\n#include "cycle.h"\n')
+    (source / "main.cpp").write_text('#include "cycle.h"\nint main() { return 0; }\n')
+    cycle_outputs = root / "cycle-outputs"
+    execute([sys.executable, script], env={**environment, "BUILDRAY_COMMAND": "deps",
+            "BUILDRAY_FAIL_ON_CYCLES": "true", "GITHUB_OUTPUT": str(cycle_outputs)}, expected=5)
+    cycle_fields = dict(line.split("=", 1) for line in cycle_outputs.read_text().splitlines())
+    assert cycle_fields["result"] == "cycles" and Path(cycle_fields["dependencies"]).is_file()
+    assert json.loads(Path(cycle_fields["report"]).read_text())["cycle_gate_passed"] is False
+    (source / "cycle.h").unlink()
 
     # Bootstrap failures still retain a useful artifact instead of an empty upload.
     failed_outputs = root / "failed-outputs"

@@ -78,6 +78,17 @@ The [raw report](evidence/sentencepiece-common-pch-report.json) and
 [CMake patch](evidence/sentencepiece-common-pch.patch) are retained. The patch also
 passes `git apply --check` against the pinned revision's original `CMakeLists.txt`.
 
+The separate standard-header experiment in
+[run 38831428929](https://github.com/kennethassogba/buildray/actions/runs/38831428929)
+also completed successfully. On `sentencepiece-static`, a private PCH containing
+`<string>`, `<vector>`, `<memory>`, `<algorithm>` and `<unordered_map>` reduces the
+whole-build median from **187.358797 s to 178.851200 s (4.541%)**. Both variants
+pass the CTest suite; three alternating pairs exceed that run's noise threshold
+and produce `patch_recommended: true`. The [raw report](evidence/sentencepiece-standard-pch-report.json)
+and [patch](evidence/sentencepiece-standard-pch.patch) are retained. This is a
+separate runner and experiment from the `spm_test` result; the two baseline times
+and gains should not be compared as measurements of target quality.
+
 Reproduce after checking out SentencePiece v0.2.2 in `fixtures/sentencepiece`:
 
 ```bash

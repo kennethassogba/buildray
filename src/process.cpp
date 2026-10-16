@@ -8,6 +8,8 @@
 #include <csignal>
 #include <cstdlib>
 #include <cstring>
+#include <iostream>
+#include <sstream>
 #include <stdexcept>
 
 #include "buildray/core.hpp"
@@ -86,7 +88,7 @@ ProcessResult run(const std::vector<std::string>& args, const fs::path& cwd, con
             seconds(usage.ru_utime), seconds(usage.ru_stime), usage.ru_maxrss};
 }
 
-int launch(const std::vector<std::string>& args, bool trace) {
+int launch(const std::vector<std::string>& args, bool trace, bool includes) {
     if (args.size() < 3 || args[1] != "--") {
         throw std::runtime_error("Internal launcher expects RECORD_DIR -- COMPILER [ARGS...]");
     }
@@ -94,11 +96,23 @@ int launch(const std::vector<std::string>& args, bool trace) {
     fs::create_directories(records);
     std::vector<std::string> compiler(args.begin() + 2, args.end());
     const auto trace_file = records / (std::to_string(::getpid()) + ".trace");
+    const auto include_file = records / (std::to_string(::getpid()) + ".includes");
     if (trace) {
         compiler.push_back("-ftime-trace=" + trace_file.string());
         compiler.push_back("-ftime-trace-granularity=0");
     }
-    const auto result = run(compiler, fs::current_path());
+    if (includes) {
+        compiler.push_back("-H");
+        compiler.push_back("-fshow-skipped-includes");
+    }
+    const auto result = run(compiler, fs::current_path(), includes ? include_file : fs::path{});
+    if (includes) {
+        // Keep diagnostics visible to Ninja without flooding its build log with traces.
+        std::istringstream lines(read_file(include_file));
+        std::string line;
+        while (std::getline(lines, line))
+            if (!include_line(line).first) std::cerr << line << '\n';
+    }
     json::Array command;
     for (const auto& arg : compiler) command.push_back(arg);
     std::string source;
@@ -111,6 +125,7 @@ int launch(const std::vector<std::string>& args, bool trace) {
                             {"directory", fs::current_path().string()},
                             {"command", std::move(command)},
                             {"trace_file", trace ? trace_file.string() : ""},
+                            {"include_file", includes ? include_file.string() : ""},
                             {"wall_seconds", result.seconds},
                             {"user_seconds", result.user_seconds},
                             {"system_seconds", result.system_seconds},

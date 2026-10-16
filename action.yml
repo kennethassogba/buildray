@@ -9,7 +9,7 @@ inputs:
     description: CMake source directory relative to the checkout.
     default: '.'
   command:
-    description: measure, optimize (include cleanup), profile (header costs), or pch (PCH experiment).
+    description: measure, optimize (includes), profile (header costs), pch (experiment), or deps (dependency graphs).
     default: measure
   baseline-ref:
     description: Base Git revision for measure. Empty outside PRs means a standalone measurement.
@@ -32,6 +32,12 @@ inputs:
   clang-tidy:
     description: Include analyzer for optimize.
     default: clang-tidy-21
+  c-compiler:
+    description: Clang C compiler for command deps.
+    default: clang-21
+  fail-on-cycles:
+    description: For deps, fail with exit 5 if observed include or target-link cycles exist.
+    default: 'false'
   pch-target:
     description: CMake target for command pch.
     default: ''
@@ -75,6 +81,12 @@ outputs:
   headers:
     description: Header costs by target from profile.
     value: ${{ steps.run.outputs.headers }}
+  dependencies:
+    description: Observed include and configured CMake dependency graph JSON.
+    value: ${{ steps.run.outputs.dependencies }}
+  dependency-dot:
+    description: Graphviz dependency graph.
+    value: ${{ steps.run.outputs.dependency-dot }}
   result:
     description: Performance classification or failure status.
     value: ${{ steps.run.outputs.result }}
@@ -98,6 +110,8 @@ runs:
         BUILDRAY_MAX_REGRESSION_PERCENT: ${{ inputs.max-regression-percent }}
         BUILDRAY_COMPILER: ${{ inputs.compiler }}
         BUILDRAY_CLANG_TIDY: ${{ inputs.clang-tidy }}
+        BUILDRAY_C_COMPILER: ${{ inputs.c-compiler }}
+        BUILDRAY_FAIL_ON_CYCLES: ${{ inputs.fail-on-cycles }}
         BUILDRAY_PCH_TARGET: ${{ inputs.pch-target }}
         BUILDRAY_PCH_HEADERS: ${{ inputs.pch-headers }}
         BUILDRAY_ALLOW_NO_TESTS: ${{ inputs.allow-no-tests }}
