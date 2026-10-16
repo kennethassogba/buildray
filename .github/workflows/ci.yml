@@ -9,6 +9,18 @@ on:
         description: Profile headers and benchmark a PCH on pinned SentencePiece (several clean builds).
         type: boolean
         default: false
+      profile_headers:
+        description: Capture header traces before the SentencePiece PCH experiment.
+        type: boolean
+        default: true
+      pch_target:
+        description: SentencePiece target for the PCH experiment.
+        type: string
+        default: sentencepiece-static
+      pch_headers:
+        description: JSON array of PCH headers for the SentencePiece experiment.
+        type: string
+        default: '["<string>", "<vector>", "<memory>", "<algorithm>", "<unordered_map>"]'
 
 permissions:
   contents: read
@@ -108,6 +120,7 @@ jobs:
           git clone --depth 1 --branch v0.2.2 https://github.com/google/sentencepiece.git fixtures/sentencepiece
           test "$(git -C fixtures/sentencepiece rev-parse HEAD)" = e0cce7d37b065b5140349dbe12c6bcf6192fdd78
       - name: Profile headers on the AI corpus
+        if: inputs.profile_headers
         uses: ./
         with:
           source: fixtures/sentencepiece
@@ -119,9 +132,9 @@ jobs:
         with:
           source: fixtures/sentencepiece
           command: pch
-          pch-target: sentencepiece-static
-          pch-headers: '["<string>", "<vector>", "<memory>", "<algorithm>", "<unordered_map>"]'
-          install-dependencies: 'false'
+          pch-target: ${{ inputs.pch_target }}
+          pch-headers: ${{ inputs.pch_headers }}
+          install-dependencies: ${{ !inputs.profile_headers }}
           runs: '3'
           jobs: '2'
           cmake-args: '["-DSPM_BUILD_TEST=ON", "-DSPM_ENABLE_SHARED=OFF", "-DSPM_ENABLE_TCMALLOC=OFF"]'
