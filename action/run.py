@@ -128,8 +128,16 @@ def main():
     if not source.is_relative_to(workspace) or not (source / "CMakeLists.txt").is_file():
         raise ValueError("Source must be a CMake tree inside GITHUB_WORKSPACE")
     mode = os.environ.get("BUILDRAY_COMMAND", "measure")
-    if mode not in ("measure", "optimize"):
-        raise ValueError("command must be measure or optimize")
+    if mode not in ("measure", "optimize", "profile", "pch"):
+        raise ValueError("command must be measure, optimize, profile or pch")
+    target = os.environ.get("BUILDRAY_PCH_TARGET", "")
+    headers = json.loads(os.environ.get("BUILDRAY_PCH_HEADERS", "[]"))
+    if not isinstance(headers, list) or not all(isinstance(item, str) and item for item in headers):
+        raise ValueError("pch-headers must be a JSON array of nonempty strings")
+    if mode == "pch" and (not target or not headers):
+        raise ValueError("pch needs pch-target and pch-headers")
+    if mode != "pch" and (target or headers):
+        raise ValueError("pch-target and pch-headers require command pch")
     runs = integer("BUILDRAY_RUNS", "3", 100)
     jobs = integer("BUILDRAY_JOBS", "2", 1024)
     integer("BUILDRAY_RETENTION_DAYS", "30", 90)
@@ -160,6 +168,10 @@ def main():
                             "--max-regression-percent", str(budget)])
         if mode == "optimize":
             command.extend(["--clang-tidy", os.environ.get("BUILDRAY_CLANG_TIDY", "clang-tidy-21")])
+        if mode == "pch":
+            command.extend(["--target", target])
+            for header in headers:
+                command.extend(["--header", header])
         if allow_no_tests:
             command.append("--allow-no-tests")
         command.extend(["--", *cmake_args])
@@ -174,12 +186,13 @@ def main():
                if report["status"] == "passed" else report["status"])
         for name, key in [("report.json", "report"), ("comparison.json", "comparison"),
                           ("baseline-report.json", "baseline-report"), ("current-report.json", "current-report"),
-                          ("includes.patch", "patch")]:
+                          ("includes.patch", "patch"), ("pch.patch", "patch"),
+                          ("headers.json", "headers")]:
             item = work / "run" / name
             if item.is_file():
                 shutil.copyfile(item, artifacts / name)
                 output(key, artifacts / name)
-        summary = work / "run/comparison.md"
+        summary = work / ("run/headers.md" if mode == "profile" else "run/comparison.md")
         if summary.is_file():
             text = summary.read_text()
             shutil.copyfile(summary, artifacts / summary.name)
@@ -189,6 +202,9 @@ def main():
                 text += f"\nClean-build median: {report['baseline']['median_seconds']:.3f} s.\n"
             if mode == "optimize":
                 text += f"\nRemoved includes: {report.get('removed_includes', 0)}. Patch validated: {report.get('patch_validated', False)}.\n"
+            if mode == "pch" and report.get("candidate"):
+                text += f"\nPCH median: {report['candidate']['median_seconds']:.3f} s. Change: {report['wall_change_percent']:+.3f}% ({report['performance_result']}).\n"
+                text += f"\nPatch validated: {report.get('patch_validated', False)}. Recommended: {report.get('patch_recommended', False)}.\n"
         if os.environ.get("GITHUB_STEP_SUMMARY"):
             with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a") as stream:
                 stream.write(text)

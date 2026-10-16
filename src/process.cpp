@@ -86,13 +86,18 @@ ProcessResult run(const std::vector<std::string>& args, const fs::path& cwd, con
             seconds(usage.ru_utime), seconds(usage.ru_stime), usage.ru_maxrss};
 }
 
-int launch(const std::vector<std::string>& args) {
+int launch(const std::vector<std::string>& args, bool trace) {
     if (args.size() < 3 || args[1] != "--") {
         throw std::runtime_error("Internal launcher expects RECORD_DIR -- COMPILER [ARGS...]");
     }
     const fs::path records = args[0];
     fs::create_directories(records);
-    const std::vector<std::string> compiler(args.begin() + 2, args.end());
+    std::vector<std::string> compiler(args.begin() + 2, args.end());
+    const auto trace_file = records / (std::to_string(::getpid()) + ".trace");
+    if (trace) {
+        compiler.push_back("-ftime-trace=" + trace_file.string());
+        compiler.push_back("-ftime-trace-granularity=0");
+    }
     const auto result = run(compiler, fs::current_path());
     json::Array command;
     for (const auto& arg : compiler) command.push_back(arg);
@@ -105,6 +110,7 @@ int launch(const std::vector<std::string>& args) {
                json::Object{{"source", source},
                             {"directory", fs::current_path().string()},
                             {"command", std::move(command)},
+                            {"trace_file", trace ? trace_file.string() : ""},
                             {"wall_seconds", result.seconds},
                             {"user_seconds", result.user_seconds},
                             {"system_seconds", result.system_seconds},

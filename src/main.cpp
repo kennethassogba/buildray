@@ -14,6 +14,9 @@ constexpr const char* help = "Buildray " BUILDRAY_VERSION R"( - measured C++ bui
 Usage:
   buildray optimize --source DIR [options] [-- -DNAME=VALUE ...]
   buildray measure  --source DIR [options] [-- -DNAME=VALUE ...]
+  buildray profile --source DIR [options] [-- -DNAME=VALUE ...]
+  buildray pch --source DIR --target NAME --header HEADER [--header HEADER ...]
+               [options] [-- -DNAME=VALUE ...]
   buildray compare --baseline-source DIR --source DIR [options] [-- -DNAME=VALUE ...]
   buildray check --baseline REPORT --current REPORT [--output FILE]
                  [--max-regression-percent N]
@@ -29,6 +32,8 @@ Options:
   --baseline-source DIR  Base revision source for paired comparison
   --max-regression-percent N  Regression budget (default: 5)
   --session ID          Optional label shared by comparable measurements
+  --target NAME         CMake target for a PCH experiment
+  --header HEADER       PCH header: <system> or source-root-relative path; repeatable
   --help                Show this help
   --version             Print version
 
@@ -41,6 +46,12 @@ not edited. Unity builds and PCH are disabled in both measured variants.
 compare validates both revisions and alternates their clean builds on this
 machine. check compares saved measure reports and refuses incompatible context.
 Both require at least three samples. Reports and Markdown summaries are retained.
+
+profile runs one instrumented build with Clang time traces and CTest, then ranks
+headers by inclusive parse time and target. Profiling overhead is not a benchmark.
+pch tests a private C++ PCH on one target, validates it, and alternates clean
+builds against a baseline with PCH disabled. Outputs: pch.patch and report.json.
+PCH generation is included in candidate timings. Neither command edits your tree.
 
 Exit codes: 0 completed, 1 pipeline/validation failure, 2 invalid arguments,
 3 regression over budget and noise, 4 incomparable reports, 130 interrupted.
@@ -92,7 +103,7 @@ buildray::Options parse(const std::vector<std::string>& args) {
     buildray::Options options;
     options.command = args.front();
     if (options.command != "optimize" && options.command != "measure" &&
-        options.command != "compare")
+        options.command != "compare" && options.command != "profile" && options.command != "pch")
         throw std::runtime_error("Unknown command: " + options.command);
     for (std::size_t i = 1; i < args.size(); ++i) {
         const auto& arg = args[i];
@@ -107,7 +118,8 @@ buildray::Options parse(const std::vector<std::string>& args) {
         }
         if (arg != "--source" && arg != "--work-dir" && arg != "--compiler" &&
             arg != "--clang-tidy" && arg != "--runs" && arg != "--jobs" &&
-            arg != "--baseline-source" && arg != "--max-regression-percent" && arg != "--session")
+            arg != "--baseline-source" && arg != "--max-regression-percent" && arg != "--session" &&
+            arg != "--target" && arg != "--header")
             throw std::runtime_error("Unknown option: " + arg);
         if (++i == args.size() || args[i].starts_with("--"))
             throw std::runtime_error("Missing value for " + arg);
@@ -129,6 +141,10 @@ buildray::Options parse(const std::vector<std::string>& args) {
             options.baseline_source = value;
         else if (arg == "--session")
             options.session = value;
+        else if (arg == "--target")
+            options.target = value;
+        else if (arg == "--header")
+            options.headers.push_back(value);
         else if (arg == "--max-regression-percent")
             options.max_regression_percent = budget(value);
     }
@@ -136,6 +152,10 @@ buildray::Options parse(const std::vector<std::string>& args) {
         throw std::runtime_error("compare requires --baseline-source and at least three runs");
     if (options.command != "compare" && !options.baseline_source.empty())
         throw std::runtime_error("--baseline-source is supported only by compare");
+    if (options.command == "pch" && (options.target.empty() || options.headers.empty()))
+        throw std::runtime_error("pch requires --target and at least one --header");
+    if (options.command != "pch" && (!options.target.empty() || !options.headers.empty()))
+        throw std::runtime_error("--target and --header are supported only by pch");
     // Tools run from the snapshot; resolve explicit relative executable paths now.
     for (auto* tool : {&options.compiler, &options.tidy}) {
         // The driver name is semantic: clang++ can be a symlink to clang.
@@ -174,9 +194,9 @@ int main(int argc, char** argv) {
             return 1;
         }
     }
-    if (args.front() == "_launch") {
+    if (args.front() == "_launch" || args.front() == "_trace-launch") {
         try {
-            return buildray::launch({args.begin() + 1, args.end()});
+            return buildray::launch({args.begin() + 1, args.end()}, args.front() == "_trace-launch");
         } catch (const std::exception& error) {
             std::cerr << "buildray launcher: " << error.what() << '\n';
             return 1;

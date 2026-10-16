@@ -9,7 +9,7 @@ inputs:
     description: CMake source directory relative to the checkout.
     default: '.'
   command:
-    description: measure (with a paired baseline on PRs), or optimize (validated include patch).
+    description: measure, optimize (include cleanup), profile (header costs), or pch (PCH experiment).
     default: measure
   baseline-ref:
     description: Base Git revision for measure. Empty outside PRs means a standalone measurement.
@@ -32,6 +32,12 @@ inputs:
   clang-tidy:
     description: Include analyzer for optimize.
     default: clang-tidy-21
+  pch-target:
+    description: CMake target for command pch.
+    default: ''
+  pch-headers:
+    description: JSON array of system headers such as <vector> or source-root-relative header paths.
+    default: '[]'
   allow-no-tests:
     description: Explicitly allow build-only validation when no CTest tests exist.
     default: 'false'
@@ -64,8 +70,11 @@ outputs:
     description: Current revision measurement for history or offline checks.
     value: ${{ steps.run.outputs.current-report }}
   patch:
-    description: Validated or rejected candidate patch from optimize; inspect report before applying.
+    description: Candidate include or PCH patch; inspect validation and recommendation before applying.
     value: ${{ steps.run.outputs.patch }}
+  headers:
+    description: Header costs by target from profile.
+    value: ${{ steps.run.outputs.headers }}
   result:
     description: Performance classification or failure status.
     value: ${{ steps.run.outputs.result }}
@@ -89,6 +98,8 @@ runs:
         BUILDRAY_MAX_REGRESSION_PERCENT: ${{ inputs.max-regression-percent }}
         BUILDRAY_COMPILER: ${{ inputs.compiler }}
         BUILDRAY_CLANG_TIDY: ${{ inputs.clang-tidy }}
+        BUILDRAY_PCH_TARGET: ${{ inputs.pch-target }}
+        BUILDRAY_PCH_HEADERS: ${{ inputs.pch-headers }}
         BUILDRAY_ALLOW_NO_TESTS: ${{ inputs.allow-no-tests }}
         BUILDRAY_INSTALL_DEPENDENCIES: ${{ inputs.install-dependencies }}
         BUILDRAY_BINARY: ${{ inputs.buildray-path }}

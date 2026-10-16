@@ -22,6 +22,8 @@ struct Variant {
     fs::path source;
     fs::path build;
     fs::path records;
+    bool trace = false;
+    std::string pch_target;
 };
 
 void checked(const std::vector<std::string>& args, const fs::path& cwd, const fs::path& log) {
@@ -76,11 +78,11 @@ void check_cmake_args(const std::vector<std::string>& args) {
     }
 }
 
-std::string launcher(const fs::path& executable, const fs::path& records) {
+std::string launcher(const fs::path& executable, const fs::path& records, bool trace) {
     if (executable.string().find(';') != std::string::npos ||
         records.string().find(';') != std::string::npos)
         throw std::runtime_error("Semicolons in launcher paths are unsupported by CMake lists");
-    return executable.string() + ";_launch;" + records.string() + ";--";
+    return executable.string() + (trace ? ";_trace-launch;" : ";_launch;") + records.string() + ";--";
 }
 
 void configure(const Options& options, const Variant& variant, const fs::path& executable,
@@ -99,7 +101,7 @@ void configure(const Options& options, const Variant& variant, const fs::path& e
     const std::vector<std::string> controlled{
         "-DCMAKE_CXX_COMPILER=" + options.compiler, "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
         "-DCMAKE_UNITY_BUILD=OFF", "-DCMAKE_DISABLE_PRECOMPILE_HEADERS=ON",
-        "-DCMAKE_CXX_COMPILER_LAUNCHER=" + launcher(executable, variant.records)};
+        "-DCMAKE_CXX_COMPILER_LAUNCHER=" + launcher(executable, variant.records, variant.trace)};
     args.insert(args.end(), controlled.begin(), controlled.end());
     checked(args, variant.source, log);
     if (!fs::exists(variant.build / "compile_commands.json"))
@@ -172,6 +174,8 @@ bool cpp_source(const fs::path& file) {
 }
 
 void verify_coverage(const Variant& variant) {
+    std::size_t pch_creations = 0;
+    std::size_t pch_uses = 0;
     std::map<fs::path, std::size_t> expected;
     const auto database = read_json(variant.build / "compile_commands.json");
     const auto* commands = database.getAsArray();
@@ -197,13 +201,25 @@ void verify_coverage(const Variant& variant) {
             throw std::runtime_error(
                 "A target re-enabled unity builds; isolated compilation is required");
         if (const auto* command = object->getArray("command")) {
+            bool creation = false;
+            bool use = false;
+            bool selected = false;
             for (const auto& argument : *command) {
                 const auto text = argument.getAsString();
+                if (text && !variant.pch_target.empty() &&
+                    text->contains("CMakeFiles/" + variant.pch_target + ".dir/cmake_pch.hxx"))
+                    selected = true;
+                if (text && *text == "-emit-pch") creation = true;
+                if (text && *text == "-include-pch") use = true;
                 if (text && (text->contains("cmake_pch") || *text == "-include-pch" ||
-                             *text == "-emit-pch"))
+                             *text == "-emit-pch") && variant.pch_target.empty())
                     throw std::runtime_error(
                         "A target re-enabled precompiled headers; disable PCH for validation");
             }
+            if ((creation || use) && !selected)
+                throw std::runtime_error("PCH enabled outside the selected target");
+            if (creation) ++pch_creations;
+            if (use) ++pch_uses;
         }
         if (!cpp_source(file)) continue;
         if (file.is_relative()) file = fs::path(object->getString("directory")->str()) / file;
@@ -214,6 +230,8 @@ void verify_coverage(const Variant& variant) {
             "Compiler coverage does not match compile_commands.json. "
             "Build all C++ targets by default (disable EXCLUDE_FROM_ALL targets), and do not "
             "override the compiler launcher. Partial validation is refused.");
+    if (!variant.pch_target.empty() && (pch_creations == 0 || pch_uses == 0))
+        throw std::runtime_error("Selected target did not create and use a C++ PCH");
 }
 
 void clear_records(const fs::path& records) {
@@ -472,6 +490,10 @@ void print_summary(const json::Object& report, const fs::path& work) {
     std::cout << "Report: " << (work / "report.json") << '\n';
     if (fs::exists(work / "includes.patch"))
         std::cout << "Patch: " << (work / "includes.patch") << '\n';
+    if (fs::exists(work / "pch.patch"))
+        std::cout << "Patch: " << (work / "pch.patch") << '\n';
+    if (fs::exists(work / "headers.json"))
+        std::cout << "Header profile: " << (work / "headers.json") << '\n';
 }
 }  // namespace
 
@@ -484,6 +506,8 @@ int pipeline(const Options& options, const fs::path& executable) {
         throw std::runtime_error("--source must contain CMakeLists.txt: " + source.string());
     if (!fs::is_regular_file(base_source / "CMakeLists.txt"))
         throw std::runtime_error("--baseline-source must contain CMakeLists.txt");
+    // Validate generated CMake inputs before creating an output directory or running project code.
+    const auto pch_script = options.command == "pch" ? pch_cmake(options, source) : "";
     const auto stamp = std::chrono::system_clock::now().time_since_epoch().count();
     const auto work =
         options.work.empty()
@@ -506,7 +530,7 @@ int pipeline(const Options& options, const fs::path& executable) {
         {"source", source.string()},
         {"work_dir", work.string()},
         {"jobs", options.jobs},
-        {"runs", options.runs},
+        {"runs", options.command == "profile" ? 1u : options.runs},
         {"cmake_args", std::move(extra)},
         {"measurement",
          options.command == "measure"
@@ -542,15 +566,17 @@ int pipeline(const Options& options, const fs::path& executable) {
                 throw std::runtime_error("clang-tidy does not provide misc-include-cleaner");
         }
         Variant baseline{work / "baseline-source", work / "baseline-build",
-                         work / "baseline-records"};
+                         work / "baseline-records", options.command == "profile", {}};
         Variant candidate{work / "candidate-source", work / "candidate-build",
-                          work / "candidate-records"};
+                          work / "candidate-records", false,
+                          options.command == "pch" ? options.target : ""};
         report["phase"] = "baseline_validation";
         std::cout << "Configuring baseline, warming build, running tests...\n" << std::flush;
         snapshot(base_source, baseline.source, work);
         // Configure scripts can write generated links or files into their source tree.
         // Prepare both inputs before either configure runs; optimize uses identical bytes.
-        if (options.command == "optimize") snapshot(baseline.source, candidate.source, work);
+        if (options.command == "optimize" || options.command == "pch")
+            snapshot(baseline.source, candidate.source, work);
         if (options.command == "compare") snapshot(source, candidate.source, work);
         SourceFiles originals;
         if (options.command == "optimize") {
@@ -561,13 +587,27 @@ int pipeline(const Options& options, const fs::path& executable) {
             }
         }
         configure(options, baseline, executable, logs / "baseline-configure.log");
-        report["measurement_context"] = measurement_context(options, baseline.build);
+        auto initial_context = measurement_context(options, baseline.build);
+        if (options.command == "profile") {
+            initial_context["method"] = "clang-time-trace-v1";
+            initial_context["sampling"] = "single-instrumented-build";
+            report["profiling_context"] = std::move(initial_context);
+        } else {
+            report["measurement_context"] = std::move(initial_context);
+        }
         clear_records(baseline.records);
         build(options, baseline, logs / "baseline-warmup.log");
         verify_coverage(baseline);
         const auto baseline_tests = test(options, baseline, logs, "baseline");
         report["baseline_tests_passed"] = static_cast<std::int64_t>(baseline_tests);
-        if (options.command == "compare") {
+        if (options.command == "profile") {
+            report["phase"] = "profiling";
+            auto profile = header_profile(baseline.records, baseline.source, baseline.build);
+            write_file(work / "headers.md", profile_markdown(profile));
+            write_json(work / "headers.json", std::move(profile));
+            report["measurement"] = "one Clang time-trace build; profiling overhead; not a benchmark";
+            report["validation"] = baseline_tests ? "build_and_tests_passed" : "build_only";
+        } else if (options.command == "compare") {
             report["baseline_source"] = base_source.string();
             report["phase"] = "candidate_validation";
             std::cout << "Configuring current revision, warming build, running tests...\n"
@@ -621,14 +661,40 @@ int pipeline(const Options& options, const fs::path& executable) {
             report["baseline"] = summarize(samples);
         } else {
             report["phase"] = "analysis";
+            Changes changes;
+            if (options.command == "pch") {
+                const auto path = candidate.source / "CMakeLists.txt";
+                if (read_file(path) != read_file(baseline.source / "CMakeLists.txt"))
+                    throw std::runtime_error("CMakeLists.txt changed during baseline configuration");
+                write_file(path, read_file(path) + pch_script);
+                const auto result = run({"diff", "-u", "--label", "a/CMakeLists.txt", "--label",
+                                         "b/CMakeLists.txt", (baseline.source / "CMakeLists.txt").string(),
+                                         path.string()}, work, work / "pch.patch");
+                if (result.code != 1) throw std::runtime_error("Cannot generate PCH patch");
+                report["pch_target"] = options.target;
+                json::Array headers;
+                for (const auto& header : options.headers) headers.push_back(header);
+                report["pch_headers"] = std::move(headers);
+                report["candidate_precompiled_headers"] = true;
+                report["validation_scope"] = "one configured CMake build; private C++ PCH on one target";
+            }
             configure(options, candidate, executable, logs / "candidate-configure.log");
-            // Generated headers must exist before clang-tidy parses sources.
-            clear_records(candidate.records);
-            build(options, candidate, logs / "candidate-initial-build.log");
-            verify_coverage(candidate);
-            std::cout << "Analyzing unused includes with clang-tidy...\n" << std::flush;
-            const auto changes = analyze(options, candidate, work, originals, report);
-            patch(changes, baseline, candidate, work);
+            if (options.command == "pch") {
+                auto context = measurement_context(options, candidate.build);
+                if (json::Value(json::Object(context)) != *report.get("measurement_context"))
+                    throw std::runtime_error("PCH experiment changed measurement context or CMake flags");
+                context["precompiled_headers"] = true;
+                report["candidate_measurement_context"] = std::move(context);
+            }
+            if (options.command == "optimize") {
+                // Generated headers must exist before clang-tidy parses sources.
+                clear_records(candidate.records);
+                build(options, candidate, logs / "candidate-initial-build.log");
+                verify_coverage(candidate);
+                std::cout << "Analyzing unused includes with clang-tidy...\n" << std::flush;
+                changes = analyze(options, candidate, work, originals, report);
+                patch(changes, baseline, candidate, work);
+            }
             write_json(work / "report.json", json::Object(report));
             report["phase"] = "candidate_validation";
             std::cout << "Validating candidate with a clean build and tests...\n" << std::flush;
@@ -652,7 +718,8 @@ int pipeline(const Options& options, const fs::path& executable) {
             const double threshold = std::max(
                 0.02 * before_median, 3 * std::max(*before_summary.getNumber("mad_seconds"),
                                                    *after_summary.getNumber("mad_seconds")));
-            const std::string verdict = changes.empty()    ? "no_changes"
+            const bool changed = options.command == "pch" || !changes.empty();
+            const std::string verdict = !changed    ? "no_changes"
                                         : options.runs < 3 ? "insufficient_samples"
                                         : std::abs(after_median - before_median) <= threshold
                                             ? "inconclusive"
@@ -666,7 +733,7 @@ int pipeline(const Options& options, const fs::path& executable) {
             report["performance_rule"] =
                 "heuristic: difference exceeds max(2% baseline, 3x max MAD); not a significance "
                 "test";
-            report["patch_recommended"] = !changes.empty() && verdict == "improved";
+            report["patch_recommended"] = changed && verdict == "improved";
         }
         report["phase"] = "complete";
         report["status"] = "passed";

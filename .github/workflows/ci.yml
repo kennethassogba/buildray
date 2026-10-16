@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       ai_corpus:
-        description: Run the pinned SentencePiece benchmark (several clean builds).
+        description: Profile headers and benchmark a PCH on pinned SentencePiece (several clean builds).
         type: boolean
         default: false
 
@@ -70,6 +70,12 @@ jobs:
           build/buildray optimize --source "$RUNNER_TEMP/tinyxml2" --work-dir "$RUNNER_TEMP/tinyxml2-result" --compiler clang++-21 --clang-tidy clang-tidy-21 --runs 3 --jobs 2 -- -Dtinyxml2_BUILD_TESTING=ON
           git -C "$RUNNER_TEMP/tinyxml2" apply --check "$RUNNER_TEMP/tinyxml2-result/includes.patch"
           python tests/check_real_project.py "$RUNNER_TEMP/tinyxml2-result/report.json"
+      - name: Profile headers and validate a PCH on tinyxml2
+        if: matrix.build_type == 'Release'
+        run: |
+          build/buildray profile --source "$RUNNER_TEMP/tinyxml2" --work-dir "$RUNNER_TEMP/tinyxml2-headers" --compiler clang++-21 -- -Dtinyxml2_BUILD_TESTING=ON
+          build/buildray pch --source "$RUNNER_TEMP/tinyxml2" --work-dir "$RUNNER_TEMP/tinyxml2-pch" --target xmltest --header '<string>' --header '<vector>' --compiler clang++-21 --runs 3 --jobs 2 -- -Dtinyxml2_BUILD_TESTING=ON
+          git -C "$RUNNER_TEMP/tinyxml2" apply --check "$RUNNER_TEMP/tinyxml2-pch/pch.patch"
       - name: Retain evidence
         if: always()
         uses: actions/upload-artifact@v7
@@ -81,6 +87,12 @@ jobs:
             ${{ runner.temp }}/tinyxml2-result/report.json
             ${{ runner.temp }}/tinyxml2-result/includes.patch
             ${{ runner.temp }}/tinyxml2-result/logs/
+            ${{ runner.temp }}/tinyxml2-headers/headers.json
+            ${{ runner.temp }}/tinyxml2-headers/headers.md
+            ${{ runner.temp }}/tinyxml2-headers/report.json
+            ${{ runner.temp }}/tinyxml2-pch/report.json
+            ${{ runner.temp }}/tinyxml2-pch/pch.patch
+            ${{ runner.temp }}/tinyxml2-pch/logs/
 
   ai-corpus:
     if: github.event_name == 'workflow_dispatch' && inputs.ai_corpus
@@ -95,12 +107,22 @@ jobs:
         run: |
           git clone --depth 1 --branch v0.2.2 https://github.com/google/sentencepiece.git fixtures/sentencepiece
           test "$(git -C fixtures/sentencepiece rev-parse HEAD)" = e0cce7d37b065b5140349dbe12c6bcf6192fdd78
-      - name: Validate cleanup on the AI corpus
+      - name: Profile headers on the AI corpus
         uses: ./
         with:
           source: fixtures/sentencepiece
-          command: optimize
+          command: profile
+          cmake-args: '["-DSPM_BUILD_TEST=ON", "-DSPM_ENABLE_SHARED=OFF", "-DSPM_ENABLE_TCMALLOC=OFF"]'
+          artifact-name: sentencepiece-v0.2.2-headers
+      - name: Validate and measure a PCH on the AI corpus
+        uses: ./
+        with:
+          source: fixtures/sentencepiece
+          command: pch
+          pch-target: sentencepiece-static
+          pch-headers: '["<string>", "<vector>", "<memory>", "<algorithm>", "<unordered_map>"]'
+          install-dependencies: 'false'
           runs: '3'
           jobs: '2'
           cmake-args: '["-DSPM_BUILD_TEST=ON", "-DSPM_ENABLE_SHARED=OFF", "-DSPM_ENABLE_TCMALLOC=OFF"]'
-          artifact-name: sentencepiece-v0.2.2
+          artifact-name: sentencepiece-v0.2.2-pch

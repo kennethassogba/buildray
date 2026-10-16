@@ -57,9 +57,23 @@ add_test(NAME works COMMAND sample)
         {"BUILDRAY_RUNS": "0"},
         {"BUILDRAY_SOURCE": "../"},
         {"BUILDRAY_ALLOW_NO_TESTS": "yes"},
+        {"BUILDRAY_COMMAND": "pch", "BUILDRAY_PCH_HEADERS": "<vector>"},
+        {"BUILDRAY_COMMAND": "profile", "BUILDRAY_PCH_TARGET": "sample"},
     ]:
         execute([sys.executable, script], env={**environment, **changes}, expected=1)
     assert not (source / "injected").exists()
+
+    for mode in ["profile", "pch"]:
+        output_file = root / (mode + "-outputs")
+        extra = {"BUILDRAY_PCH_TARGET": "sample", "BUILDRAY_PCH_HEADERS": '["<vector>"]'} if mode == "pch" else {}
+        execute([sys.executable, script], env={**environment, **extra,
+                "BUILDRAY_COMMAND": mode, "BUILDRAY_RUNS": "1", "GITHUB_OUTPUT": str(output_file)})
+        result_fields = dict(line.split("=", 1) for line in output_file.read_text().splitlines())
+        assert "baseline-sha" not in result_fields, "PR baseline applies only to measure"
+        assert Path(result_fields["headers" if mode == "profile" else "patch"]).is_file()
+        state = json.loads(Path(result_fields["report"]).read_text())
+        assert state["status"] == "passed"
+        assert execute(["git", "status", "--porcelain"], cwd=source) == status
 
     # Bootstrap failures still retain a useful artifact instead of an empty upload.
     failed_outputs = root / "failed-outputs"

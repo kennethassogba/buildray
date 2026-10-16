@@ -60,6 +60,8 @@ struct Options {
     bool allow_no_tests = false;
     double max_regression_percent = 5.0;
     std::string session;
+    std::string target;
+    std::vector<std::string> headers;
 };
 
 struct CheckOptions {
@@ -79,5 +81,9 @@ Comparison compare_reports(const json::Value& baseline, const json::Value& curre
 std::string comparison_markdown(const json::Object& report);
 int check_reports(const CheckOptions& options);
 int pipeline(const Options& options, const fs::path& executable);
-int launch(const std::vector<std::string>& args);
+int launch(const std::vector<std::string>& args, bool trace = false);
+json::Object header_profile(const fs::path& records, const fs::path& source,
+                            const fs::path& build);
+std::string profile_markdown(const json::Object& profile);
+std::string pch_cmake(const Options& options, const fs::path& source);
 }  // namespace buildray

@@ -1,6 +1,6 @@
 # Buildray
 
-Measure C++ builds, remove unused includes, validate the patch, and compare build times.
+Measure C++ builds, find costly headers, and validate include cleanup or PCH patches.
 
 Buildray is written in **C++26**. It supports Linux, Clang, CMake and Ninja.
 
@@ -70,6 +70,27 @@ buildray check --baseline base/report.json --current current/report.json \
 configuration or machine context. [Comparison details and limits](docs/ci.md).
 `buildray --help` lists all options and exit codes.
 
+## Header costs and PCH
+
+```bash
+buildray profile --source /path/to/project --compiler clang++-21 --jobs 2
+buildray pch --source /path/to/project --target my_library \
+  --header '<vector>' --header 'include/common.hpp' \
+  --compiler clang++-21 --runs 5 --jobs 2
+```
+
+`profile` builds and tests an isolated copy with Clang time traces. `headers.json`
+and `headers.md` rank headers by inclusive parse time; the JSON also groups them
+by CMake target. Nested headers overlap, so these costs cannot be added to predict
+a speedup. Trace overhead is kept out of benchmark results.
+
+`pch` takes a target and repeatable headers, generates `pch.patch`, and builds and
+tests both variants. It alternates clean builds with PCH disabled in the baseline
+and enabled only for the selected candidate target. PCH generation counts toward
+candidate time. The patch is recommended only when the measured gain exceeds noise.
+See [the workflow and limitations](docs/profiling.md). Both modes are also available
+through the GitHub Action.
+
 ## What optimize does
 
 1. Copies the source tree into isolated baseline and candidate trees, excluding `.git`, `.cache`,
@@ -107,6 +128,8 @@ comparison.json, comparison.md Comparison and CI gate (compare)
 baseline-report.json           Base measurement for history (compare)
 current-report.json            Current measurement for history (compare)
 includes.patch                 Unified patch (optimize only)
+pch.patch                      CMake PCH patch (pch only)
+headers.json, headers.md        Inclusive header costs and target rankings (profile)
 logs/*-compilers.json           Duration, CPU time, RSS and argv per C++ compilation
 logs/*-build.log                Build output for each sample
 logs/*-tests.xml                CTest validation results
@@ -120,15 +143,15 @@ baseline-build/, candidate-build/
 when a nonempty validated patch also has an `improved` performance result. A
 failed candidate can leave a patch for diagnosis: its existence is not validation.
 
-For `optimize`, `performance_result` is `improved`, `regressed`, `inconclusive`,
+For `optimize` and `pch`, `performance_result` is `improved`, `regressed`, `inconclusive`,
 `insufficient_samples` (fewer than three runs), or `no_changes`. The noise
 threshold is the larger of 2% of baseline time and three times the larger MAD.
 This is a reporting heuristic, not a statistical significance test. A noisy
 runner can produce an inconclusive result even when the candidate median is lower.
 
 Timings cover full builds with a warm filesystem cache, fixed parallelism and
-compiler caches disabled. Unity builds and PCH are disabled in both variants so
-aggregation cannot mask missing includes. Cleaning, configuration, analysis and
+compiler caches disabled. Unity builds are disabled. PCH is disabled for include
+cleanup and revision comparisons; only `pch` enables it in the candidate. Cleaning, configuration, analysis and
 tests are outside the measured interval. Build wall time includes dependency
 scans, compilation, code generation, linking and launcher overhead. Per-compiler
 totals cover C++ compiler invocations; their sum is not the parallel build's wall
@@ -142,7 +165,7 @@ time. RSS is the maximum of individual compiler peaks, not aggregate build memor
 - All C++ entries in the compilation database must be built and instrumented.
   Launcher overrides and `EXCLUDE_FROM_ALL` C++ targets cause a coverage error.
   Disable optional targets that are not part of the build you want to validate.
-  Active PCH or unity compilation is refused, including target overrides.
+  Active unity compilation and unexpected PCH are refused, including target overrides.
 - CTest tests are required. Missing tests fail unless `--allow-no-tests` is
   explicit; that report says `build_only`. Disabled, skipped and failing tests
   are refused. Each test has a 120-second timeout.
@@ -152,7 +175,7 @@ time. RSS is the maximum of individual compiler peaks, not aggregate build memor
   `-inl.h` or `.inl.h` are kept because they can supply template definitions.
 - Project CMake scripts and tests execute normally. Buildray uses no network
   service; project dependency downloads remain the project's responsibility.
-- CMake rewrites, forward declarations, PCH selection, trace analysis,
+- Dependency graph rewrites, forward declarations, automatic PCH selection,
   incremental builds and a tagged Marketplace release are later work. The
   composite Action can already be used by its commit SHA.
 

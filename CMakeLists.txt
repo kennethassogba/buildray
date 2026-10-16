@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.30)
-project(buildray VERSION 0.2.0 LANGUAGES CXX)
+project(buildray VERSION 0.3.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 26)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -21,7 +21,7 @@ else()
     llvm_map_components_to_libnames(BUILDRAY_LLVM_LIBS Support)
 endif()
 
-add_library(buildray_core src/process.cpp src/core.cpp src/pipeline.cpp src/comparison.cpp)
+add_library(buildray_core src/process.cpp src/core.cpp src/pipeline.cpp src/comparison.cpp src/profiling.cpp)
 target_compile_definitions(buildray_core PUBLIC BUILDRAY_VERSION="${PROJECT_VERSION}")
 target_include_directories(buildray_core PUBLIC include)
 target_include_directories(buildray_core SYSTEM PUBLIC ${LLVM_INCLUDE_DIRS})
@@ -57,4 +57,7 @@ if(BUILD_TESTING)
         ${CMAKE_CURRENT_SOURCE_DIR}/tests/action_cli.py $<TARGET_FILE:buildray>
         ${BUILDRAY_CLANGXX} ${CMAKE_CURRENT_SOURCE_DIR}/action/run.py)
     set_tests_properties(comparison action PROPERTIES TIMEOUT 180)
+    add_test(NAME profiling COMMAND ${Python3_EXECUTABLE}
+        ${CMAKE_CURRENT_SOURCE_DIR}/tests/profiling_cli.py $<TARGET_FILE:buildray> ${BUILDRAY_CLANGXX})
+    set_tests_properties(profiling PROPERTIES TIMEOUT 180)
 endif()

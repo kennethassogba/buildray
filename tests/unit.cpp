@@ -163,6 +163,32 @@ Diagnostics:
                 "read provider insertions too; only removable_include authorizes deletions");
         write_file(temporary / "fixes.yaml", "Diagnostics: [unterminated");
         rejects([&] { read_fixes(temporary / "fixes.yaml"); }, "malformed YAML rejected");
+        const auto records = temporary / "traces";
+        fs::create_directories(records);
+        write_json(records / "one.json", json::Object{
+            {"exit_code", 0}, {"directory", temporary.string()},
+            {"trace_file", (records / "one.trace").string()},
+            {"command", json::Array{"clang++", "-o", "sub/CMakeFiles/core.dir/a.cpp.o"}}});
+        write_file(records / "one.trace", R"({"traceEvents":[
+          {"name":"Source","ph":"X","dur":200,"args":{"detail":"outer.hpp"}},
+          {"name":"Source","ph":"b","pid":1,"tid":1,"id":0,"ts":20,"args":{"detail":"inner.hpp"}},
+          {"name":"Source","ph":"e","pid":1,"tid":1,"id":0,"ts":120},
+          {"name":"Total Source","ph":"X","dur":999999},
+          {"name":"Source","ph":"X","dur":50,"args":{"detail":"inner.hpp"}}
+        ]})");
+        const auto profile = header_profile(records, temporary, temporary / "build");
+        const auto& rows = *profile.getArray("headers");
+        require(rows.size() == 2 && rows[0].getAsObject()->getString("header") == "<SOURCE>/outer.hpp",
+                "rank inclusive events without adding Total Source summaries");
+        const auto& inner = *rows[1].getAsObject();
+        require(*inner.getInteger("events") == 2 && *inner.getInteger("compilations") == 1 &&
+                    std::abs(*inner.getNumber("inclusive_seconds") - 0.00015) < 1e-10,
+                "Clang async and complete events, repeated headers count once per compilation");
+        write_file(records / "one.trace", R"({"traceEvents":[
+          {"name":"Source","ph":"e","pid":1,"tid":1,"id":0,"ts":120}
+        ]})");
+        rejects([&] { header_profile(records, temporary, temporary / "build"); },
+                "unpaired trace events cannot produce partial rankings");
         const auto success = run({"/bin/sh", "-c", "exit 0"}, temporary);
         require(success.code == 0 && success.seconds > 0, "process success and timing");
         require(run({"/bin/sh", "-c", "exit 7"}, temporary).code == 7, "exit status preserved");
