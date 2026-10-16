@@ -204,3 +204,5 @@ failure-path tests.
 The real-project check uses unmodified tinyxml2 11.0.0. See
 [validation evidence](docs/validation.md) for commands, scope and observed results.
 [AI corpus](docs/corpus.md) records the next projects and their contribution constraints.
+[Profiling and PCH evidence](docs/profiling-validation.md) covers the new commands,
+including candidates with no measured benefit.

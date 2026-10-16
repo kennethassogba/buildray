@@ -1,0 +1,149 @@
+{
+  "source_report": "GitHub run 38831428929, sentencepiece-v0.2.2-headers/headers.json",
+  "metric": "inclusive Source event duration; nested headers overlap; not wall time or predicted savings",
+  "compilations": 236,
+  "top_global_headers": [
+    {
+      "compilations": 50,
+      "events": 50,
+      "header": "<SOURCE>/src/common.h",
+      "inclusive_seconds": 49.69097299999999,
+      "max_event_seconds": 1.631824
+    },
+    {
+      "compilations": 55,
+      "events": 55,
+      "header": "<SOURCE>/third_party/abseil-cpp/absl/status/status.h",
+      "inclusive_seconds": 33.85802299999999,
+      "max_event_seconds": 1.374729
+    },
+    {
+      "compilations": 61,
+      "events": 61,
+      "header": "<SOURCE>/third_party/abseil-cpp/absl/strings/cord.h",
+      "inclusive_seconds": 31.887803,
+      "max_event_seconds": 1.454794
+    },
+    {
+      "compilations": 55,
+      "events": 55,
+      "header": "<SOURCE>/third_party/abseil-cpp/absl/status/internal/status_internal.h",
+      "inclusive_seconds": 30.95856499999999,
+      "max_event_seconds": 1.35837
+    },
+    {
+      "compilations": 214,
+      "events": 214,
+      "header": "/usr/include/c++/14/string",
+      "inclusive_seconds": 29.583193999999995,
+      "max_event_seconds": 0.232573
+    },
+    {
+      "compilations": 21,
+      "events": 21,
+      "header": "<SOURCE>/src/model_interface.h",
+      "inclusive_seconds": 29.144682,
+      "max_event_seconds": 2.650509
+    },
+    {
+      "compilations": 194,
+      "events": 194,
+      "header": "/usr/include/c++/14/ios",
+      "inclusive_seconds": 23.00716500000002,
+      "max_event_seconds": 0.310005
+    },
+    {
+      "compilations": 70,
+      "events": 70,
+      "header": "<SOURCE>/third_party/abseil-cpp/absl/strings/internal/cord_internal.h",
+      "inclusive_seconds": 21.532176999999997,
+      "max_event_seconds": 1.162548
+    },
+    {
+      "compilations": 71,
+      "events": 71,
+      "header": "<SOURCE>/third_party/abseil-cpp/absl/hash/hash.h",
+      "inclusive_seconds": 21.250835999999996,
+      "max_event_seconds": 0.671029
+    },
+    {
+      "compilations": 72,
+      "events": 72,
+      "header": "<SOURCE>/third_party/abseil-cpp/absl/hash/internal/hash.h",
+      "inclusive_seconds": 21.23194,
+      "max_event_seconds": 1.05904
+    }
+  ],
+  "spm_test_top_headers": [
+    {
+      "compilations": 24,
+      "events": 24,
+      "header": "<SOURCE>/src/common.h",
+      "inclusive_seconds": 23.131445,
+      "max_event_seconds": 1.598031
+    },
+    {
+      "compilations": 24,
+      "events": 24,
+      "header": "<SOURCE>/third_party/abseil-cpp/absl/status/status.h",
+      "inclusive_seconds": 14.301541,
+      "max_event_seconds": 0.906544
+    },
+    {
+      "compilations": 9,
+      "events": 9,
+      "header": "<SOURCE>/src/model_interface.h",
+      "inclusive_seconds": 14.014706999999998,
+      "max_event_seconds": 2.53483
+    },
+    {
+      "compilations": 24,
+      "events": 24,
+      "header": "<SOURCE>/third_party/abseil-cpp/absl/status/internal/status_internal.h",
+      "inclusive_seconds": 12.709029999999998,
+      "max_event_seconds": 0.79917
+    },
+    {
+      "compilations": 24,
+      "events": 24,
+      "header": "<SOURCE>/third_party/abseil-cpp/absl/strings/cord.h",
+      "inclusive_seconds": 11.86523,
+      "max_event_seconds": 0.722288
+    },
+    {
+      "compilations": 24,
+      "events": 24,
+      "header": "<SOURCE>/third_party/abseil-cpp/absl/log/check.h",
+      "inclusive_seconds": 9.580281000000001,
+      "max_event_seconds": 0.605377
+    },
+    {
+      "compilations": 24,
+      "events": 24,
+      "header": "<SOURCE>/third_party/abseil-cpp/absl/log/internal/check_impl.h",
+      "inclusive_seconds": 9.57697,
+      "max_event_seconds": 0.605211
+    },
+    {
+      "compilations": 24,
+      "events": 24,
+      "header": "<SOURCE>/third_party/abseil-cpp/absl/log/internal/check_op.h",
+      "inclusive_seconds": 9.218205999999999,
+      "max_event_seconds": 0.58449
+    },
+    {
+      "compilations": 19,
+      "events": 19,
+      "header": "<SOURCE>/src/builtin_pb/sentencepiece_model.pb.h",
+      "inclusive_seconds": 9.022639,
+      "max_event_seconds": 1.044233
+    },
+    {
+      "compilations": 7,
+      "events": 7,
+      "header": "<SOURCE>/src/trainer_interface.h",
+      "inclusive_seconds": 7.234844000000001,
+      "max_event_seconds": 2.522616
+    }
+  ]
+}
