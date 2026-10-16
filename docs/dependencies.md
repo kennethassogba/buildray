@@ -45,9 +45,10 @@ CMake relationships retain their kinds: `linkLibraries`, `interfaceLinkLibraries
 Link-cycle detection uses the two link kinds. It does not use CMake's legacy
 `dependencies` field, which describes transitive build ordering and can omit static
 link cycles. Interface and imported targets come from the codemodel's abstract targets.
-Only relationships to CMake targets are represented; raw linker flags and library
-names without targets are outside this graph. No unused or missing link dependency
-is inferred.
+Relationships to CMake targets form the graph. Raw linker flags and library names
+without targets are retained separately in `cmake.link_fragments`, with their kinds
+and available declaration locations. They do not create vertices or target cycles.
+No unused or missing link dependency is inferred.
 
 Guarded includes and cyclic static libraries can be valid. A finding needs review
 before changing declarations, include ownership or CMake dependencies. No automatic

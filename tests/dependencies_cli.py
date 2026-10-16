@@ -33,7 +33,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_library(a STATIC a.cpp)
 add_library(b STATIC b.cpp)
 add_library(api INTERFACE)
-target_link_libraries(a PUBLIC b api)
+target_link_libraries(a PUBLIC b api m)
 target_link_libraries(b PUBLIC a)
 add_executable(sample "main file.cpp" helper.c)
 target_link_libraries(sample PRIVATE a)
@@ -85,6 +85,7 @@ int main() { return 0; }
     report = json.loads((work / "report.json").read_text())
     assert report["status"] == "passed" and report["baseline_tests_passed"] == 1
     assert report["cycle_gate_passed"] is False and report["include_cycles"] == 3
+    assert report["fail_on_cycles"] is True
     assert report["target_link_cycles"] == 1 and report["runs"] == 1
     assert "measurement_context" not in report and "baseline" not in report
     assert graph["compilations"] == 4 and graph["c_compilations"] == 1
@@ -105,6 +106,10 @@ int main() { return 0; }
     edge = next(e for e in graph["cmake"]["edges"]
                 if e["from"] == "a" and e["to"] == "api" and e["kind"] == "linkLibraries")
     assert edge["file"] == "<SOURCE>/CMakeLists.txt" and edge["line"] == 8
+    fragments = [f for f in graph["cmake"]["link_fragments"] if f["from"] == "a"]
+    assert {f["kind"] for f in fragments} == {"linkLibraries", "interfaceLinkLibraries"}
+    assert all(f["fragment"] == "m" and f["line"] == 8 for f in fragments)
+    assert all(t["name"] != "m" for t in graph["cmake"]["targets"])
     assert "guarded include cycles" in (work / "dependencies.md").read_text()
     dot = (work / "dependencies.dot").read_text()
     assert '"include:<SOURCE>/self.hpp" -> "include:<SOURCE>/self.hpp"' in dot

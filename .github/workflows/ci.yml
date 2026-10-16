@@ -145,6 +145,7 @@ jobs:
           artifact-name: sentencepiece-v0.2.2-pch
 
   dependency-corpus:
+    name: dependency-corpus (${{ matrix.name }})
     if: github.event_name == 'workflow_dispatch' && inputs.dependency_corpus
     runs-on: ubuntu-24.04
     timeout-minutes: 60

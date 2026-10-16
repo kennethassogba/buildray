@@ -133,7 +133,7 @@ json::Object cmake_graph(const fs::path& source, const fs::path& build) {
     // Keep their File API identities distinct rather than inventing cross-scope edges.
     for (auto& [id, name] : names)
         if (name_counts.at(name) > 1) name += " [" + id + "]";
-    json::Array nodes, edges;
+    json::Array nodes, edges, fragments;
     Graph links;
     for (const auto& [id, target] : definitions) {
         const auto& name = names.at(id);
@@ -149,10 +149,23 @@ json::Object cmake_graph(const fs::path& source, const fs::path& build) {
             for (const auto& value : *dependencies) {
                 const auto* dependency = value.getAsObject();
                 if (!dependency) throw std::runtime_error("Invalid CMake target dependency");
-                const auto to_id = required(*dependency, "id");
-                if (!names.contains(to_id)) throw std::runtime_error("Unresolved CMake target dependency");
-                const auto& to = names.at(to_id);
-                json::Object edge{{"from", name}, {"to", to}, {"kind", kind}};
+                const auto to_id = dependency->getString("id");
+                const auto fragment = dependency->getString("fragment");
+                const bool link_kind = std::string_view(kind) == "linkLibraries" ||
+                                       std::string_view(kind) == "interfaceLinkLibraries";
+                if (to_id.has_value() == fragment.has_value() || (fragment && !link_kind))
+                    throw std::runtime_error("Invalid CMake relationship: expected target id or link fragment");
+                json::Object edge{{"from", name}, {"kind", kind}};
+                if (to_id) {
+                    if (!names.contains(to_id->str()))
+                        throw std::runtime_error("Unresolved CMake target dependency");
+                    edge["to"] = names.at(to_id->str());
+                    if (link_kind) links[name].insert(names.at(to_id->str()));
+                } else {
+                    // Libraries such as m/dl and raw linker arguments are not targets.
+                    // Retain them without inventing vertices or target cycles.
+                    edge["fragment"] = fragment->str();
+                }
                 if (const auto backtrace = dependency->getInteger("backtrace")) {
                     const auto* trace = target.getObject("backtraceGraph");
                     const auto* entries = trace ? trace->getArray("nodes") : nullptr;
@@ -167,15 +180,15 @@ json::Object cmake_graph(const fs::path& source, const fs::path& build) {
                         }
                     }
                 }
-                edges.push_back(std::move(edge));
-                if (std::string_view(kind) == "linkLibraries" || std::string_view(kind) == "interfaceLinkLibraries")
-                    links[name].insert(to);
+                if (to_id) edges.push_back(std::move(edge));
+                else fragments.push_back(std::move(edge));
             }
         }
     }
     return json::Object{{"codemodel_minor", *version->getInteger("minor")},
                          {"scope", "configured target relationships; includes excluded targets; no unused-link inference"},
                          {"targets", std::move(nodes)}, {"edges", std::move(edges)},
+                         {"link_fragments", std::move(fragments)},
                          {"link_cycles", cycles(links)}};
 }
 

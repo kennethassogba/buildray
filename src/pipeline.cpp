@@ -276,7 +276,11 @@ void verify_coverage(const Variant& variant) {
     }
     if (expected.empty() || measured != expected)
         throw std::runtime_error(
-            "Compiler coverage does not match the expected compilation database. "
+            variant.dependencies ?
+            "Compiler coverage does not match Ninja's default all target. "
+            "Every C/C++ compilation in that target must use Buildray's launcher; "
+            "do not override the C or C++ compiler launcher." :
+            "Compiler coverage does not match compile_commands.json. "
             "Build all C++ targets by default (disable EXCLUDE_FROM_ALL targets), and do not "
             "override the compiler launcher. Partial validation is refused.");
     if (!variant.pch_target.empty() && (pch_creations == 0 || pch_uses == 0))
@@ -676,6 +680,7 @@ int pipeline(const Options& options, const fs::path& executable) {
             const bool cycles = include_cycles || target_cycles;
             report["include_cycles"] = static_cast<std::int64_t>(include_cycles);
             report["target_link_cycles"] = static_cast<std::int64_t>(target_cycles);
+            report["fail_on_cycles"] = options.fail_on_cycles;
             report["cycle_gate_passed"] = !options.fail_on_cycles || !cycles;
             report["validation_scope"] = "default Ninja all target; C and C++; original snapshot include graph; configured CMake targets";
             report["validation"] = baseline_tests ? "build_and_tests_passed" : "build_only";

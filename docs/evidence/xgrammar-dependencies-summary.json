@@ -1,0 +1,84 @@
+{
+  "repository": "mlc-ai/xgrammar",
+  "revision": "7e269d56c74c89de52bc8c31e42191155416371f",
+  "configuration": {
+    "XGRAMMAR_BUILD_PYTHON_BINDINGS": false,
+    "XGRAMMAR_BUILD_CXX_TESTS": true
+  },
+  "validation": "build_and_tests_passed",
+  "tests_passed": 83,
+  "compilations": 44,
+  "c_compilations": 0,
+  "cxx_compilations": 44,
+  "node_count": 141,
+  "edge_count": 469,
+  "include_cycles": [],
+  "target_count": 8,
+  "target_edge_count": 37,
+  "target_link_cycles": [],
+  "top_headers": [
+    {
+      "compilations": 37,
+      "direct_includers": 1,
+      "header": "<SOURCE>/cpp/support/cpptrace.h"
+    },
+    {
+      "compilations": 37,
+      "direct_includers": 33,
+      "header": "<SOURCE>/cpp/support/logging.h"
+    },
+    {
+      "compilations": 36,
+      "direct_includers": 14,
+      "header": "<SOURCE>/include/xgrammar/exception.h"
+    },
+    {
+      "compilations": 36,
+      "direct_includers": 5,
+      "header": "<SOURCE>/include/xgrammar/object.h"
+    },
+    {
+      "compilations": 32,
+      "direct_includers": 12,
+      "header": "<SOURCE>/cpp/support/utils.h"
+    },
+    {
+      "compilations": 32,
+      "direct_includers": 7,
+      "header": "<SOURCE>/include/xgrammar/tokenizer_info.h"
+    },
+    {
+      "compilations": 31,
+      "direct_includers": 19,
+      "header": "<SOURCE>/3rdparty/picojson/picojson.h"
+    },
+    {
+      "compilations": 31,
+      "direct_includers": 8,
+      "header": "<SOURCE>/cpp/support/reflection.h"
+    },
+    {
+      "compilations": 31,
+      "direct_includers": 2,
+      "header": "<SOURCE>/include/xgrammar/config.h"
+    },
+    {
+      "compilations": 30,
+      "direct_includers": 3,
+      "header": "<SOURCE>/3rdparty/dlpack/include/dlpack/dlpack.h"
+    },
+    {
+      "compilations": 30,
+      "direct_includers": 5,
+      "header": "<SOURCE>/include/xgrammar/compiler.h"
+    },
+    {
+      "compilations": 30,
+      "direct_includers": 17,
+      "header": "<SOURCE>/include/xgrammar/grammar.h"
+    }
+  ],
+  "metric": "compilations reaching each header, including skipped includes; not parse time or predicted rebuild time",
+  "ci_run": "https://github.com/kennethassogba/buildray/actions/runs/38882067479",
+  "ci_status": "passed"
+}
