@@ -1,0 +1,945 @@
+{
+  "baseline_tests_passed": 1,
+  "buildray_version": "0.2.0",
+  "clang_tidy_version": "Ubuntu LLVM version 21.1.8\n  Optimized build.\n",
+  "cmake_args": [
+    "-DSPM_BUILD_TEST=ON",
+    "-DSPM_ENABLE_SHARED=OFF",
+    "-DSPM_ENABLE_TCMALLOC=OFF"
+  ],
+  "cmake_version": "cmake version 4.2.3\n\nCMake suite maintained and supported by Kitware (kitware.com/cmake).\n",
+  "command": "optimize",
+  "compile_commands_analyzed": 78,
+  "compiler_version": "Ubuntu clang version 21.1.8 (++20251221032922+2078da43e25a-1~exp1~20251221153059.70)\nTarget: x86_64-pc-linux-gnu\nThread model: posix\nInstalledDir: /usr/lib/llvm-21/bin\n",
+  "error": "Build failed (exit 1); see /home/runner/work/_temp/buildray-action-zvy2i_z_/run/logs/candidate-validation-build.log",
+  "findings": [
+    {
+      "compile_configurations": 1,
+      "directive": "#include <functional>\n",
+      "file": "src/bpe_model.cc",
+      "length": 22,
+      "line": 18,
+      "offset": 633
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <random>\n",
+      "file": "src/bpe_model.cc",
+      "length": 18,
+      "line": 21,
+      "offset": 690
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include \"freelist.h\"\n",
+      "file": "src/bpe_model.cc",
+      "length": 22,
+      "line": 25,
+      "offset": 746
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <algorithm>\n",
+      "file": "src/bpe_model_trainer.cc",
+      "length": 21,
+      "line": 17,
+      "offset": 622
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <unordered_set>\n",
+      "file": "src/bpe_model_trainer.cc",
+      "length": 25,
+      "line": 19,
+      "offset": 661
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include \"third_party/absl/flags/flag.h\"\n",
+      "file": "src/bpe_model_trainer.cc",
+      "length": 41,
+      "line": 24,
+      "offset": 798
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include \"third_party/absl/container/flat_hash_map.h\"\n",
+      "file": "src/builder.cc",
+      "length": 54,
+      "line": 22,
+      "offset": 699
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include \"third_party/absl/container/flat_hash_set.h\"\n",
+      "file": "src/builder.cc",
+      "length": 54,
+      "line": 23,
+      "offset": 753
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include \"third_party/absl/strings/str_cat.h\"\n",
+      "file": "src/builder.cc",
+      "length": 46,
+      "line": 25,
+      "offset": 851
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <set>\n",
+      "file": "src/builder.cc",
+      "length": 15,
+      "line": 41,
+      "offset": 1365
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include \"common.h\"\n",
+      "file": "src/builder_test.cc",
+      "length": 20,
+      "line": 17,
+      "offset": 612
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include \"third_party/absl/strings/str_cat.h\"\n",
+      "file": "src/builder_test.cc",
+      "length": 46,
+      "line": 22,
+      "offset": 740
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <google/protobuf/io/zero_copy_stream_impl_lite.h>\n",
+      "file": "src/builtin_pb/sentencepiece.pb.cc",
+      "length": 59,
+      "line": 11,
+      "offset": 279
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <google/protobuf/io/zero_copy_stream_impl_lite.h>\n",
+      "file": "src/builtin_pb/sentencepiece_model.pb.cc",
+      "length": 59,
+      "line": 11,
+      "offset": 291
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include \"util.h\"\n",
+      "file": "src/char_model.cc",
+      "length": 18,
+      "line": 18,
+      "offset": 665
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include \"util.h\"\n",
+      "file": "src/char_model_test.cc",
+      "length": 18,
+      "line": 20,
+      "offset": 659
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include \"char_model.h\"\n",
+      "file": "src/char_model_trainer.cc",
+      "length": 24,
+      "line": 19,
+      "offset": 641
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include \"third_party/absl/strings/str_cat.h\"\n",
+      "file": "src/char_model_trainer_test.cc",
+      "length": 46,
+      "line": 23,
+      "offset": 746
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include \"third_party/absl/strings/str_cat.h\"\n",
+      "file": "src/filesystem_test.cc",
+      "length": 46,
+      "line": 18,
+      "offset": 640
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include \"common.h\"\n",
+      "file": "src/init.cc",
+      "length": 20,
+      "line": 17,
+      "offset": 609
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include \"util.h\"\n",
+      "file": "src/init.cc",
+      "length": 18,
+      "line": 25,
+      "offset": 914
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <vector>\n",
+      "file": "src/invalid_model_test.cc",
+      "length": 18,
+      "line": 20,
+      "offset": 679
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <memory>\n",
+      "file": "src/invalid_model_test.cc",
+      "length": 18,
+      "line": 21,
+      "offset": 697
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include \"third_party/darts_clone/darts.h\"\n",
+      "file": "src/invalid_model_test.cc",
+      "length": 43,
+      "line": 27,
+      "offset": 886
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include \"unigram_model.h\"\n",
+      "file": "src/invalid_model_test.cc",
+      "length": 27,
+      "line": 31,
+      "offset": 1020
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include \"util.h\"\n",
+      "file": "src/model_interface_test.cc",
+      "length": 18,
+      "line": 20,
+      "offset": 726
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include \"third_party/absl/strings/str_split.h\"\n",
+      "file": "src/pretokenizer_for_training_test.cc",
+      "length": 48,
+      "line": 20,
+      "offset": 791
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <set>\n",
+      "file": "src/sentencepiece_processor.cc",
+      "length": 15,
+      "line": 23,
+      "offset": 738
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include \"unigram_model.h\"\n",
+      "file": "src/sentencepiece_processor.cc",
+      "length": 27,
+      "line": 47,
+      "offset": 1641
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include \"sentencepiece_model.pb.h\"\n",
+      "file": "src/sentencepiece_processor_parallel_test.cc",
+      "length": 36,
+      "line": 20,
+      "offset": 681
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include \"third_party/absl/log/log.h\"\n",
+      "file": "src/sentencepiece_processor_parallel_test.cc",
+      "length": 38,
+      "line": 24,
+      "offset": 819
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include \"builder.h\"\n",
+      "file": "src/sentencepiece_processor_test.cc",
+      "length": 21,
+      "line": 19,
+      "offset": 648
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include \"sentencepiece.pb.h\"\n",
+      "file": "src/sentencepiece_trainer.cc",
+      "length": 30,
+      "line": 23,
+      "offset": 728
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include \"third_party/absl/flags/flag.h\"\n",
+      "file": "src/sentencepiece_trainer.cc",
+      "length": 41,
+      "line": 26,
+      "offset": 819
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include \"common.h\"\n",
+      "file": "src/spm_decode_main.cc",
+      "length": 20,
+      "line": 19,
+      "offset": 649
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include \"util.h\"\n",
+      "file": "src/spm_decode_main.cc",
+      "length": 18,
+      "line": 26,
+      "offset": 867
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include \"common.h\"\n",
+      "file": "src/spm_encode_main.cc",
+      "length": 20,
+      "line": 20,
+      "offset": 667
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include \"third_party/absl/strings/str_cat.h\"\n",
+      "file": "src/spm_encode_main.cc",
+      "length": 46,
+      "line": 27,
+      "offset": 891
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include \"common.h\"\n",
+      "file": "src/spm_export_vocab_main.cc",
+      "length": 20,
+      "line": 17,
+      "offset": 610
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include \"common.h\"\n",
+      "file": "src/spm_normalize_main.cc",
+      "length": 20,
+      "line": 16,
+      "offset": 611
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include \"sentencepiece.pb.h\"\n",
+      "file": "src/spm_normalize_main.cc",
+      "length": 30,
+      "line": 20,
+      "offset": 697
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <map>\n",
+      "file": "src/spm_train_main.cc",
+      "length": 15,
+      "line": 15,
+      "offset": 590
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include \"third_party/absl/strings/ascii.h\"\n",
+      "file": "src/spm_train_main.cc",
+      "length": 44,
+      "line": 22,
+      "offset": 760
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include \"third_party/absl/strings/str_split.h\"\n",
+      "file": "src/spm_train_main.cc",
+      "length": 48,
+      "line": 24,
+      "offset": 851
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <unistd.h>\n",
+      "file": "src/testharness.cc",
+      "length": 20,
+      "line": 19,
+      "offset": 653
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <memory>\n",
+      "file": "src/testharness.cc",
+      "length": 18,
+      "line": 24,
+      "offset": 707
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include \"common.h\"\n",
+      "file": "src/testharness.cc",
+      "length": 20,
+      "line": 28,
+      "offset": 762
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include \"third_party/absl/strings/str_cat.h\"\n",
+      "file": "src/testharness.cc",
+      "length": 46,
+      "line": 29,
+      "offset": 782
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include \"util.h\"\n",
+      "file": "src/testharness.cc",
+      "length": 18,
+      "line": 30,
+      "offset": 828
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include \"model_factory.h\"\n",
+      "file": "src/trainer_interface.cc",
+      "length": 27,
+      "line": 27,
+      "offset": 793
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include \"common.h\"\n",
+      "file": "src/unicode_script_test.cc",
+      "length": 20,
+      "line": 17,
+      "offset": 619
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <complex>\n",
+      "file": "src/unigram_model.cc",
+      "length": 19,
+      "line": 20,
+      "offset": 674
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <map>\n",
+      "file": "src/unigram_model.cc",
+      "length": 15,
+      "line": 21,
+      "offset": 693
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <string>\n",
+      "file": "src/unigram_model.cc",
+      "length": 18,
+      "line": 23,
+      "offset": 725
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include \"third_party/absl/strings/str_cat.h\"\n",
+      "file": "src/unigram_model_test.cc",
+      "length": 46,
+      "line": 26,
+      "offset": 803
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include \"normalizer.h\"\n",
+      "file": "src/unigram_model_trainer.cc",
+      "length": 24,
+      "line": 28,
+      "offset": 821
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include \"unicode_script.h\"\n",
+      "file": "src/unigram_model_trainer.cc",
+      "length": 28,
+      "line": 39,
+      "offset": 1305
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include \"third_party/absl/strings/str_cat.h\"\n",
+      "file": "src/util_test.cc",
+      "length": 46,
+      "line": 22,
+      "offset": 718
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include \"util.h\"\n",
+      "file": "src/word_model.cc",
+      "length": 18,
+      "line": 18,
+      "offset": 665
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include \"util.h\"\n",
+      "file": "src/word_model_test.cc",
+      "length": 18,
+      "line": 21,
+      "offset": 695
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include \"third_party/absl/strings/str_cat.h\"\n",
+      "file": "src/word_model_trainer_test.cc",
+      "length": 46,
+      "line": 23,
+      "offset": 746
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <google/protobuf/stubs/mutex.h>\n",
+      "file": "third_party/protobuf-lite/arena.cc",
+      "length": 41,
+      "line": 37,
+      "offset": 1754
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <google/protobuf/stubs/common.h>\n",
+      "file": "third_party/protobuf-lite/arenastring.cc",
+      "length": 42,
+      "line": 34,
+      "offset": 1745
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <google/protobuf/parse_context.h>\n",
+      "file": "third_party/protobuf-lite/arenastring.cc",
+      "length": 43,
+      "line": 35,
+      "offset": 1787
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <google/protobuf/io/coded_stream.h>\n",
+      "file": "third_party/protobuf-lite/arenastring.cc",
+      "length": 45,
+      "line": 36,
+      "offset": 1830
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <google/protobuf/stubs/strutil.h>\n",
+      "file": "third_party/protobuf-lite/arenastring.cc",
+      "length": 43,
+      "line": 39,
+      "offset": 1958
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <google/protobuf/stubs/stl_util.h>\n",
+      "file": "third_party/protobuf-lite/arenastring.cc",
+      "length": 44,
+      "line": 40,
+      "offset": 2001
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <google/protobuf/stubs/common.h>\n",
+      "file": "third_party/protobuf-lite/coded_stream.cc",
+      "length": 42,
+      "line": 50,
+      "offset": 2271
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <google/protobuf/arena.h>\n",
+      "file": "third_party/protobuf-lite/coded_stream.cc",
+      "length": 35,
+      "line": 51,
+      "offset": 2313
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <errno.h>\n",
+      "file": "third_party/protobuf-lite/common.cc",
+      "length": 19,
+      "line": 36,
+      "offset": 1766
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <vector>\n",
+      "file": "third_party/protobuf-lite/common.cc",
+      "length": 18,
+      "line": 39,
+      "offset": 1823
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <pthread.h>\n",
+      "file": "third_party/protobuf-lite/common.cc",
+      "length": 21,
+      "line": 48,
+      "offset": 2061
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <google/protobuf/stubs/once.h>\n",
+      "file": "third_party/protobuf-lite/common.cc",
+      "length": 40,
+      "line": 58,
+      "offset": 2290
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <google/protobuf/stubs/strutil.h>\n",
+      "file": "third_party/protobuf-lite/common.cc",
+      "length": 43,
+      "line": 61,
+      "offset": 2419
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <google/protobuf/stubs/common.h>\n",
+      "file": "third_party/protobuf-lite/extension_set.cc",
+      "length": 42,
+      "line": 40,
+      "offset": 1903
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <google/protobuf/extension_set_inl.h>\n",
+      "file": "third_party/protobuf-lite/extension_set.cc",
+      "length": 47,
+      "line": 41,
+      "offset": 1945
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <google/protobuf/stubs/hash.h>\n",
+      "file": "third_party/protobuf-lite/extension_set.cc",
+      "length": 40,
+      "line": 49,
+      "offset": 2312
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <type_traits>\n",
+      "file": "third_party/protobuf-lite/generated_message_table_driven_lite.cc",
+      "length": 23,
+      "line": 33,
+      "offset": 1726
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <limits>\n",
+      "file": "third_party/protobuf-lite/generated_message_util.cc",
+      "length": 18,
+      "line": 37,
+      "offset": 1851
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <vector>\n",
+      "file": "third_party/protobuf-lite/generated_message_util.cc",
+      "length": 18,
+      "line": 45,
+      "offset": 2123
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <google/protobuf/io/zero_copy_stream_impl_lite.h>\n",
+      "file": "third_party/protobuf-lite/implicit_weak_message.cc",
+      "length": 59,
+      "line": 34,
+      "offset": 1755
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <google/protobuf/wire_format_lite.h>\n",
+      "file": "third_party/protobuf-lite/implicit_weak_message.cc",
+      "length": 46,
+      "line": 36,
+      "offset": 1854
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <google/protobuf/stubs/stringprintf.h>\n",
+      "file": "third_party/protobuf-lite/message_lite.cc",
+      "length": 48,
+      "line": 44,
+      "offset": 2028
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <google/protobuf/generated_message_table_driven.h>\n",
+      "file": "third_party/protobuf-lite/message_lite.cc",
+      "length": 60,
+      "line": 51,
+      "offset": 2361
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <google/protobuf/stubs/stringprintf.h>\n",
+      "file": "third_party/protobuf-lite/parse_context.cc",
+      "length": 48,
+      "line": 33,
+      "offset": 1704
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <google/protobuf/arenastring.h>\n",
+      "file": "third_party/protobuf-lite/parse_context.cc",
+      "length": 41,
+      "line": 36,
+      "offset": 1846
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <google/protobuf/stubs/strutil.h>\n",
+      "file": "third_party/protobuf-lite/parse_context.cc",
+      "length": 43,
+      "line": 40,
+      "offset": 2019
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <google/protobuf/stubs/common.h>\n",
+      "file": "third_party/protobuf-lite/repeated_field.cc",
+      "length": 42,
+      "line": 40,
+      "offset": 1908
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <stdio.h>\n",
+      "file": "third_party/protobuf-lite/status.cc",
+      "length": 19,
+      "line": 33,
+      "offset": 1721
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <utility>\n",
+      "file": "third_party/protobuf-lite/status.cc",
+      "length": 19,
+      "line": 35,
+      "offset": 1758
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <errno.h>\n",
+      "file": "third_party/protobuf-lite/stringprintf.cc",
+      "length": 19,
+      "line": 35,
+      "offset": 1747
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <google/protobuf/stubs/common.h>\n",
+      "file": "third_party/protobuf-lite/stringprintf.cc",
+      "length": 42,
+      "line": 40,
+      "offset": 1899
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <stack>\n",
+      "file": "third_party/protobuf-lite/wire_format_lite.cc",
+      "length": 17,
+      "line": 37,
+      "offset": 1845
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <vector>\n",
+      "file": "third_party/protobuf-lite/wire_format_lite.cc",
+      "length": 18,
+      "line": 39,
+      "offset": 1880
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <google/protobuf/io/zero_copy_stream.h>\n",
+      "file": "third_party/protobuf-lite/wire_format_lite.cc",
+      "length": 49,
+      "line": 45,
+      "offset": 2077
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <google/protobuf/io/zero_copy_stream_impl_lite.h>\n",
+      "file": "third_party/protobuf-lite/wire_format_lite.cc",
+      "length": 59,
+      "line": 46,
+      "offset": 2126
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <google/protobuf/stubs/common.h>\n",
+      "file": "third_party/protobuf-lite/zero_copy_stream.cc",
+      "length": 42,
+      "line": 38,
+      "offset": 1891
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <sys/stat.h>\n",
+      "file": "third_party/protobuf-lite/zero_copy_stream_impl.cc",
+      "length": 22,
+      "line": 37,
+      "offset": 1834
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <sys/types.h>\n",
+      "file": "third_party/protobuf-lite/zero_copy_stream_impl.cc",
+      "length": 23,
+      "line": 38,
+      "offset": 1856
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <algorithm>\n",
+      "file": "third_party/protobuf-lite/zero_copy_stream_impl.cc",
+      "length": 21,
+      "line": 43,
+      "offset": 1926
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <google/protobuf/stubs/common.h>\n",
+      "file": "third_party/protobuf-lite/zero_copy_stream_impl.cc",
+      "length": 42,
+      "line": 46,
+      "offset": 1968
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <google/protobuf/io/io_win32.h>\n",
+      "file": "third_party/protobuf-lite/zero_copy_stream_impl.cc",
+      "length": 41,
+      "line": 48,
+      "offset": 2053
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <google/protobuf/stubs/stl_util.h>\n",
+      "file": "third_party/protobuf-lite/zero_copy_stream_impl.cc",
+      "length": 44,
+      "line": 50,
+      "offset": 2148
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <google/protobuf/stubs/common.h>\n",
+      "file": "third_party/protobuf-lite/zero_copy_stream_impl_lite.cc",
+      "length": 42,
+      "line": 40,
+      "offset": 1898
+    }
+  ],
+  "generated_compile_commands_skipped": 158,
+  "jobs": 2,
+  "measurement": "clean builds; warm filesystem cache; compiler caches disabled; alternating order",
+  "measurement_context": {
+    "architecture": "x86_64",
+    "buildray_version": "0.2.0",
+    "cache_flags": {
+      "CMAKE_BUILD_TYPE": "Release",
+      "CMAKE_CXX_FLAGS": "",
+      "CMAKE_CXX_FLAGS-ADVANCED": "1",
+      "CMAKE_CXX_FLAGS_DEBUG": "-g",
+      "CMAKE_CXX_FLAGS_DEBUG-ADVANCED": "1",
+      "CMAKE_CXX_FLAGS_MINSIZEREL": "-Os -DNDEBUG",
+      "CMAKE_CXX_FLAGS_MINSIZEREL-ADVANCED": "1",
+      "CMAKE_CXX_FLAGS_RELEASE": "-O3 -DNDEBUG",
+      "CMAKE_CXX_FLAGS_RELEASE-ADVANCED": "1",
+      "CMAKE_CXX_FLAGS_RELWITHDEBINFO": "-O2 -g -DNDEBUG",
+      "CMAKE_CXX_FLAGS_RELWITHDEBINFO-ADVANCED": "1",
+      "CMAKE_C_FLAGS": "",
+      "CMAKE_C_FLAGS-ADVANCED": "1",
+      "CMAKE_C_FLAGS_DEBUG": "-g",
+      "CMAKE_C_FLAGS_DEBUG-ADVANCED": "1",
+      "CMAKE_C_FLAGS_MINSIZEREL": "-Os -DNDEBUG",
+      "CMAKE_C_FLAGS_MINSIZEREL-ADVANCED": "1",
+      "CMAKE_C_FLAGS_RELEASE": "-O3 -DNDEBUG",
+      "CMAKE_C_FLAGS_RELEASE-ADVANCED": "1",
+      "CMAKE_C_FLAGS_RELWITHDEBINFO": "-O2 -g -DNDEBUG",
+      "CMAKE_C_FLAGS_RELWITHDEBINFO-ADVANCED": "1",
+      "CMAKE_EXE_LINKER_FLAGS": "",
+      "CMAKE_EXE_LINKER_FLAGS-ADVANCED": "1",
+      "CMAKE_EXE_LINKER_FLAGS_DEBUG": "",
+      "CMAKE_EXE_LINKER_FLAGS_DEBUG-ADVANCED": "1",
+      "CMAKE_EXE_LINKER_FLAGS_MINSIZEREL": "",
+      "CMAKE_EXE_LINKER_FLAGS_MINSIZEREL-ADVANCED": "1",
+      "CMAKE_EXE_LINKER_FLAGS_RELEASE": "",
+      "CMAKE_EXE_LINKER_FLAGS_RELEASE-ADVANCED": "1",
+      "CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO": "",
+      "CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO-ADVANCED": "1",
+      "CMAKE_PROJECT_NAME": "sentencepiece",
+      "CMAKE_SHARED_LINKER_FLAGS": "",
+      "CMAKE_SHARED_LINKER_FLAGS-ADVANCED": "1",
+      "CMAKE_SHARED_LINKER_FLAGS_DEBUG": "",
+      "CMAKE_SHARED_LINKER_FLAGS_DEBUG-ADVANCED": "1",
+      "CMAKE_SHARED_LINKER_FLAGS_MINSIZEREL": "",
+      "CMAKE_SHARED_LINKER_FLAGS_MINSIZEREL-ADVANCED": "1",
+      "CMAKE_SHARED_LINKER_FLAGS_RELEASE": "",
+      "CMAKE_SHARED_LINKER_FLAGS_RELEASE-ADVANCED": "1",
+      "CMAKE_SHARED_LINKER_FLAGS_RELWITHDEBINFO": "",
+      "CMAKE_SHARED_LINKER_FLAGS_RELWITHDEBINFO-ADVANCED": "1"
+    },
+    "cmake_args": [
+      "-DSPM_BUILD_TEST=ON",
+      "-DSPM_ENABLE_SHARED=OFF",
+      "-DSPM_ENABLE_TCMALLOC=OFF"
+    ],
+    "cpu_affinity_count": 4,
+    "cpu_model": "INTEL(R) XEON(R) PLATINUM 8573C",
+    "cpu_quota": "unavailable",
+    "environment_flags": {
+      "CFLAGS": "",
+      "CXXFLAGS": "",
+      "LDFLAGS": ""
+    },
+    "jobs": 2,
+    "kernel": "6.17.0-1022-azure",
+    "method": "clean-build-warm-filesystem-v1",
+    "precompiled_headers": false,
+    "sampling": "paired_alternating",
+    "session": "5c65c4b6-c88d-48f7-93d5-b039a20203c0",
+    "tests_required": true,
+    "unity_build": false
+  },
+  "ninja_version": "1.13.2\n",
+  "patch_recommended": false,
+  "patch_validated": false,
+  "phase": "candidate_validation",
+  "precompiled_headers": false,
+  "preflight_compile_commands": 48,
+  "preflight_rejected_files": [
+    {
+      "compiler_exit_code": 1,
+      "file": "src/word_model_trainer.cc",
+      "log": "analysis/preflight-31.log",
+      "reason": "deletion-only proposal failed compilation"
+    }
+  ],
+  "removed_includes": 104,
+  "runs": 3,
+  "schema_version": 1,
+  "source": "/home/runner/work/buildray/buildray/fixtures/sentencepiece",
+  "status": "failed",
+  "tests_required": true,
+  "translation_units_analyzed": 78,
+  "unity_build": false,
+  "validation_scope": "one configured CMake build; project C++ source files only",
+  "work_dir": "/home/runner/work/_temp/buildray-action-zvy2i_z_/run"
+}

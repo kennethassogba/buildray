@@ -1,0 +1,713 @@
+--- a/src/bpe_model.cc
++++ b/src/bpe_model.cc
+@@ -15,14 +15,11 @@
+ #include "bpe_model.h"
+ 
+ #include <cstdint>
+-#include <functional>
+ #include <memory>
+ #include <queue>
+-#include <random>
+ #include <utility>
+ #include <vector>
+ 
+-#include "freelist.h"
+ #include "model_interface.h"
+ #include "sentencepiece_model.pb.h"
+ #include "third_party/absl/base/attributes.h"
+--- a/src/bpe_model_trainer.cc
++++ b/src/bpe_model_trainer.cc
+@@ -14,14 +14,11 @@
+ 
+ #include "bpe_model_trainer.h"
+ 
+-#include <algorithm>
+ #include <string>
+-#include <unordered_set>
+ #include <vector>
+ 
+ #include "pretokenizer_for_training.h"
+ #include "third_party/absl/container/flat_hash_set.h"
+-#include "third_party/absl/flags/flag.h"
+ #include "third_party/absl/hash/hash.h"
+ #include "third_party/absl/status/status.h"
+ #include "third_party/absl/strings/str_join.h"
+--- a/src/builder.cc
++++ b/src/builder.cc
+@@ -19,10 +19,7 @@
+ #include <utility>
+ 
+ #include "filesystem.h"
+-#include "third_party/absl/container/flat_hash_map.h"
+-#include "third_party/absl/container/flat_hash_set.h"
+ #include "third_party/absl/status/status.h"
+-#include "third_party/absl/strings/str_cat.h"
+ #include "third_party/absl/strings/str_join.h"
+ #include "third_party/absl/strings/str_replace.h"
+ #include "third_party/absl/strings/str_split.h"
+@@ -38,7 +35,6 @@
+ #include <unicode/utypes.h>
+ #endif  // ENABLE_NFKC_COMPILE
+ 
+-#include <set>
+ 
+ #include "normalizer.h"
+ #include "third_party/darts_clone/darts.h"
+--- a/src/builder_test.cc
++++ b/src/builder_test.cc
+@@ -14,12 +14,10 @@
+ 
+ #include "builder.h"
+ 
+-#include "common.h"
+ #include "filesystem.h"
+ #include "normalizer.h"
+ #include "sentencepiece_trainer.h"
+ #include "testharness.h"
+-#include "third_party/absl/strings/str_cat.h"
+ #include "third_party/absl/strings/string_view.h"
+ #include "util.h"
+ 
+--- a/src/builtin_pb/sentencepiece.pb.cc
++++ b/src/builtin_pb/sentencepiece.pb.cc
+@@ -8,7 +8,6 @@
+ #include <google/protobuf/io/coded_stream.h>
+ #include <google/protobuf/extension_set.h>
+ #include <google/protobuf/wire_format_lite.h>
+-#include <google/protobuf/io/zero_copy_stream_impl_lite.h>
+ // @@protoc_insertion_point(includes)
+ #include <google/protobuf/port_def.inc>
+ extern PROTOBUF_INTERNAL_EXPORT_sentencepiece_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_SentencePieceText_sentencepiece_2eproto;
+--- a/src/builtin_pb/sentencepiece_model.pb.cc
++++ b/src/builtin_pb/sentencepiece_model.pb.cc
+@@ -8,7 +8,6 @@
+ #include <google/protobuf/io/coded_stream.h>
+ #include <google/protobuf/extension_set.h>
+ #include <google/protobuf/wire_format_lite.h>
+-#include <google/protobuf/io/zero_copy_stream_impl_lite.h>
+ // @@protoc_insertion_point(includes)
+ #include <google/protobuf/port_def.inc>
+ extern PROTOBUF_INTERNAL_EXPORT_sentencepiece_5fmodel_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_ModelProto_SentencePiece_sentencepiece_5fmodel_2eproto;
+--- a/src/char_model.cc
++++ b/src/char_model.cc
+@@ -15,7 +15,6 @@
+ #include "char_model.h"
+ 
+ #include "third_party/absl/strings/string_view.h"
+-#include "util.h"
+ 
+ namespace sentencepiece {
+ namespace character {
+--- a/src/char_model_test.cc
++++ b/src/char_model_test.cc
+@@ -17,7 +17,6 @@
+ #include <string>
+ 
+ #include "testharness.h"
+-#include "util.h"
+ 
+ namespace sentencepiece {
+ namespace character {
+--- a/src/char_model_trainer.cc
++++ b/src/char_model_trainer.cc
+@@ -16,7 +16,6 @@
+ 
+ #include <cmath>
+ 
+-#include "char_model.h"
+ #include "third_party/absl/status/status.h"
+ #include "util.h"
+ 
+--- a/src/char_model_trainer_test.cc
++++ b/src/char_model_trainer_test.cc
+@@ -20,7 +20,6 @@
+ #include "filesystem.h"
+ #include "sentencepiece_processor.h"
+ #include "testharness.h"
+-#include "third_party/absl/strings/str_cat.h"
+ #include "third_party/absl/strings/str_join.h"
+ #include "util.h"
+ 
+--- a/src/filesystem_test.cc
++++ b/src/filesystem_test.cc
+@@ -15,7 +15,6 @@
+ #include "filesystem.h"
+ 
+ #include "testharness.h"
+-#include "third_party/absl/strings/str_cat.h"
+ #include "util.h"
+ 
+ namespace sentencepiece {
+--- a/src/init.cc
++++ b/src/init.cc
+@@ -14,7 +14,6 @@
+ 
+ #include "init.h"
+ 
+-#include "common.h"
+ #include "config.h"
+ #include "third_party/absl/flags/flag.h"
+ #include "third_party/absl/flags/parse.h"
+@@ -22,7 +21,6 @@
+ #include "third_party/absl/flags/usage_config.h"
+ #include "third_party/absl/log/initialize.h"
+ #include "third_party/absl/strings/str_cat.h"
+-#include "util.h"
+ 
+ #ifdef _USE_EXTERNAL_PROTOBUF
+ #include "google/protobuf/message_lite.h"
+--- a/src/invalid_model_test.cc
++++ b/src/invalid_model_test.cc
+@@ -17,18 +17,14 @@
+ #include <fstream>
+ #include <ios>
+ #include <string>
+-#include <vector>
+-#include <memory>
+ 
+ #include "testharness.h"
+ #include "third_party/absl/base/internal/endian.h"
+ #include "third_party/absl/status/status.h"
+ #include "third_party/absl/strings/string_view.h"
+-#include "third_party/darts_clone/darts.h"
+ #include "sentencepiece_model.pb.h"
+ #include "sentencepiece_processor.h"
+ #include "util.h"
+-#include "unigram_model.h"
+ 
+ namespace sentencepiece {
+ namespace {
+--- a/src/model_interface_test.cc
++++ b/src/model_interface_test.cc
+@@ -17,7 +17,6 @@
+ #include "model_factory.h"
+ #include "testharness.h"
+ #include "third_party/absl/container/flat_hash_map.h"
+-#include "util.h"
+ 
+ namespace sentencepiece {
+ namespace {
+--- a/src/pretokenizer_for_training_test.cc
++++ b/src/pretokenizer_for_training_test.cc
+@@ -17,7 +17,6 @@
+ #include "third_party/absl/status/status.h"
+ #include "third_party/absl/strings/str_cat.h"
+ #include "third_party/absl/strings/str_join.h"
+-#include "third_party/absl/strings/str_split.h"
+ #include "third_party/absl/strings/string_view.h"
+ #include "trainer_interface.h"
+ 
+--- a/src/sentencepiece_processor.cc
++++ b/src/sentencepiece_processor.cc
+@@ -20,7 +20,6 @@
+ #include <iterator>
+ #include <map>
+ #include <memory>
+-#include <set>
+ #include <utility>
+ #include <vector>
+ 
+@@ -44,7 +43,6 @@
+ #include "third_party/absl/strings/strip.h"
+ #include "third_party/absl/synchronization/blocking_counter.h"
+ #include "third_party/absl/synchronization/mutex.h"
+-#include "unigram_model.h"
+ #include "util.h"
+ 
+ #ifdef _USE_EXTERNAL_PROTOBUF
+--- a/src/sentencepiece_processor_parallel_test.cc
++++ b/src/sentencepiece_processor_parallel_test.cc
+@@ -17,11 +17,9 @@
+ 
+ #include "filesystem.h"
+ #include "sentencepiece.pb.h"
+-#include "sentencepiece_model.pb.h"
+ #include "sentencepiece_processor.h"
+ #include "testharness.h"
+ #include "third_party/absl/log/check.h"
+-#include "third_party/absl/log/log.h"
+ #include "util.h"
+ 
+ namespace sentencepiece {
+--- a/src/sentencepiece_processor_test.cc
++++ b/src/sentencepiece_processor_test.cc
+@@ -16,7 +16,6 @@
+ 
+ #include <utility>
+ 
+-#include "builder.h"
+ #include "filesystem.h"
+ #include "model_interface.h"
+ #include "normalizer.h"
+--- a/src/sentencepiece_trainer.cc
++++ b/src/sentencepiece_trainer.cc
+@@ -20,10 +20,8 @@
+ #include "builder.h"
+ #include "common.h"
+ #include "normalizer.h"
+-#include "sentencepiece.pb.h"
+ #include "sentencepiece_model.pb.h"
+ #include "spec_parser.h"
+-#include "third_party/absl/flags/flag.h"
+ #include "third_party/absl/status/status.h"
+ #include "third_party/absl/strings/numbers.h"
+ #include "third_party/absl/strings/str_cat.h"
+--- a/src/spm_decode_main.cc
++++ b/src/spm_decode_main.cc
+@@ -16,14 +16,12 @@
+ #include <string>
+ #include <vector>
+ 
+-#include "common.h"
+ #include "filesystem.h"
+ #include "init.h"
+ #include "sentencepiece.pb.h"
+ #include "sentencepiece_processor.h"
+ #include "third_party/absl/flags/flag.h"
+ #include "third_party/absl/strings/str_split.h"
+-#include "util.h"
+ 
+ ABSL_FLAG(std::string, model, "", "model file name");
+ ABSL_FLAG(std::string, input, "", "input filename");
+--- a/src/spm_encode_main.cc
++++ b/src/spm_encode_main.cc
+@@ -17,14 +17,12 @@
+ #include <string>
+ #include <vector>
+ 
+-#include "common.h"
+ #include "filesystem.h"
+ #include "init.h"
+ #include "sentencepiece.pb.h"
+ #include "sentencepiece_processor.h"
+ #include "third_party/absl/container/flat_hash_map.h"
+ #include "third_party/absl/flags/flag.h"
+-#include "third_party/absl/strings/str_cat.h"
+ #include "third_party/absl/strings/str_join.h"
+ #include "third_party/absl/strings/string_view.h"
+ #include "trainer_interface.h"
+--- a/src/spm_export_vocab_main.cc
++++ b/src/spm_export_vocab_main.cc
+@@ -14,7 +14,6 @@
+ 
+ #include <sstream>
+ 
+-#include "common.h"
+ #include "filesystem.h"
+ #include "init.h"
+ #include "sentencepiece_model.pb.h"
+--- a/src/spm_normalize_main.cc
++++ b/src/spm_normalize_main.cc
+@@ -13,11 +13,9 @@
+ // limitations under the License.!
+ 
+ #include "builder.h"
+-#include "common.h"
+ #include "filesystem.h"
+ #include "init.h"
+ #include "normalizer.h"
+-#include "sentencepiece.pb.h"
+ #include "sentencepiece_model.pb.h"
+ #include "sentencepiece_processor.h"
+ #include "sentencepiece_trainer.h"
+--- a/src/spm_train_main.cc
++++ b/src/spm_train_main.cc
+@@ -12,16 +12,13 @@
+ // See the License for the specific language governing permissions and
+ // limitations under the License.!
+ 
+-#include <map>
+ 
+ #include "filesystem.h"
+ #include "init.h"
+ #include "sentencepiece_model.pb.h"
+ #include "sentencepiece_trainer.h"
+ #include "third_party/absl/flags/flag.h"
+-#include "third_party/absl/strings/ascii.h"
+ #include "third_party/absl/strings/str_join.h"
+-#include "third_party/absl/strings/str_split.h"
+ #include "third_party/absl/strings/string_view.h"
+ #include "util.h"
+ 
+--- a/src/testharness.cc
++++ b/src/testharness.cc
+@@ -16,18 +16,13 @@
+ 
+ #ifndef OS_WIN
+ #include <sys/stat.h>
+-#include <unistd.h>
+ #else
+ #include <direct.h>
+ #endif
+ 
+-#include <memory>
+ #include <string>
+ #include <vector>
+ 
+-#include "common.h"
+-#include "third_party/absl/strings/str_cat.h"
+-#include "util.h"
+ 
+ namespace sentencepiece {
+ namespace test {
+--- a/src/trainer_interface.cc
++++ b/src/trainer_interface.cc
+@@ -24,7 +24,6 @@
+ #include <vector>
+ 
+ #include "filesystem.h"
+-#include "model_factory.h"
+ #include "model_interface.h"
+ #include "normalizer.h"
+ #include "sentencepiece_processor.h"
+--- a/src/unicode_script_test.cc
++++ b/src/unicode_script_test.cc
+@@ -14,7 +14,6 @@
+ 
+ #include "unicode_script.h"
+ 
+-#include "common.h"
+ #include "testharness.h"
+ #include "third_party/absl/strings/string_view.h"
+ #include "util.h"
+--- a/src/unigram_model.cc
++++ b/src/unigram_model.cc
+@@ -17,10 +17,7 @@
+ #include <algorithm>
+ #include <cfloat>
+ #include <cmath>
+-#include <complex>
+-#include <map>
+ #include <queue>
+-#include <string>
+ #include <utility>
+ #include <vector>
+ 
+--- a/src/unigram_model_test.cc
++++ b/src/unigram_model_test.cc
+@@ -23,7 +23,6 @@
+ #include "sentencepiece_model.pb.h"
+ #include "sentencepiece_processor.h"
+ #include "testharness.h"
+-#include "third_party/absl/strings/str_cat.h"
+ #include "third_party/absl/strings/str_join.h"
+ #include "third_party/absl/strings/string_view.h"
+ #include "util.h"
+--- a/src/unigram_model_trainer.cc
++++ b/src/unigram_model_trainer.cc
+@@ -25,7 +25,6 @@
+ #include <vector>
+ 
+ #include "filesystem.h"
+-#include "normalizer.h"
+ #include "pretokenizer_for_training.h"
+ #include "sentencepiece_trainer.h"
+ #include "third_party/absl/container/flat_hash_map.h"
+@@ -36,7 +35,6 @@
+ #include "third_party/absl/strings/string_view.h"
+ #include "third_party/esaxx/esa.hxx"  // Suffix array library.
+ #include "trainer_interface.h"
+-#include "unicode_script.h"
+ #include "util.h"
+ 
+ namespace sentencepiece {
+--- a/src/util_test.cc
++++ b/src/util_test.cc
+@@ -19,7 +19,6 @@
+ #include "filesystem.h"
+ #include "testharness.h"
+ #include "third_party/absl/status/status.h"
+-#include "third_party/absl/strings/str_cat.h"
+ #include "third_party/absl/strings/string_view.h"
+ #include "third_party/absl/time/clock.h"
+ #include "third_party/absl/time/time.h"
+--- a/src/word_model.cc
++++ b/src/word_model.cc
+@@ -15,7 +15,6 @@
+ #include "word_model.h"
+ 
+ #include "third_party/absl/strings/string_view.h"
+-#include "util.h"
+ 
+ namespace sentencepiece {
+ namespace word {
+--- a/src/word_model_test.cc
++++ b/src/word_model_test.cc
+@@ -18,7 +18,6 @@
+ 
+ #include "sentencepiece_model.pb.h"
+ #include "testharness.h"
+-#include "util.h"
+ 
+ namespace sentencepiece {
+ namespace word {
+--- a/src/word_model_trainer_test.cc
++++ b/src/word_model_trainer_test.cc
+@@ -20,7 +20,6 @@
+ #include "filesystem.h"
+ #include "sentencepiece_processor.h"
+ #include "testharness.h"
+-#include "third_party/absl/strings/str_cat.h"
+ #include "third_party/absl/strings/str_join.h"
+ #include "util.h"
+ 
+--- a/third_party/protobuf-lite/arena.cc
++++ b/third_party/protobuf-lite/arena.cc
+@@ -34,7 +34,6 @@
+ #include <atomic>
+ #include <limits>
+ 
+-#include <google/protobuf/stubs/mutex.h>
+ 
+ #ifdef ADDRESS_SANITIZER
+ #include <sanitizer/asan_interface.h>
+--- a/third_party/protobuf-lite/arenastring.cc
++++ b/third_party/protobuf-lite/arenastring.cc
+@@ -31,13 +31,8 @@
+ #include <google/protobuf/arenastring.h>
+ 
+ #include <google/protobuf/stubs/logging.h>
+-#include <google/protobuf/stubs/common.h>
+-#include <google/protobuf/parse_context.h>
+-#include <google/protobuf/io/coded_stream.h>
+ #include <google/protobuf/message_lite.h>
+ #include <google/protobuf/stubs/mutex.h>
+-#include <google/protobuf/stubs/strutil.h>
+-#include <google/protobuf/stubs/stl_util.h>
+ 
+ // clang-format off
+ #include <google/protobuf/port_def.inc>
+--- a/third_party/protobuf-lite/coded_stream.cc
++++ b/third_party/protobuf-lite/coded_stream.cc
+@@ -47,8 +47,6 @@
+ #include <utility>
+ 
+ #include <google/protobuf/stubs/logging.h>
+-#include <google/protobuf/stubs/common.h>
+-#include <google/protobuf/arena.h>
+ #include <google/protobuf/io/zero_copy_stream.h>
+ #include <google/protobuf/io/zero_copy_stream_impl_lite.h>
+ #include <google/protobuf/stubs/stl_util.h>
+--- a/third_party/protobuf-lite/common.cc
++++ b/third_party/protobuf-lite/common.cc
+@@ -33,10 +33,8 @@
+ #include <google/protobuf/stubs/common.h>
+ 
+ #include <atomic>
+-#include <errno.h>
+ #include <sstream>
+ #include <stdio.h>
+-#include <vector>
+ 
+ #ifdef _WIN32
+ #ifndef WIN32_LEAN_AND_MEAN
+@@ -45,7 +43,6 @@
+ #include <windows.h>
+ #define snprintf _snprintf    // see comment in strutil.cc
+ #elif defined(HAVE_PTHREAD)
+-#include <pthread.h>
+ #else
+ #error "No suitable threading library available."
+ #endif
+@@ -55,10 +52,8 @@
+ 
+ #include <google/protobuf/stubs/callback.h>
+ #include <google/protobuf/stubs/logging.h>
+-#include <google/protobuf/stubs/once.h>
+ #include <google/protobuf/stubs/status.h>
+ #include <google/protobuf/stubs/stringpiece.h>
+-#include <google/protobuf/stubs/strutil.h>
+ #include <google/protobuf/stubs/int128.h>
+ 
+ #include <google/protobuf/port_def.inc>
+--- a/third_party/protobuf-lite/extension_set.cc
++++ b/third_party/protobuf-lite/extension_set.cc
+@@ -37,7 +37,6 @@
+ #include <tuple>
+ #include <unordered_map>
+ #include <utility>
+-#include <google/protobuf/stubs/common.h>
+ #include <google/protobuf/extension_set_inl.h>
+ #include <google/protobuf/parse_context.h>
+ #include <google/protobuf/io/coded_stream.h>
+@@ -46,7 +45,6 @@
+ #include <google/protobuf/metadata_lite.h>
+ #include <google/protobuf/repeated_field.h>
+ #include <google/protobuf/stubs/map_util.h>
+-#include <google/protobuf/stubs/hash.h>
+ 
+ #include <google/protobuf/port_def.inc>
+ 
+--- a/third_party/protobuf-lite/generated_message_table_driven_lite.cc
++++ b/third_party/protobuf-lite/generated_message_table_driven_lite.cc
+@@ -30,7 +30,6 @@
+ 
+ #include <google/protobuf/generated_message_table_driven_lite.h>
+ 
+-#include <type_traits>
+ 
+ #include <google/protobuf/io/zero_copy_stream_impl_lite.h>
+ #include <google/protobuf/metadata_lite.h>
+--- a/third_party/protobuf-lite/generated_message_util.cc
++++ b/third_party/protobuf-lite/generated_message_util.cc
+@@ -34,7 +34,6 @@
+ 
+ #include <google/protobuf/generated_message_util.h>
+ 
+-#include <limits>
+ 
+ #ifndef GOOGLE_PROTOBUF_SUPPORT_WINDOWS_XP
+ // We're only using this as a standard way for getting the thread id.
+@@ -42,7 +41,6 @@
+ #include <thread>  // NOLINT
+ #endif             // #ifndef GOOGLE_PROTOBUF_SUPPORT_WINDOWS_XP
+ 
+-#include <vector>
+ 
+ #include <google/protobuf/io/coded_stream.h>
+ #include <google/protobuf/io/zero_copy_stream_impl_lite.h>
+--- a/third_party/protobuf-lite/implicit_weak_message.cc
++++ b/third_party/protobuf-lite/implicit_weak_message.cc
+@@ -31,9 +31,7 @@
+ #include <google/protobuf/implicit_weak_message.h>
+ 
+ #include <google/protobuf/parse_context.h>
+-#include <google/protobuf/io/zero_copy_stream_impl_lite.h>
+ #include <google/protobuf/stubs/once.h>
+-#include <google/protobuf/wire_format_lite.h>
+ 
+ #include <google/protobuf/port_def.inc>
+ 
+--- a/third_party/protobuf-lite/message_lite.cc
++++ b/third_party/protobuf-lite/message_lite.cc
+@@ -41,14 +41,12 @@
+ 
+ #include <google/protobuf/stubs/logging.h>
+ #include <google/protobuf/stubs/common.h>
+-#include <google/protobuf/stubs/stringprintf.h>
+ #include <google/protobuf/parse_context.h>
+ #include <google/protobuf/io/coded_stream.h>
+ #include <google/protobuf/io/zero_copy_stream.h>
+ #include <google/protobuf/io/zero_copy_stream_impl.h>
+ #include <google/protobuf/io/zero_copy_stream_impl_lite.h>
+ #include <google/protobuf/arena.h>
+-#include <google/protobuf/generated_message_table_driven.h>
+ #include <google/protobuf/generated_message_util.h>
+ #include <google/protobuf/repeated_field.h>
+ #include <google/protobuf/stubs/strutil.h>
+--- a/third_party/protobuf-lite/parse_context.cc
++++ b/third_party/protobuf-lite/parse_context.cc
+@@ -30,14 +30,11 @@
+ 
+ #include <google/protobuf/parse_context.h>
+ 
+-#include <google/protobuf/stubs/stringprintf.h>
+ #include <google/protobuf/io/coded_stream.h>
+ #include <google/protobuf/io/zero_copy_stream.h>
+-#include <google/protobuf/arenastring.h>
+ #include <google/protobuf/message_lite.h>
+ #include <google/protobuf/repeated_field.h>
+ #include <google/protobuf/wire_format_lite.h>
+-#include <google/protobuf/stubs/strutil.h>
+ 
+ #include <google/protobuf/port_def.inc>
+ 
+--- a/third_party/protobuf-lite/repeated_field.cc
++++ b/third_party/protobuf-lite/repeated_field.cc
+@@ -37,7 +37,6 @@
+ #include <algorithm>
+ 
+ #include <google/protobuf/stubs/logging.h>
+-#include <google/protobuf/stubs/common.h>
+ #include <google/protobuf/implicit_weak_message.h>
+ 
+ #include <google/protobuf/port_def.inc>
+--- a/third_party/protobuf-lite/status.cc
++++ b/third_party/protobuf-lite/status.cc
+@@ -30,9 +30,7 @@
+ #include <google/protobuf/stubs/status.h>
+ 
+ #include <ostream>
+-#include <stdio.h>
+ #include <string>
+-#include <utility>
+ 
+ namespace google {
+ namespace protobuf {
+--- a/third_party/protobuf-lite/stringprintf.cc
++++ b/third_party/protobuf-lite/stringprintf.cc
+@@ -32,12 +32,10 @@
+ 
+ #include <google/protobuf/stubs/stringprintf.h>
+ 
+-#include <errno.h>
+ #include <stdarg.h> // For va_list and related operations
+ #include <stdio.h> // MSVC requires this for _vsnprintf
+ #include <vector>
+ 
+-#include <google/protobuf/stubs/common.h>
+ #include <google/protobuf/stubs/logging.h>
+ 
+ namespace google {
+--- a/third_party/protobuf-lite/wire_format_lite.cc
++++ b/third_party/protobuf-lite/wire_format_lite.cc
+@@ -34,16 +34,12 @@
+ 
+ #include <google/protobuf/wire_format_lite.h>
+ 
+-#include <stack>
+ #include <string>
+-#include <vector>
+ 
+ #include <google/protobuf/stubs/logging.h>
+ #include <google/protobuf/stubs/common.h>
+ #include <google/protobuf/stubs/stringprintf.h>
+ #include <google/protobuf/io/coded_stream.h>
+-#include <google/protobuf/io/zero_copy_stream.h>
+-#include <google/protobuf/io/zero_copy_stream_impl_lite.h>
+ 
+ 
+ #include <google/protobuf/port_def.inc>
+--- a/third_party/protobuf-lite/zero_copy_stream.cc
++++ b/third_party/protobuf-lite/zero_copy_stream.cc
+@@ -35,7 +35,6 @@
+ #include <google/protobuf/io/zero_copy_stream.h>
+ 
+ #include <google/protobuf/stubs/logging.h>
+-#include <google/protobuf/stubs/common.h>
+ 
+ namespace google {
+ namespace protobuf {
+--- a/third_party/protobuf-lite/zero_copy_stream_impl.cc
++++ b/third_party/protobuf-lite/zero_copy_stream_impl.cc
+@@ -34,20 +34,14 @@
+ 
+ #ifndef _MSC_VER
+ #include <fcntl.h>
+-#include <sys/stat.h>
+-#include <sys/types.h>
+ #include <unistd.h>
+ #endif
+ #include <errno.h>
+ 
+-#include <algorithm>
+ #include <iostream>
+ 
+-#include <google/protobuf/stubs/common.h>
+ #include <google/protobuf/stubs/logging.h>
+-#include <google/protobuf/io/io_win32.h>
+ #include <google/protobuf/io/zero_copy_stream_impl.h>
+-#include <google/protobuf/stubs/stl_util.h>
+ 
+ 
+ namespace google {
+--- a/third_party/protobuf-lite/zero_copy_stream_impl_lite.cc
++++ b/third_party/protobuf-lite/zero_copy_stream_impl_lite.cc
+@@ -37,7 +37,6 @@
+ #include <algorithm>
+ #include <limits>
+ 
+-#include <google/protobuf/stubs/common.h>
+ #include <google/protobuf/stubs/logging.h>
+ #include <google/protobuf/stubs/casts.h>
+ #include <google/protobuf/stubs/stl_util.h>

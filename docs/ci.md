@@ -22,7 +22,7 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
-      - uses: kennethassogba/buildray@codex/ci-baselines
+      - uses: kennethassogba/buildray@3e882e100e3fb08a9afe34a3d2db636677d7548e
         with:
           source: .
           cmake-args: '["-DBUILD_TESTING=ON"]'
@@ -31,8 +31,8 @@ jobs:
           max-regression-percent: '5'
 ```
 
-The branch reference above is for trying this change. Pin a reviewed commit SHA
-in a production workflow. There is no published Marketplace release yet.
+The example pins the tested implementation by commit SHA. There is no published
+Marketplace release yet.
 
 On a PR, `baseline-ref` defaults to its base commit. The action exports that
 commit with `git archive`, snapshots the current checkout, builds and tests both,
@@ -55,8 +55,10 @@ without shell evaluation. Projects still execute their own CMake code and tests,
 so run them with the same trust boundaries as a normal build workflow.
 
 The action writes a step summary and uploads reports and any patch, including
-when a regression fails the step. It does not upload source copies or complete
-compiler logs. Artifact retention defaults to 30 days; `artifact-name` and
+when a regression fails the step. For pipeline failures, it also retains the last
+64 KiB of each of the three most recent tool logs and prints the latest log tail
+in the job. It does not upload source copies or complete compiler logs.
+Artifact retention defaults to 30 days; `artifact-name` and
 `retention-days` are configurable. This provides downloadable run history, not
 an external history service. Outputs include `report`, `comparison`,
 `baseline-report`, `current-report`, `baseline-sha`, `patch`, and `result`.
@@ -84,7 +86,9 @@ lack the required context and must be measured again.
 Reports must agree on tool versions, Buildray version, build method, sampling
 method, job count, CMake arguments, selected cache/environment flags, CPU model,
 affinity, quota, architecture, kernel, test policy and optional `--session` label.
-This detects common mismatches. It cannot detect every difference in toolchain
+Cache flags normalize the isolated source/build roots as `<SOURCE>` and `<BUILD>`
+so CMake prefix-map flags remain comparable across the two copies. This detects
+common mismatches. It cannot detect every difference in toolchain
 contents, load, thermal state or runner hardware. Prefer paired `compare` runs
 on one runner for a CI decision. Independently measured history is diagnostic;
 matching recorded context does not prove identical conditions.
@@ -106,8 +110,11 @@ is explicit. Build-only reports do not claim test validation.
 | 1 | Build, validation, I/O or pipeline failure |
 | 2 | Invalid CLI arguments |
 | 3 | Regression exceeds budget and noise |
-| 4 | Saved reports are incompatible or malformed |
+| 4 | Saved reports are incompatible, malformed or unreadable |
 | 130 | Interrupted |
 
 A completed comparison uses `status: passed` for pipeline completion and
 `gate_passed` for the performance gate. Read both when consuming the JSON.
+
+[Validation evidence](ci-validation.md) covers the native commands, the Action
+bootstrap on GitHub, and retained report replay.
