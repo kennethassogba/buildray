@@ -19,10 +19,11 @@ def run(*args, expected=0):
 def project(path, *, delay=False, fail=False):
     path.mkdir()
     (path / "main.cpp").write_text("int main() { return " + ("1" if fail else "0") + "; }\n")
-    (path / "CMakeLists.txt").write_text("""cmake_minimum_required(VERSION 3.30)
+    (path / "CMakeLists.txt").write_text(r"""cmake_minimum_required(VERSION 3.30)
 project(comparison LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 26)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffile-prefix-map=\"${CMAKE_CURRENT_SOURCE_DIR}=.\" -fdebug-prefix-map=\"${CMAKE_CURRENT_BINARY_DIR}=.\"" CACHE STRING "fixture flags" FORCE)
 add_executable(sample main.cpp)
 enable_testing()
 add_test(NAME sample COMMAND sample)
@@ -50,6 +51,8 @@ with tempfile.TemporaryDirectory(prefix="buildray compare ") as temp:
         assert item["command"] == "measure" and item["status"] == "passed"
         assert len(item["baseline"]["samples"]) == 3
         assert item["measurement_context"]["sampling"] == "paired_alternating"
+        flags = item["measurement_context"]["cache_flags"]["CMAKE_CXX_FLAGS"]
+        assert "<SOURCE>" in flags and "<BUILD>" in flags, flags
     check = [binary, "check", "--baseline", work / "baseline-report.json",
              "--current", work / "current-report.json", "--output", root / "check.json"]
     run(*check, expected=3)

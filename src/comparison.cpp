@@ -11,6 +11,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string_view>
+#include <utility>
 
 #include "buildray/core.hpp"
 
@@ -103,13 +104,27 @@ json::Object statistics(const std::vector<double>& values) {
 
 json::Object measurement_context(const Options& options, const fs::path& build) {
     const auto cache = cache_values(build);
+    const auto comparable_flags = [&](std::string value) {
+        for (const auto& [key, label] : {std::pair{"CMAKE_HOME_DIRECTORY", "<SOURCE>"},
+                                         std::pair{"CMAKE_CACHEFILE_DIR", "<BUILD>"}}) {
+            const auto root = cache.find(key);
+            if (root == cache.end() || root->second.empty()) continue;
+            const std::string marker(label);
+            std::size_t position = 0;
+            while ((position = value.find(root->second, position)) != std::string::npos) {
+                value.replace(position, root->second.size(), marker);
+                position += marker.size();
+            }
+        }
+        return value;
+    };
     json::Object flags;
     for (const auto& [key, value] : cache) {
         if (key.starts_with("CMAKE_CXX_FLAGS") || key.starts_with("CMAKE_C_FLAGS") ||
             key.starts_with("CMAKE_EXE_LINKER_FLAGS") ||
             key.starts_with("CMAKE_SHARED_LINKER_FLAGS") || key == "CMAKE_BUILD_TYPE" ||
             key == "CMAKE_PROJECT_NAME")
-            flags[key] = value;
+            flags[key] = comparable_flags(value);
     }
     json::Array arguments;
     for (const auto& argument : options.cmake_args) arguments.push_back(argument);
