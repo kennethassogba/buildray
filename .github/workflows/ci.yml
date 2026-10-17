@@ -51,6 +51,11 @@ on:
         type: choice
         options: ['1', '3', '5']
         default: '3'
+      unity_project:
+        description: Unity corpus project to evaluate.
+        type: choice
+        options: ['all', 'sentencepiece', 'xgrammar', 'mujoco']
+        default: 'all'
 
 permissions:
   contents: read
@@ -330,29 +335,33 @@ jobs:
             repository: google-deepmind/mujoco
             revision: f640345f72b773e7ec52cd9426a57335cf9c6c28
             target: mujoco
-            exclusions: '[]'
+            exclusions: '["src/user/user_flexcomp.cc"]'
             cmake_args: '["-DMUJOCO_BUILD_EXAMPLES=OFF", "-DMUJOCO_BUILD_SIMULATE=OFF", "-DMUJOCO_BUILD_TESTS=ON", "-DMUJOCO_TEST_PYTHON_UTIL=OFF"]'
     steps:
       - uses: actions/checkout@v6
+        if: inputs.unity_project == 'all' || inputs.unity_project == matrix.name
       - uses: actions/setup-python@v7
+        if: inputs.unity_project == 'all' || inputs.unity_project == matrix.name
         with:
           python-version: '3.12'
       - uses: actions/checkout@v6
+        if: inputs.unity_project == 'all' || inputs.unity_project == matrix.name
         with:
           repository: ${{ matrix.repository }}
           ref: ${{ matrix.revision }}
           path: fixtures/${{ matrix.name }}
           persist-credentials: false
       - name: Prepare XGrammar C++ configuration
-        if: matrix.name == 'xgrammar'
+        if: matrix.name == 'xgrammar' && (inputs.unity_project == 'all' || inputs.unity_project == matrix.name)
         working-directory: fixtures/xgrammar
         run: |
           git submodule update --init --depth 1 3rdparty/dlpack 3rdparty/googletest
           printf '%s\n' 'set(XGRAMMAR_BUILD_PYTHON_BINDINGS OFF)' 'set(XGRAMMAR_BUILD_CXX_TESTS ON)' > config.cmake
       - name: Prepare MuJoCo test locale
-        if: matrix.name == 'mujoco'
+        if: matrix.name == 'mujoco' && (inputs.unity_project == 'all' || inputs.unity_project == matrix.name)
         run: sudo locale-gen de_DE.UTF-8
       - name: Validate and measure a unity build
+        if: inputs.unity_project == 'all' || inputs.unity_project == matrix.name
         uses: ./
         with:
           command: unity
