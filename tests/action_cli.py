@@ -3,9 +3,11 @@
 import json
 import os
 from pathlib import Path
+import signal
 import subprocess
 import sys
 import tempfile
+import time
 
 binary, compiler, script = [str(Path(item).absolute()) for item in sys.argv[1:]]
 
@@ -132,6 +134,53 @@ add_test(NAME works COMMAND sample)
     assert (retained / "logs/candidate-validation-build.log").is_file()
     assert (retained / "logs/candidate-retry-1-build.log").is_file()
     assert "Unity target:" in summary.read_text()
+    # Interrupt only the Python parent while a real candidate build is running.
+    # It must forward SIGINT to the native CLI and preserve its partial evidence.
+    for name in ["main.cpp", "helper.cpp"]:
+        file = source / name
+        file.write_text(file.read_text().split("\n", 1)[1])
+    before_cancel = cmake.read_text()
+    cmake.write_text(before_cancel + '''if(BUILDRAY_UNITY)
+add_custom_target(cancel_gate ALL COMMAND ${CMAKE_COMMAND} -E touch "${CMAKE_BINARY_DIR}/cancel-ready"
+  COMMAND ${CMAKE_COMMAND} -E sleep 20)
+endif()
+''')
+    cancel_outputs = root / "cancel-outputs"
+    cancel_log = root / "cancel.log"
+    with cancel_log.open("w") as log:
+        process = subprocess.Popen([sys.executable, script], stdout=log, stderr=log,
+            env={**environment, "BUILDRAY_COMMAND": "unity", "BUILDRAY_UNITY_TARGET": "sample",
+                 "BUILDRAY_CMAKE_ARGS": '["-DCMAKE_CXX_SCAN_FOR_MODULES=OFF"]',
+                 "BUILDRAY_RUNS": "1", "GITHUB_OUTPUT": str(cancel_outputs)})
+        try:
+            deadline = time.monotonic() + 45
+            ready = False
+            while process.poll() is None and time.monotonic() < deadline:
+                if cancel_outputs.is_file():
+                    fields = dict(line.split("=", 1) for line in cancel_outputs.read_text().splitlines())
+                    if "artifact-path" in fields:
+                        ready = (Path(fields["artifact-path"]).parent / "run/candidate-build/cancel-ready").is_file()
+                        if ready:
+                            break
+                time.sleep(0.02)
+            assert ready, cancel_log.read_text()
+            in_progress = json.loads((Path(fields["artifact-path"]).parent / "run/report.json").read_text())
+            assert in_progress["status"] == "running" and in_progress["phase"] == "candidate_validation"
+            process.send_signal(signal.SIGINT)
+            assert process.wait(timeout=10) in (130, -signal.SIGINT), cancel_log.read_text()
+        finally:
+            if process.poll() is None:
+                process.kill()
+                process.wait()
+    cancelled = dict(line.split("=", 1) for line in cancel_outputs.read_text().splitlines())
+    assert cancelled["result"] == "interrupted"
+    partial = json.loads(Path(cancelled["report"]).read_text())
+    assert partial["status"] == "interrupted" and not partial["patch_validated"]
+    assert not partial["patch_recommended"] and Path(cancelled["patch"]).is_file()
+    state = json.loads((Path(cancelled["artifact-path"]) / "action-status.json").read_text())
+    assert state["status"] == "interrupted" and state["exit_code"] == 130
+    assert list((Path(cancelled["artifact-path"]) / "failure-logs").glob("*.log"))
+    cmake.write_text(before_cancel)
     cmake.write_text(original_cmake)
     (source / "main.cpp").write_text("int main() { return 0; }\n")
     (source / "common.hpp").unlink()

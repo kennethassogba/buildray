@@ -62,6 +62,10 @@ Plans used for retries and failed compiler records are retained as `unity-attemp
 the final `unity.patch` contains both manual and learned exclusions. The Action
 also retains these JSON files and the last 64 KiB of each attempt's build log.
 Retries and discovery happen before timing; only the final fixed layout is timed.
+On a cooperative SIGINT, the Action forwards the interruption to the CLI and
+copies the partial report, patch and diagnostic logs before exiting. An
+interrupted report is not a validated patch. A forceful process or machine kill
+cannot guarantee this final copy.
 
 Testing cannot prove that merging translation units preserves all
 behavior: macros, lookup and initialization can change. Other feature flags,

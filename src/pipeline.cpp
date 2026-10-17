@@ -1052,8 +1052,8 @@ int pipeline(const Options& options, const fs::path& executable) {
                     patch(changes, baseline, candidate, work);
                 }
             }
-            write_json(work / "report.json", json::Object(report));
             report["phase"] = "candidate_validation";
+            write_json(work / "report.json", json::Object(report));
             std::cout << "Validating candidate with a clean build and tests...\n" << std::flush;
             auto unity_options = options;
             for (unsigned attempt = 0;; ++attempt) {
