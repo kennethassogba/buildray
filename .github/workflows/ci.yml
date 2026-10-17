@@ -1,4 +1,4 @@
-name: C++26 CLI
+name: Buildray CI
 
 on:
   push:
@@ -92,7 +92,7 @@ jobs:
           python-version: "3.12"
       - name: Install CMake and LLVM 21
         run: bash action/install.sh
-      - name: Configure C++26
+      - name: Configure
         run: >-
           cmake -S . -B build -G Ninja
           -DCMAKE_CXX_COMPILER=clang++-21

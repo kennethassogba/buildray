@@ -315,3 +315,6 @@ exported requirements and failed experiments.
 standalone checks and C/C++ user validation.
 [Unity build evidence](docs/unity-validation.md) covers the measured XGrammar
 improvement, memory tradeoff and rejected corpus candidates.
+[MuJoCo compiler hotspot evidence](docs/mujoco-compile-validation.md) covers a
+manual comparison-helper refactor, three paired translation-unit measurements
+and native validation in both precisions.

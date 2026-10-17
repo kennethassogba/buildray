@@ -1,0 +1,58 @@
+{
+  "source_revision": "651bae11c3c38efe483f033b4b7e869e7ce3f4ec",
+  "precision": "single",
+  "jobs": 4,
+  "status": "passed",
+  "native_patch_validated": true,
+  "scope": "native CMake/CTest validation; no clean-build performance comparison; exact upstream float32 skips permitted only by this corpus harness",
+  "baseline": {
+    "registered": 3522,
+    "passed": 3507,
+    "skipped": [
+      "BoxQPTest.BoundedQPvariations",
+      "CoreConstraintTest.BoxShellPinnedParentWithFreejoint",
+      "ElasticityTest.CantileverIntoCircle",
+      "ForwardTest.NormalizeQuats",
+      "JacobianTest.WeldRotJacobian",
+      "MjCGeomTest.ShellInertiaBox",
+      "MjCGeomTest.ShellInertiaCapsule",
+      "MjCGeomTest.ShellInertiaCylinder",
+      "MjCGeomTest.ShellInertiaEllipsoid",
+      "MjCGeomTest.ShellInertiaSphere",
+      "RayTest.RayNormal",
+      "UserFlexTest.BoundingBoxCoordinates",
+      "UserFlexTest.StiffnessMatrix",
+      "XMLWriterTest.TrimsDefaults",
+      "XMLWriterTest.WritesFrameDefaults"
+    ],
+    "failures": 0,
+    "normalized_opaque_names": 153,
+    "ctest_seconds_observed": 136.59413201899997
+  },
+  "candidate": {
+    "registered": 3522,
+    "passed": 3507,
+    "skipped": [
+      "BoxQPTest.BoundedQPvariations",
+      "CoreConstraintTest.BoxShellPinnedParentWithFreejoint",
+      "ElasticityTest.CantileverIntoCircle",
+      "ForwardTest.NormalizeQuats",
+      "JacobianTest.WeldRotJacobian",
+      "MjCGeomTest.ShellInertiaBox",
+      "MjCGeomTest.ShellInertiaCapsule",
+      "MjCGeomTest.ShellInertiaCylinder",
+      "MjCGeomTest.ShellInertiaEllipsoid",
+      "MjCGeomTest.ShellInertiaSphere",
+      "RayTest.RayNormal",
+      "UserFlexTest.BoundingBoxCoordinates",
+      "UserFlexTest.StiffnessMatrix",
+      "XMLWriterTest.TrimsDefaults",
+      "XMLWriterTest.WritesFrameDefaults"
+    ],
+    "failures": 0,
+    "normalized_opaque_names": 153,
+    "ctest_seconds_observed": 134.89246211499994
+  },
+  "identical_test_inventory": true,
+  "refactor_patch_sha256": "95304b731d8c3b1cd620ed9b12763292609d645281c61da1b86c268d2eab339c"
+}

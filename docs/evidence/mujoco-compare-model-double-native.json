@@ -1,0 +1,26 @@
+{
+  "source_revision": "651bae11c3c38efe483f033b4b7e869e7ce3f4ec",
+  "precision": "double",
+  "jobs": 4,
+  "status": "passed",
+  "native_patch_validated": true,
+  "scope": "native CMake/CTest validation; no clean-build performance comparison; exact upstream float32 skips permitted only by this corpus harness",
+  "baseline": {
+    "registered": 3522,
+    "passed": 3522,
+    "skipped": [],
+    "failures": 0,
+    "normalized_opaque_names": 153,
+    "ctest_seconds_observed": 145.81800029399994
+  },
+  "candidate": {
+    "registered": 3522,
+    "passed": 3522,
+    "skipped": [],
+    "failures": 0,
+    "normalized_opaque_names": 153,
+    "ctest_seconds_observed": 141.29999478600007
+  },
+  "identical_test_inventory": true,
+  "refactor_patch_sha256": "95304b731d8c3b1cd620ed9b12763292609d645281c61da1b86c268d2eab339c"
+}
