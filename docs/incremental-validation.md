@@ -109,11 +109,15 @@ The [probe report](evidence/mujoco-linker-idle-probe-report.json),
 the `mujoco-linker-idle-*-*.log` files retain the evidence. This is a readiness
 diagnosis, not a runtime validation or a Unity/PCH speed result.
 
-The [controlled rerun](https://github.com/kennethassogba/buildray/actions/runs/39069068276)
-uses that common flag for both baseline and candidate. Compiler header
-dependencies, complete source coverage and all 3,519 CTest entries remain
-required. Its incremental measurements are pending; no timing from a refused
-readiness check is used.
+The sequential controlled run was superseded by
+[six independent jobs](https://github.com/kennethassogba/buildray/actions/runs/39071066598),
+one per strategy and edited file. Each keeps its own baseline, three alternating
+pairs and all 3,519 CTest entries. This scheduling change was made before
+accepting any MuJoCo timings. Unity reuses the same 12 source exclusions found
+and validated in the earlier attempts, avoiding repeated collision discovery.
+Both variants use the common linker setting above. Compiler header dependencies
+and complete source coverage remain required. These measurements are pending;
+no timing from a refused readiness check or a cancelled run is used.
 
 ## Evidence and reproduction
 
@@ -139,3 +143,12 @@ Trigger the opt-in corpus with `incremental_corpus=true`. Optional
 headers, file choices, parallelism and CMake arguments.
 For MuJoCo in this toolchain, also set `incremental_linker_deps=off`.
 `mujoco_linker_probe=true` runs the separate library-only diagnostic.
+`incremental_split_cases=true` runs each file in its own paired job; the MuJoCo
+Unity jobs then reuse the previously validated exclusions.
+
+After downloading the artifacts, run
+`python tests/corpus/verify_incremental.py <artifact-directories...> --output summary.json --require-complete`.
+Artifact directory names are `<project>-<mode>` or `<project>-<mode>-case-N`.
+The verifier rejects missing or duplicate scenarios, differing measurement
+contexts, invalid raw compiler metrics, non-idle controls and changed JUnit
+inventories. It recomputes statistics and verdicts independently of the CLI.
