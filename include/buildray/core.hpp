@@ -76,6 +76,8 @@ struct Options {
     unsigned batch_size = 4;
     std::vector<fs::path> unity_exclusions;
     unsigned unity_retries = 0;
+    std::vector<fs::path> rebuild_files;
+    bool incremental_only = false;
 };
 
 struct CheckOptions {

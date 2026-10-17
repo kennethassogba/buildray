@@ -131,6 +131,8 @@ def retain_run_evidence(run, artifacts, report):
                       ("baseline-report.json", "baseline-report"), ("current-report.json", "current-report"),
                       ("includes.patch", "patch"), ("pch.patch", "patch"), ("cmake.patch", "patch"), ("headers.patch", "patch"),
                       ("unity.patch", "patch"), ("unity.json", "unity"),
+                      ("incremental.json", "incremental"),
+                      ("incremental.md", "incremental-summary"),
                       ("headers.json", "headers"), ("dependencies.json", "dependencies"),
                       ("dependencies.dot", "dependency-dot"), ("selection.json", "selection"),
                       ("links.json", "links"), ("cmake-before.json", "cmake-before"),
@@ -142,6 +144,11 @@ def retain_run_evidence(run, artifacts, report):
     for item in run.glob("unity-attempt-*.json"):
         if item.is_file() and not item.is_symlink():
             shutil.copyfile(item, artifacts / item.name)
+    for item in (run / "logs").glob("incremental-*"):
+        if item.is_file() and not item.is_symlink():
+            destination = artifacts / "logs" / item.name
+            destination.parent.mkdir(exist_ok=True)
+            shutil.copyfile(item, destination)
     for attempt in report.get("unity_attempts", []):
         # Only our fixed attempt labels are accepted as artifact paths.
         index = attempt.get("attempt")
@@ -205,6 +212,14 @@ def main():
     if mode != "pch" and (target or headers):
         raise ValueError("pch-target and pch-headers require command pch")
     runs = integer("BUILDRAY_RUNS", "3", 100)
+    rebuild_files = json.loads(os.environ.get("BUILDRAY_REBUILD_FILES", "[]"))
+    incremental_only = boolean("BUILDRAY_INCREMENTAL_ONLY", "false")
+    if not isinstance(rebuild_files, list) or not all(isinstance(item, str) and item for item in rebuild_files):
+        raise ValueError("rebuild-files must be a JSON array of nonempty relative paths")
+    if (rebuild_files or incremental_only) and mode not in ("pch", "unity"):
+        raise ValueError("incremental options require command pch or unity")
+    if incremental_only and not rebuild_files:
+        raise ValueError("incremental-only requires rebuild-files")
     if auto_pch and runs < 3:
         raise ValueError("pch-auto requires at least three runs")
     link_target = os.environ.get("BUILDRAY_LINK_TARGET", "")
@@ -260,6 +275,10 @@ def main():
         command = [binary, mode, "--source", source, "--work-dir", work / "run",
                    "--compiler", compiler, "--runs", str(runs), "--jobs", str(jobs),
                    "--session", str(uuid.uuid4())]
+        for path in rebuild_files:
+            command.extend(["--rebuild-file", path])
+        if incremental_only:
+            command.append("--incremental-only")
         if reference and mode == "measure":
             command[1] = "compare"
             command.extend(["--baseline-source", base_tree(source, reference, work),
@@ -284,7 +303,7 @@ def main():
             command.extend(["--max-header-edits", str(max_header_edits)])
             for path in header_paths:
                 command.extend(["--header-path", path])
-        if mode in ("deps", "headers", "unity"):
+        if mode in ("deps", "headers", "unity") or (mode == "pch" and rebuild_files):
             command.extend(["--c-compiler", os.environ.get("BUILDRAY_C_COMPILER", "clang-21")])
         if mode == "deps":
             if fail_on_cycles:
@@ -347,6 +366,14 @@ def main():
             if report.get("automatic_selection"):
                 selected = report["automatic_selection"]
                 text += f"\nAutomatic candidate: `{selected['header']}` on `{selected['target']}`. Selection profiling is outside the measurements.\n"
+        if report.get("incremental"):
+            text += "\nIncremental rebuilds after single-file comment edits (compilation and linking; tests excluded):\n\n"
+            text += "| File | Before | After | Change | Result |\n| --- | ---: | ---: | ---: | --- |\n"
+            for scenario in report["incremental"]["scenarios"]:
+                if scenario.get("status") == "passed":
+                    path = scenario["file"].replace("|", "&#124;").replace("\n", " ").replace("\r", " ").replace("`", "&#96;")
+                    text += f"| `{path}` | {scenario['baseline']['median_seconds']:.3f} s | {scenario['candidate']['median_seconds']:.3f} s | {scenario['wall_change_percent']:+.2f}% | {scenario['performance_result']} |\n"
+            text += "\nThese probes measure dependency invalidation, not arbitrary code changes. Peak RSS in samples is per compiler, not total memory.\n"
         if os.environ.get("GITHUB_STEP_SUMMARY"):
             with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a") as stream:
                 stream.write(text)

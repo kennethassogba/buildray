@@ -144,6 +144,13 @@ and applying it, configure your project with `-DBUILDRAY_UNITY=ON` to enable the
 tested batches. `unity.json` records source coverage and generated groups.
 [Validation, memory tradeoffs and Action usage](docs/unity.md).
 
+Add repeatable `--rebuild-file src/file.cpp` options to `unity` or `pch` to
+measure incremental rebuilds after individual source/header edits. Use
+`--incremental-only` to skip repeated clean timings while keeping full build and
+test validation. Reports include compiler counts, CPU time, per-compiler peak
+RSS and before/after timings for each file. A measured incremental regression
+blocks a clean-build patch recommendation. See [the protocol](docs/incremental.md).
+
 ## Dependency graphs
 
 ```bash
@@ -273,8 +280,8 @@ time. RSS is the maximum of individual compiler peaks, not aggregate build memor
   `-inl.h` or `.inl.h` are kept because they can supply template definitions.
 - Project CMake scripts and tests execute normally. Buildray uses no network
   service; project dependency downloads remain the project's responsibility.
-- Cycle-breaking rewrites, general template forward declarations,
-  incremental builds and a tagged Marketplace release are later work. The
+- Cycle-breaking rewrites, general template forward declarations and
+  a tagged Marketplace release are later work. The
   composite Action can already be used by its commit SHA.
 
 Exit codes: `0` completed, `1` pipeline or validation failure, `2` CLI syntax

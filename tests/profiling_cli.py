@@ -109,9 +109,13 @@ int main() { return answer() + second(); }
     # A work directory inside the source must not recursively copy profiling outputs.
     nested = source / "automatic-output"
     run(binary, "pch", "--auto", "--target", "sample", "--source", source,
-        "--work-dir", nested, "--compiler", compiler, "--runs", 3, "--jobs", 2)
+        "--work-dir", nested, "--compiler", compiler, "--runs", 3, "--jobs", 2,
+        "--rebuild-file", "lib/main file.cpp", "--incremental-only")
     assert not (nested / "input/automatic-output").exists()
     assert json.loads((nested / "report.json").read_text())["status"] == "passed"
+    assert json.loads((nested / "incremental.json").read_text())["status"] == "passed"
+    assert (nested / "incremental.md").is_file()
+    assert list((nested / "logs").glob("incremental-*-compilers.json"))
     shutil.rmtree(nested)
     assert digest(source) == original
 
