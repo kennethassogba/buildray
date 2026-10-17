@@ -9,6 +9,9 @@ on:
       mode:
         type: string
         default: all
+      linker_deps:
+        type: string
+        default: default
 
 permissions:
   contents: read
@@ -53,6 +56,7 @@ jobs:
             rebuild_files: '["src/user/user_model.cc", "src/user/user_model.h", "include/mujoco/mujoco.h"]'
             exclusions: '[]'
             cmake_args: '["-DMUJOCO_BUILD_EXAMPLES=OFF", "-DMUJOCO_BUILD_SIMULATE=OFF", "-DMUJOCO_BUILD_TESTS=ON", "-DMUJOCO_TEST_PYTHON_UTIL=OFF"]'
+            cmake_args_no_linker_deps: '["-DMUJOCO_BUILD_EXAMPLES=OFF", "-DMUJOCO_BUILD_SIMULATE=OFF", "-DMUJOCO_BUILD_TESTS=ON", "-DMUJOCO_TEST_PYTHON_UTIL=OFF", "-DCMAKE_LINK_DEPENDS_USE_LINKER=OFF"]'
     steps:
       - uses: actions/checkout@v6
         if: env.CORPUS_SELECTED == 'true'
@@ -91,5 +95,5 @@ jobs:
           incremental-only: 'true'
           runs: '3'
           jobs: ${{ matrix.jobs }}
-          cmake-args: ${{ matrix.cmake_args }}
+          cmake-args: ${{ matrix.project == 'mujoco' && inputs.linker_deps == 'off' && matrix.cmake_args_no_linker_deps || matrix.cmake_args }}
           artifact-name: incremental-${{ matrix.project }}-${{ matrix.mode }}

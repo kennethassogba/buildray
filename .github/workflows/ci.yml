@@ -19,6 +19,15 @@ on:
         type: choice
         options: ['all', 'unity', 'pch']
         default: 'all'
+      incremental_linker_deps:
+        description: MuJoCo linker-generated dependency files; off is an explicit common setting for both variants.
+        type: choice
+        options: ['default', 'off']
+        default: 'default'
+      mujoco_linker_probe:
+        description: Diagnose MuJoCo library relinks without building or running the test binaries.
+        type: boolean
+        default: false
       mujoco_compare:
         description: Validate the CompareModel refactor against MuJoCo in both precisions.
         type: boolean
@@ -84,12 +93,17 @@ permissions:
   contents: read
 
 jobs:
+  mujoco-linker-probe:
+    if: github.event_name == 'workflow_dispatch' && inputs.mujoco_linker_probe
+    uses: ./.github/workflows/mujoco-linker-probe.yml
+
   incremental-corpus:
     if: github.event_name == 'workflow_dispatch' && inputs.incremental_corpus
     uses: ./.github/workflows/incremental.yml
     with:
       project: ${{ inputs.incremental_project }}
       mode: ${{ inputs.incremental_mode }}
+      linker_deps: ${{ inputs.incremental_linker_deps }}
 
   mujoco-compare:
     if: github.event_name == 'workflow_dispatch' && inputs.mujoco_compare
