@@ -10,8 +10,8 @@ Buildray does not automatically make this refactor.
 ## Compilation measurement
 
 Source: MuJoCo `651bae11c3c38efe483f033b4b7e869e7ce3f4ec`.
-Machine: Intel Core i7-8650U. Clang 21, GCC 15 standard library, Release `-O3`,
-ThinLTO, one compiler process at a time. The real CMake compile command was
+Machine: Intel Core i7-8650U. Default double precision, Clang 21, GCC 15 standard
+library, Release `-O3`, ThinLTO, one compiler process at a time. The real CMake compile command was
 reused, removing include tracing and dependency-output flags. Inputs and object
 outputs use separate temporary files; header paths and compiler flags match.
 Buildray's native compiler launcher captured wall time, CPU and peak RSS.
@@ -78,3 +78,4 @@ The [double](evidence/mujoco-compare-model-double-native.json) and
 exact skip list, source revision, verified patch hash and inventory identity.
 The source patch published on `kennethassogba/mujoco` matches the validated
 refactor patch byte for byte.
+The proposed upstream change is [MuJoCo draft #3703](https://github.com/google-deepmind/mujoco/pull/3703).

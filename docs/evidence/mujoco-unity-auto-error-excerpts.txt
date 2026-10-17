@@ -1,0 +1,40 @@
+candidate-retry-1-build.log (first 8 errors; full retained log is in the artifact)
+In file included from /home/runner/work/_temp/buildray-action-dvcydqc0/run/candidate-build/CMakeFiles/mujoco.dir/Unity/unity_1_c.c:7:
+/home/runner/work/_temp/buildray-action-dvcydqc0/run/candidate-source/src/engine/engine_collision_flex.c:253:12: error: redefinition of 'filterSphereBox'
+  253 | static int filterSphereBox(const mjtNum s[3], mjtNum bound, const mjtNum aabb[6]) {
+      |            ^
+In file included from /home/runner/work/_temp/buildray-action-dvcydqc0/run/candidate-build/CMakeFiles/mujoco.dir/Unity/unity_1_c.c:7:
+/home/runner/work/_temp/buildray-action-dvcydqc0/run/candidate-source/src/engine/engine_collision_flex.c:265:12: error: redefinition of 'filterBox'
+  265 | static int filterBox(const mjtNum aabb1[6], const mjtNum aabb2[6], mjtNum margin) {
+      |            ^
+
+candidate-validation-build.log (first 8 errors; full retained log is in the artifact)
+In file included from /home/runner/work/_temp/buildray-action-dvcydqc0/run/candidate-build/CMakeFiles/mujoco.dir/Unity/unity_0_cxx.cxx:7:
+/home/runner/work/_temp/buildray-action-dvcydqc0/run/candidate-source/plugin/obj_decoder/obj_decoder.cc:37:9: error: redefinition of 'Decode'
+   37 | mjSpec* Decode(mjResource* resource, const mjVFS* vfs, char* error,
+      |         ^
+In file included from /home/runner/work/_temp/buildray-action-dvcydqc0/run/candidate-build/CMakeFiles/mujoco.dir/Unity/unity_0_cxx.cxx:7:
+/home/runner/work/_temp/buildray-action-dvcydqc0/run/candidate-source/plugin/obj_decoder/obj_decoder.cc:177:5: error: redefinition of 'CanDecode'
+  177 | int CanDecode(const mjResource* resource) {
+      |     ^
+In file included from /home/runner/work/_temp/buildray-action-dvcydqc0/run/candidate-build/CMakeFiles/mujoco.dir/Unity/unity_0_cxx.cxx:10:
+/home/runner/work/_temp/buildray-action-dvcydqc0/run/candidate-source/plugin/stl_decoder/stl_decoder.cc:30:6: error: redefinition of 'ReadFromBuffer'
+   30 | void ReadFromBuffer(T* dst, const char* src) {
+      |      ^
+In file included from /home/runner/work/_temp/buildray-action-dvcydqc0/run/candidate-build/CMakeFiles/mujoco.dir/Unity/unity_0_cxx.cxx:10:
+/home/runner/work/_temp/buildray-action-dvcydqc0/run/candidate-source/plugin/stl_decoder/stl_decoder.cc:51:6: error: redefinition of 'SetError'
+   51 | void SetError(char* error, int error_sz, const char* format, ...) {
+      |      ^
+In file included from /home/runner/work/_temp/buildray-action-dvcydqc0/run/candidate-build/CMakeFiles/mujoco.dir/Unity/unity_0_cxx.cxx:10:
+/home/runner/work/_temp/buildray-action-dvcydqc0/run/candidate-source/plugin/stl_decoder/stl_decoder.cc:83:3: error: no matching function for call to 'ReadFromBuffer'
+   83 |   ReadFromBuffer(&nfaces, buffer + 80);
+      |   ^~~~~~~~~~~~~~
+      |      ^
+/home/runner/work/_temp/buildray-action-dvcydqc0/run/candidate-source/plugin/stl_decoder/stl_decoder.cc:111:7: error: no matching function for call to 'ReadFromBuffer'
+  111 |       ReadFromBuffer(&v, stl + 50 * i + 12 * (j + 1));
+      |       ^~~~~~~~~~~~~~
+In file included from /home/runner/work/_temp/buildray-action-dvcydqc0/run/candidate-build/CMakeFiles/mujoco.dir/Unity/unity_2_cxx.cxx:7:
+/home/runner/work/_temp/buildray-action-dvcydqc0/run/candidate-source/src/user/user_flexcomp.cc:58:13: error: redefinition of 'comperr'
+   58 | static bool comperr(char* error, const char* msg, int error_sz) {
+      |             ^
+

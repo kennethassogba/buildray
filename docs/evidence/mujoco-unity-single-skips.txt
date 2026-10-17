@@ -1,0 +1,20 @@
+100% tests passed, 0 tests failed out of 3519
+
+Total Test time (real) =  87.53 sec
+
+The following tests did not run:
+	171 - CoreConstraintTest.BoxShellPinnedParentWithFreejoint (Skipped)
+	271 - JacobianTest.WeldRotJacobian (Skipped)
+	440 - ForwardTest.NormalizeQuats (Skipped)
+	746 - RayTest.RayNormal (Skipped)
+	1009 - BoxQPTest.BoundedQPvariations (Skipped)
+	1225 - MjCGeomTest.ShellInertiaSphere (Skipped)
+	1226 - MjCGeomTest.ShellInertiaCapsule (Skipped)
+	1227 - MjCGeomTest.ShellInertiaCylinder (Skipped)
+	1228 - MjCGeomTest.ShellInertiaEllipsoid (Skipped)
+	1229 - MjCGeomTest.ShellInertiaBox (Skipped)
+	2181 - UserFlexTest.BoundingBoxCoordinates (Skipped)
+	2184 - UserFlexTest.StiffnessMatrix (Skipped)
+	2692 - XMLWriterTest.WritesFrameDefaults (Skipped)
+	2716 - XMLWriterTest.TrimsDefaults (Skipped)
+	3500 - ElasticityTest.CantileverIntoCircle (Skipped)

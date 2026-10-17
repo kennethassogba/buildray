@@ -1,0 +1,190 @@
+{
+  "baseline_compiler_invocations": 326,
+  "batch_size": 4,
+  "candidate_compiler_invocations": 268,
+  "groups": [
+    {
+      "file": "<BUILD>/CMakeFiles/mujoco.dir/Unity/unity_7_cxx.cxx",
+      "sources": [
+        "<SOURCE>/src/xml/mjz/mjz_decoder.cc",
+        "<SOURCE>/src/xml/mjz/mjz_encoder.cc",
+        "<SOURCE>/src/render/classic/glad/loader.cc"
+      ]
+    },
+    {
+      "file": "<BUILD>/CMakeFiles/mujoco.dir/Unity/unity_6_cxx.cxx",
+      "sources": [
+        "<SOURCE>/src/xml/xml_native_writer.cc",
+        "<SOURCE>/src/xml/xml_urdf.cc",
+        "<SOURCE>/src/xml/xml_util.cc",
+        "<SOURCE>/src/xml/mjz/mjz_archive_provider.cc"
+      ]
+    },
+    {
+      "file": "<BUILD>/CMakeFiles/mujoco.dir/Unity/unity_5_cxx.cxx",
+      "sources": [
+        "<SOURCE>/src/xml/xml_global.cc",
+        "<SOURCE>/src/xml/xml.cc",
+        "<SOURCE>/src/xml/xml_native_reader.cc",
+        "<SOURCE>/src/xml/xml_numeric_format.cc"
+      ]
+    },
+    {
+      "file": "<BUILD>/CMakeFiles/mujoco.dir/Unity/unity_4_cxx.cxx",
+      "sources": [
+        "<SOURCE>/src/user/user_util.cc",
+        "<SOURCE>/src/user/user_vfs.cc",
+        "<SOURCE>/src/xml/xml_api.cc",
+        "<SOURCE>/src/xml/xml_base.cc"
+      ]
+    },
+    {
+      "file": "<BUILD>/CMakeFiles/mujoco.dir/Unity/unity_3_cxx.cxx",
+      "sources": [
+        "<SOURCE>/src/user/user_objects.cc",
+        "<SOURCE>/src/user/user_resolver.cc",
+        "<SOURCE>/src/user/user_resource.cc",
+        "<SOURCE>/src/user/user_threadpool.cc"
+      ]
+    },
+    {
+      "file": "<BUILD>/CMakeFiles/mujoco.dir/Unity/unity_2_cxx.cxx",
+      "sources": [
+        "<SOURCE>/src/user/user_composite.cc",
+        "<SOURCE>/src/user/user_flexcomp.cc",
+        "<SOURCE>/src/user/user_mesh.cc",
+        "<SOURCE>/src/user/user_model.cc"
+      ]
+    },
+    {
+      "file": "<BUILD>/CMakeFiles/mujoco.dir/Unity/unity_1_cxx.cxx",
+      "sources": [
+        "<SOURCE>/src/engine/engine_plugin.cc",
+        "<SOURCE>/src/engine/engine_thread.cc",
+        "<SOURCE>/src/user/user_api.cc",
+        "<SOURCE>/src/user/user_cache.cc"
+      ]
+    },
+    {
+      "file": "<BUILD>/CMakeFiles/mujoco.dir/Unity/unity_0_cxx.cxx",
+      "sources": [
+        "<SOURCE>/plugin/gmsh_decoder/gmsh_decoder.cc",
+        "<SOURCE>/plugin/obj_decoder/obj_decoder.cc",
+        "<SOURCE>/plugin/stl_decoder/stl_decoder.cc",
+        "<SOURCE>/src/engine/engine_crossplatform.cc"
+      ]
+    },
+    {
+      "file": "<BUILD>/CMakeFiles/mujoco.dir/Unity/unity_11_c.c",
+      "sources": [
+        "<SOURCE>/src/render/classic/render_gl3.c",
+        "<SOURCE>/src/render/classic/render_util.c",
+        "<SOURCE>/src/ui/ui_main.c"
+      ]
+    },
+    {
+      "file": "<BUILD>/CMakeFiles/mujoco.dir/Unity/unity_10_c.c",
+      "sources": [
+        "<SOURCE>/src/user/user_init.c",
+        "<SOURCE>/src/render/classic/glad/glad.c",
+        "<SOURCE>/src/render/classic/render_context.c",
+        "<SOURCE>/src/render/classic/render_gl2.c"
+      ]
+    },
+    {
+      "file": "<BUILD>/CMakeFiles/mujoco.dir/Unity/unity_9_c.c",
+      "sources": [
+        "<SOURCE>/src/engine/engine_util_spatial.c",
+        "<SOURCE>/src/engine/engine_vis_init.c",
+        "<SOURCE>/src/engine/engine_vis_interact.c",
+        "<SOURCE>/src/engine/engine_vis_visualize.c"
+      ]
+    },
+    {
+      "file": "<BUILD>/CMakeFiles/mujoco.dir/Unity/unity_8_c.c",
+      "sources": [
+        "<SOURCE>/src/engine/engine_util_errmem.c",
+        "<SOURCE>/src/engine/engine_util_misc.c",
+        "<SOURCE>/src/engine/engine_util_solve.c",
+        "<SOURCE>/src/engine/engine_util_sparse.c"
+      ]
+    },
+    {
+      "file": "<BUILD>/CMakeFiles/mujoco.dir/Unity/unity_7_c.c",
+      "sources": [
+        "<SOURCE>/src/engine/engine_sleep.c",
+        "<SOURCE>/src/engine/engine_solver.c",
+        "<SOURCE>/src/engine/engine_support.c",
+        "<SOURCE>/src/engine/engine_util_blas.c"
+      ]
+    },
+    {
+      "file": "<BUILD>/CMakeFiles/mujoco.dir/Unity/unity_6_c.c",
+      "sources": [
+        "<SOURCE>/src/engine/engine_print.c",
+        "<SOURCE>/src/engine/engine_ray.c",
+        "<SOURCE>/src/engine/engine_sensor.c",
+        "<SOURCE>/src/engine/engine_setconst.c"
+      ]
+    },
+    {
+      "file": "<BUILD>/CMakeFiles/mujoco.dir/Unity/unity_5_c.c",
+      "sources": [
+        "<SOURCE>/src/engine/engine_memory.c",
+        "<SOURCE>/src/engine/engine_metric.c",
+        "<SOURCE>/src/engine/engine_name.c",
+        "<SOURCE>/src/engine/engine_passive.c"
+      ]
+    },
+    {
+      "file": "<BUILD>/CMakeFiles/mujoco.dir/Unity/unity_4_c.c",
+      "sources": [
+        "<SOURCE>/src/engine/engine_ipc.c",
+        "<SOURCE>/src/engine/engine_init.c",
+        "<SOURCE>/src/engine/engine_island.c",
+        "<SOURCE>/src/engine/engine_io.c"
+      ]
+    },
+    {
+      "file": "<BUILD>/CMakeFiles/mujoco.dir/Unity/unity_3_c.c",
+      "sources": [
+        "<SOURCE>/src/engine/engine_derivative.c",
+        "<SOURCE>/src/engine/engine_derivative_fd.c",
+        "<SOURCE>/src/engine/engine_forward.c",
+        "<SOURCE>/src/engine/engine_inverse.c"
+      ]
+    },
+    {
+      "file": "<BUILD>/CMakeFiles/mujoco.dir/Unity/unity_2_c.c",
+      "sources": [
+        "<SOURCE>/src/engine/engine_collision_sdf.c",
+        "<SOURCE>/src/engine/engine_core_constraint.c",
+        "<SOURCE>/src/engine/engine_core_util.c",
+        "<SOURCE>/src/engine/engine_core_smooth.c"
+      ]
+    },
+    {
+      "file": "<BUILD>/CMakeFiles/mujoco.dir/Unity/unity_1_c.c",
+      "sources": [
+        "<SOURCE>/src/engine/engine_collision_driver.c",
+        "<SOURCE>/src/engine/engine_collision_flex.c",
+        "<SOURCE>/src/engine/engine_collision_gjk.c",
+        "<SOURCE>/src/engine/engine_collision_primitive.c"
+      ]
+    },
+    {
+      "file": "<BUILD>/CMakeFiles/mujoco.dir/Unity/unity_0_c.c",
+      "sources": [
+        "<SOURCE>/src/engine/engine_callback.c",
+        "<SOURCE>/src/engine/engine_collision_box.c",
+        "<SOURCE>/src/engine/engine_collision_continuous.c",
+        "<SOURCE>/src/engine/engine_collision_convex.c"
+      ]
+    }
+  ],
+  "original_compilations": 326,
+  "scope": "one configured Ninja default all target; C/C++ commands; original source/target multiset preserved; generated unity groups only on the selected target",
+  "selected_target_sources": 78,
+  "source_target_coverage_verified": true,
+  "target": "mujoco"
+}

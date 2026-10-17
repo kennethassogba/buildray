@@ -134,3 +134,57 @@ this older-tag experiment. The [report](evidence/sentencepiece-unity-isolated-re
 [verified groups](evidence/sentencepiece-unity-isolated-plan.json) and
 [patch](evidence/sentencepiece-unity-isolated.patch) retain the complete samples
 and selection.
+
+## MuJoCo: automatic isolation succeeds, timing remains inconclusive
+
+The [double-precision job](https://github.com/kennethassogba/buildray/actions/runs/39053101692/job/117455517022)
+evaluates current MuJoCo `651bae11c3c38efe483f033b4b7e869e7ce3f4ec` with
+Buildray `0c81012`, four build jobs, batch size four and a budget of four retries.
+There are no manual exclusions. PCH and compiler caches are disabled; tests are
+enabled and examples, simulator and Python utility tests are disabled.
+
+The first attempt finds C++ collisions in decoder and user-source groups. The
+next layout finds C collisions such as `filterSphereBox` and `filterBox`.
+Two retries keep 8 and then 4 original sources separate. The final clean build
+and all **3,519 CTest cases** pass, with the same inventory as the baseline.
+No source file is renamed or rewritten.
+
+The selected target contains 78 original sources. With 12 learned exclusions,
+66 sources form 17 C/C++ groups; the others compile separately. Whole-build
+compiler invocations fall from **326 to 277**. Original source/target coverage
+is preserved with multiplicity and rechecked during timing.
+
+| Pair | Order | Baseline (s) | Unity (s) |
+| --- | --- | ---: | ---: |
+| 1 | Baseline first | 488.957 | 485.148 |
+| 2 | Candidate first | 491.084 | 484.997 |
+| 3 | Baseline first | 491.661 | 486.731 |
+| Median | | **491.084** | **485.148** |
+| MAD | | 0.577 | 0.152 |
+
+The median is 1.209% lower, a 5.936-second difference below the 9.822-second
+recommendation threshold. The result is **`inconclusive`**:
+`patch_validated: true`, `patch_recommended: false`. Fewer compiler invocations
+alone do not establish the required improvement. The maximum individual
+compiler RSS across the samples is 433,376 KiB before and 430,592 KiB after;
+neither is aggregate build memory. No upstream unity PR is opened for this
+candidate.
+
+Evidence includes the [complete report](evidence/mujoco-unity-auto-report.json),
+[final plan](evidence/mujoco-unity-auto-plan.json),
+[patch](evidence/mujoco-unity-auto.patch),
+[input context](evidence/mujoco-unity-auto-context.json),
+[failed compiler records](evidence/mujoco-unity-auto-failed-compilers.json),
+[diagnostic excerpts](evidence/mujoco-unity-auto-error-excerpts.txt), and the
+[first](evidence/mujoco-unity-auto-attempt-0-plan.json) and
+[second](evidence/mujoco-unity-auto-attempt-1-plan.json) rejected layouts.
+
+The same workflow's single-precision CLI baseline registers 3,519 cases with
+zero failures and 15 upstream runtime skips. Buildray rejects it before any
+candidate or timing, retaining the [report](evidence/mujoco-unity-single-report.json)
+and [skip summary](evidence/mujoco-unity-single-skips.txt). The overall workflow
+therefore reports a failure, while its measured double-precision job succeeds.
+
+The separate [model comparison helper refactor](mujoco-compile-validation.md)
+has native validation in both precisions and a substantial measured reduction
+for one translation unit. It is not applied in this unity experiment.

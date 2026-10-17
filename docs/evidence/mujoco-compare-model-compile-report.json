@@ -4,6 +4,7 @@
   "scope": "test/compare_model.cc only; frontend, optimization and ThinLTO object emission; not whole-project clean build time or runtime performance",
   "source_revision": "651bae11c3c38efe483f033b4b7e869e7ce3f4ec",
   "source_file": "test/compare_model.cc",
+  "precision": "double",
   "measurement_completed_at_utc": "2026-10-17T17:40:23.571922+00:00",
   "compiler_version": "Ubuntu clang version 21.1.8 (6ubuntu1)\nTarget: x86_64-pc-linux-gnu\nThread model: posix\nInstalledDir: /usr/lib/llvm-21/bin\n",
   "buildray_version": "buildray 0.9.0 (C++26)",

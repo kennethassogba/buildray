@@ -1,0 +1,14 @@
+{
+  "source_revision": "651bae11c3c38efe483f033b4b7e869e7ce3f4ec",
+  "buildray_commit": "0c810122f46a3949376c512edcb9459fcba47951",
+  "workflow_run": "https://github.com/kennethassogba/buildray/actions/runs/39053101692",
+  "double_job": "https://github.com/kennethassogba/buildray/actions/runs/39053101692/job/117455517022",
+  "precision": "double",
+  "jobs": 4,
+  "batch_size": 4,
+  "retry_budget": 4,
+  "runs": 3,
+  "manual_exclusions": [],
+  "single_scope": "baseline rejected by generic CLI due to 15 upstream runtime skips; no candidate or timing",
+  "interrupted_prior_run": "39051532054 was deliberately cancelled before measurements and is not included"
+}
