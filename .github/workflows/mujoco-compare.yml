@@ -1,0 +1,48 @@
+name: MuJoCo comparison helper
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  native-validation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        precision: [double, single]
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Install CMake and LLVM
+        run: bash action/install.sh
+      - uses: actions/checkout@v6
+        with:
+          repository: google-deepmind/mujoco
+          ref: 651bae11c3c38efe483f033b4b7e869e7ce3f4ec
+          path: fixtures/mujoco
+          persist-credentials: false
+      - name: Prepare test locale
+        run: sudo locale-gen de_DE.UTF-8
+      - name: Validate the refactor and its regression tests
+        env:
+          PRECISION: ${{ matrix.precision }}
+          CCACHE_DISABLE: '1'
+          SCCACHE_DISABLE: '1'
+        run: python3 tests/corpus/mujoco_compare.py fixtures/mujoco "$RUNNER_TEMP/mujoco-compare/$PRECISION" "$PRECISION"
+      - name: Retain native validation evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: mujoco-compare-${{ matrix.precision }}
+          include-hidden-files: true
+          path: |
+            ${{ runner.temp }}/mujoco-compare/${{ matrix.precision }}/*.json
+            ${{ runner.temp }}/mujoco-compare/${{ matrix.precision }}/*.log
+            ${{ runner.temp }}/mujoco-compare/${{ matrix.precision }}/*.xml

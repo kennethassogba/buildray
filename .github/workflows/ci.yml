@@ -5,6 +5,10 @@ on:
   pull_request:
   workflow_dispatch:
     inputs:
+      mujoco_compare:
+        description: Validate the CompareModel refactor against MuJoCo in both precisions.
+        type: boolean
+        default: false
       ai_corpus:
         description: Profile headers and benchmark a PCH on pinned SentencePiece (several clean builds).
         type: boolean
@@ -66,6 +70,10 @@ permissions:
   contents: read
 
 jobs:
+  mujoco-compare:
+    if: github.event_name == 'workflow_dispatch' && inputs.mujoco_compare
+    uses: ./.github/workflows/mujoco-compare.yml
+
   test:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
