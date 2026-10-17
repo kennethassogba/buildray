@@ -128,8 +128,8 @@ def main():
     if not source.is_relative_to(workspace) or not (source / "CMakeLists.txt").is_file():
         raise ValueError("Source must be a CMake tree inside GITHUB_WORKSPACE")
     mode = os.environ.get("BUILDRAY_COMMAND", "measure")
-    if mode not in ("measure", "optimize", "headers", "profile", "pch", "deps", "prune-links"):
-        raise ValueError("command must be measure, optimize, headers, profile, pch, deps or prune-links")
+    if mode not in ("measure", "optimize", "headers", "profile", "pch", "deps", "prune-links", "unity"):
+        raise ValueError("command must be measure, optimize, headers, profile, pch, deps, prune-links or unity")
     fail_on_cycles = boolean("BUILDRAY_FAIL_ON_CYCLES", "false")
     if fail_on_cycles and mode != "deps":
         raise ValueError("fail-on-cycles requires command deps")
@@ -153,6 +153,17 @@ def main():
         raise ValueError("link-target and link-dependency require command prune-links")
     if mode == "prune-links" and runs < 3:
         raise ValueError("prune-links requires at least three runs")
+    unity_target = os.environ.get("BUILDRAY_UNITY_TARGET", "")
+    batch_size = integer("BUILDRAY_UNITY_BATCH_SIZE", "4", 32)
+    unity_exclusions = json.loads(os.environ.get("BUILDRAY_UNITY_EXCLUDE", "[]"))
+    if batch_size < 2:
+        raise ValueError("unity-batch-size must be at least 2")
+    if not isinstance(unity_exclusions, list) or not all(isinstance(item, str) and item for item in unity_exclusions):
+        raise ValueError("unity-exclude must be a JSON array of nonempty relative source files")
+    if mode == "unity" and not unity_target:
+        raise ValueError("unity requires unity-target")
+    if mode != "unity" and (unity_target or unity_exclusions or batch_size != 4):
+        raise ValueError("unity options require command unity")
     forward_declarations = boolean("BUILDRAY_FORWARD_DECLARATIONS", "false")
     header_paths = json.loads(os.environ.get("BUILDRAY_HEADER_PATHS", "[]"))
     max_header_edits = integer("BUILDRAY_MAX_HEADER_EDITS", "8", 1000)
@@ -201,13 +212,17 @@ def main():
                 command.extend(["--target", link_target])
             if link_dependency:
                 command.extend(["--dependency", link_dependency])
+        if mode == "unity":
+            command.extend(["--target", unity_target, "--batch-size", str(batch_size)])
+            for path in unity_exclusions:
+                command.extend(["--unity-exclude", path])
         if mode == "headers":
             if forward_declarations:
                 command.append("--forward-declarations")
             command.extend(["--max-header-edits", str(max_header_edits)])
             for path in header_paths:
                 command.extend(["--header-path", path])
-        if mode in ("deps", "headers"):
+        if mode in ("deps", "headers", "unity"):
             command.extend(["--c-compiler", os.environ.get("BUILDRAY_C_COMPILER", "clang-21")])
         if mode == "deps":
             if fail_on_cycles:
@@ -234,6 +249,7 @@ def main():
         for name, key in [("report.json", "report"), ("comparison.json", "comparison"),
                           ("baseline-report.json", "baseline-report"), ("current-report.json", "current-report"),
                           ("includes.patch", "patch"), ("pch.patch", "patch"), ("cmake.patch", "patch"), ("headers.patch", "patch"),
+                          ("unity.patch", "patch"), ("unity.json", "unity"),
                           ("headers.json", "headers"), ("dependencies.json", "dependencies"),
                           ("dependencies.dot", "dependency-dot"), ("selection.json", "selection"),
                           ("links.json", "links"), ("cmake-before.json", "cmake-before"),
@@ -260,6 +276,11 @@ def main():
                 text += f"\nPatch validated: {report.get('patch_validated', False)}. Recommended: {report.get('patch_recommended', False)}.\n"
             if mode == "pch" and report.get("candidate"):
                 text += f"\nPCH median: {report['candidate']['median_seconds']:.3f} s. Change: {report['wall_change_percent']:+.3f}% ({report['performance_result']}).\n"
+                text += f"\nPatch validated: {report.get('patch_validated', False)}. Recommended: {report.get('patch_recommended', False)}.\n"
+            if mode == "unity":
+                text += f"\nUnity target: `{unity_target}`, batch size {batch_size}.\n"
+                if report.get("candidate"):
+                    text += f"\nCandidate median: {report['candidate']['median_seconds']:.3f} s. Change: {report['wall_change_percent']:+.3f}% ({report['performance_result']}).\n"
                 text += f"\nPatch validated: {report.get('patch_validated', False)}. Recommended: {report.get('patch_recommended', False)}.\n"
             if mode == "prune-links":
                 selected = report.get("selected_link")

@@ -9,7 +9,7 @@ inputs:
     description: CMake source directory relative to the checkout.
     default: '.'
   command:
-    description: measure, optimize, headers, profile, pch, deps, or prune-links.
+    description: measure, optimize, headers, profile, pch, unity, deps, or prune-links.
     default: measure
   baseline-ref:
     description: Base Git revision for measure. Empty outside PRs means a standalone measurement.
@@ -36,7 +36,7 @@ inputs:
     description: Include analyzer for optimize and headers.
     default: clang-tidy-21
   c-compiler:
-    description: Clang C compiler for deps and headers; must match the C++ compiler major version for headers.
+    description: Clang C compiler for deps, headers and unity; must match the C++ compiler major version for headers.
     default: clang-21
   fail-on-cycles:
     description: For deps, fail with exit 5 if observed include or target-link cycles exist.
@@ -50,6 +50,15 @@ inputs:
   pch-auto:
     description: Profile and select one project-header PCH candidate, then validate and measure it. Requires command pch, empty pch-headers and at least 3 runs.
     default: 'false'
+  unity-target:
+    description: CMake target for command unity. Only this target gets unity batches.
+    default: ''
+  unity-batch-size:
+    description: Maximum source files per unity batch (2-32). Larger batches can increase compiler memory use.
+    default: '4'
+  unity-exclude:
+    description: JSON array of source-root-relative source files to keep outside unity batches.
+    default: '[]'
   link-target:
     description: Optional CMake target restriction for command prune-links.
     default: ''
@@ -111,6 +120,9 @@ outputs:
   header-cleanup:
     description: Header findings, rejected proposals and validation counts.
     value: ${{ steps.run.outputs.header-cleanup }}
+  unity:
+    description: Verified unity groups and original C/C++ source/target coverage.
+    value: ${{ steps.run.outputs.unity }}
   dependencies:
     description: Observed include and configured CMake dependency graph JSON.
     value: ${{ steps.run.outputs.dependencies }}
@@ -146,6 +158,9 @@ runs:
         BUILDRAY_PCH_TARGET: ${{ inputs.pch-target }}
         BUILDRAY_PCH_HEADERS: ${{ inputs.pch-headers }}
         BUILDRAY_PCH_AUTO: ${{ inputs.pch-auto }}
+        BUILDRAY_UNITY_TARGET: ${{ inputs.unity-target }}
+        BUILDRAY_UNITY_BATCH_SIZE: ${{ inputs.unity-batch-size }}
+        BUILDRAY_UNITY_EXCLUDE: ${{ inputs.unity-exclude }}
         BUILDRAY_LINK_TARGET: ${{ inputs.link-target }}
         BUILDRAY_LINK_DEPENDENCY: ${{ inputs.link-dependency }}
         BUILDRAY_FORWARD_DECLARATIONS: ${{ inputs.forward-declarations }}

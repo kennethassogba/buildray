@@ -30,6 +30,7 @@ struct Variant {
     bool dependencies = false;
     bool cmake_model = false;
     bool active_coverage = false;
+    std::string unity_target{};
 };
 
 void checked(const std::vector<std::string>& args, const fs::path& cwd, const fs::path& log) {
@@ -68,7 +69,7 @@ void check_cmake_args(const std::vector<std::string>& args) {
                                             "CMAKE_EXPORT_COMPILE_COMMANDS",
                                             "CMAKE_UNITY_BUILD",
                                             "CMAKE_DISABLE_PRECOMPILE_HEADERS",
-                                            "CMAKE_GENERATOR"};
+                                            "CMAKE_GENERATOR", "BUILDRAY_UNITY"};
     for (const auto& arg : args) {
         if (!arg.starts_with("-D") || arg.find('=') == std::string::npos)
             throw std::runtime_error("CMake arguments must use -DNAME=VALUE: " + arg);
@@ -111,8 +112,10 @@ void configure(const Options& options, const Variant& variant, const fs::path& e
         "-DCMAKE_UNITY_BUILD=OFF", "-DCMAKE_DISABLE_PRECOMPILE_HEADERS=ON",
         "-DCMAKE_CXX_COMPILER_LAUNCHER=" + launcher(executable, variant.records, variant.trace, variant.dependencies)};
     args.insert(args.end(), controlled.begin(), controlled.end());
-    if (variant.dependencies || options.command == "headers")
+    if (variant.dependencies || options.command == "headers" || options.command == "unity")
         args.push_back("-DCMAKE_C_COMPILER=" + options.c_compiler);
+    if (options.command == "unity")
+        args.push_back("-DBUILDRAY_UNITY=" + std::string(variant.unity_target.empty() ? "OFF" : "ON"));
     if (variant.dependencies || variant.active_coverage) {
         args.push_back("-DCMAKE_C_COMPILER_LAUNCHER=" + launcher(executable, variant.records, false, variant.dependencies));
     }
@@ -266,9 +269,12 @@ void verify_coverage(const Variant& variant) {
         fs::path file = object->getString("source")->str();
         if (file.is_relative()) file = fs::path(object->getString("directory")->str()) / file;
         if (file.parent_path().filename() == "Unity" &&
-            file.filename().string().starts_with("unity_"))
-            throw std::runtime_error(
-                "A target re-enabled unity builds; isolated compilation is required");
+            file.filename().string().starts_with("unity_")) {
+            if (variant.unity_target.empty() || !within(absolute_path(file), variant.build) ||
+                file.parent_path().parent_path().filename() != variant.unity_target + ".dir")
+                throw std::runtime_error(
+                    "A target re-enabled unity builds outside the selected experiment");
+        }
         if (const auto* command = object->getArray("command")) {
             bool creation = false;
             bool use = false;
@@ -381,6 +387,9 @@ std::pair<json::Array, json::Array> paired_samples(const Options& options, const
             after.push_back(sample(options, candidate, logs, "candidate-" + suffix));
             before.push_back(sample(options, baseline, logs, "baseline-" + suffix));
         }
+        if (options.command == "unity")
+            verify_unity_plan(baseline.source, baseline.build, candidate.source,
+                              candidate.build, options);
     }
     return {std::move(before), std::move(after)};
 }
@@ -603,6 +612,8 @@ void print_summary(const json::Object& report, const fs::path& work) {
         std::cout << "Patch: " << (work / "cmake.patch") << '\n';
     if (fs::exists(work / "headers.patch"))
         std::cout << "Patch: " << (work / "headers.patch") << '\n';
+    if (fs::exists(work / "unity.patch"))
+        std::cout << "Patch: " << (work / "unity.patch") << '\n';
     if (fs::exists(work / "headers.json"))
         std::cout << "Header profile: " << (work / "headers.json") << '\n';
 }
@@ -729,6 +740,7 @@ int pipeline(const Options& options, const fs::path& executable) {
         throw std::runtime_error("--baseline-source must contain CMakeLists.txt");
     // Validate generated CMake inputs before creating an output directory or running project code.
     const auto pch_script = options.command == "pch" ? pch_cmake(options, source) : "";
+    const auto unity_script = options.command == "unity" ? unity_cmake(options, source) : "";
     const auto stamp = std::chrono::system_clock::now().time_since_epoch().count();
     const auto work =
         options.work.empty()
@@ -779,7 +791,7 @@ int pipeline(const Options& options, const fs::path& executable) {
         checked({"ninja", "--version"}, source, logs / "ninja-version.log");
         report["cmake_version"] = read_file(logs / "cmake-version.log");
         report["ninja_version"] = read_file(logs / "ninja-version.log");
-        if (options.command == "deps" || options.command == "headers") {
+        if (options.command == "deps" || options.command == "headers" || options.command == "unity") {
             checked({options.c_compiler, "--version"}, source, logs / "c-compiler-version.log");
             report["c_compiler_version"] = read_file(logs / "c-compiler-version.log");
             if (report.getString("c_compiler_version")->find("clang") == llvm::StringRef::npos)
@@ -810,7 +822,8 @@ int pipeline(const Options& options, const fs::path& executable) {
                           work / "candidate-records", false,
                           options.command == "pch" ? options.target : "", options.headers};
         baseline.cmake_model = candidate.cmake_model = options.command == "prune-links";
-        baseline.active_coverage = candidate.active_coverage = options.command == "headers";
+        baseline.active_coverage = candidate.active_coverage = options.command == "headers" || options.command == "unity";
+        if (options.command == "unity") candidate.unity_target = options.target;
         report["phase"] = "baseline_validation";
         std::cout << "Configuring baseline, warming build, running tests...\n" << std::flush;
         snapshot(base_source, baseline.source, work);
@@ -822,7 +835,7 @@ int pipeline(const Options& options, const fs::path& executable) {
         }
         // Configure scripts can write generated links or files into their source tree.
         // Prepare both inputs before either configure runs; optimize uses identical bytes.
-        if (options.command == "optimize" || options.command == "pch" || options.command == "prune-links" || options.command == "headers")
+        if (options.command == "optimize" || options.command == "pch" || options.command == "prune-links" || options.command == "headers" || options.command == "unity")
             snapshot(baseline.source, candidate.source, work);
         if (options.command == "compare") snapshot(source, candidate.source, work);
         SourceFiles originals;
@@ -976,15 +989,26 @@ int pipeline(const Options& options, const fs::path& executable) {
                 std::cout << "CMake candidate: remove " << selected_link.getString("target")->str()
                           << " -> " << selected_link.getString("dependency")->str() << '\n' << std::flush;
             }
-            if (options.command == "pch") {
+            if (options.command == "pch" || options.command == "unity") {
                 const auto path = candidate.source / "CMakeLists.txt";
                 if (read_file(path) != read_file(baseline.source / "CMakeLists.txt"))
                     throw std::runtime_error("CMakeLists.txt changed during baseline configuration");
-                write_file(path, read_file(path) + pch_script);
+                write_file(path, read_file(path) + (options.command == "pch" ? pch_script : unity_script));
                 const auto result = run({"diff", "-u", "--label", "a/CMakeLists.txt", "--label",
                                          "b/CMakeLists.txt", (baseline.source / "CMakeLists.txt").string(),
-                                         path.string()}, work, work / "pch.patch");
-                if (result.code != 1) throw std::runtime_error("Cannot generate PCH patch");
+                                         path.string()}, work, work / (options.command + ".patch"));
+                if (result.code != 1) throw std::runtime_error("Cannot generate CMake experiment patch");
+            }
+            if (options.command == "unity") {
+                report["unity_target"] = options.target;
+                report["unity_batch_size"] = options.batch_size;
+                json::Array unity_exclusions;
+                for (const auto& file : options.unity_exclusions) unity_exclusions.push_back(file.generic_string());
+                report["unity_exclusions"] = std::move(unity_exclusions);
+                report["candidate_unity_build"] = true;
+                report["validation_scope"] = "one configured Ninja default all target; unity on one selected target; original C/C++ source/target multiset preserved; complete build and CTest";
+            }
+            if (options.command == "pch") {
                 report["pch_target"] = options.target;
                 json::Array headers;
                 for (const auto& header : options.headers) headers.push_back(header);
@@ -993,11 +1017,12 @@ int pipeline(const Options& options, const fs::path& executable) {
                 report["validation_scope"] = "one configured CMake build; private C++ PCH on one target";
             }
             configure(options, candidate, executable, logs / "candidate-configure.log");
-            if (options.command == "pch" || options.command == "prune-links") {
+            if (options.command == "pch" || options.command == "prune-links" || options.command == "unity") {
                 auto context = measurement_context(options, candidate.build);
                 if (json::Value(json::Object(context)) != *report.get("measurement_context"))
                     throw std::runtime_error("Experiment changed measurement context or CMake flags");
                 context["precompiled_headers"] = options.command == "pch";
+                context["unity_build"] = options.command == "unity";
                 report["candidate_measurement_context"] = std::move(context);
             }
             if (options.command == "prune-links") {
@@ -1030,6 +1055,12 @@ int pipeline(const Options& options, const fs::path& executable) {
             clear_records(candidate.records);
             build(options, candidate, logs / "candidate-validation-build.log");
             verify_coverage(candidate);
+            if (options.command == "unity") {
+                auto plan = verify_unity_plan(baseline.source, baseline.build, candidate.source,
+                                               candidate.build, options);
+                report["unity_plan"] = json::Object(plan);
+                write_json(work / "unity.json", std::move(plan));
+            }
             const auto candidate_tests = test(options, candidate, logs, "candidate");
             report["candidate_tests_passed"] = static_cast<std::int64_t>(candidate_tests);
             unsigned baseline_opaque = 0, candidate_opaque = 0;
@@ -1069,7 +1100,7 @@ int pipeline(const Options& options, const fs::path& executable) {
                 const double threshold = std::max(
                     0.02 * before_median, 3 * std::max(*before_summary.getNumber("mad_seconds"),
                                                        *after_summary.getNumber("mad_seconds")));
-                const bool changed = options.command == "pch" || !changes.empty();
+                const bool changed = options.command == "pch" || options.command == "unity" || !changes.empty();
                 const std::string verdict = !changed    ? "no_changes"
                                             : options.runs < 3 ? "insufficient_samples"
                                             : std::abs(after_median - before_median) <= threshold

@@ -73,6 +73,8 @@ struct Options {
     bool forward_declarations = false;
     unsigned max_header_edits = 8;
     std::vector<fs::path> header_paths;
+    unsigned batch_size = 4;
+    std::vector<fs::path> unity_exclusions;
 };
 
 struct CheckOptions {
@@ -110,6 +112,10 @@ std::string profile_markdown(const json::Object& profile);
 json::Object select_pch(const json::Object& profile, const fs::path& source,
                         const std::string& target = "");
 std::string pch_cmake(const Options& options, const fs::path& source);
+std::string unity_cmake(const Options& options, const fs::path& source);
+json::Object verify_unity_plan(const fs::path& baseline_source, const fs::path& baseline_build,
+                              const fs::path& candidate_source, const fs::path& candidate_build,
+                              const Options& options);
 std::vector<std::string> compile_arguments(const json::Object& entry);
 std::vector<Replacement> analyze_headers(const Options& options, const fs::path& source,
     const fs::path& build, const fs::path& work, const fs::path& executable,

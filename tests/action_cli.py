@@ -69,6 +69,10 @@ add_test(NAME works COMMAND sample)
         {"BUILDRAY_FORWARD_DECLARATIONS": "true"},
         {"BUILDRAY_COMMAND": "headers", "BUILDRAY_HEADER_PATHS": '"include"'},
         {"BUILDRAY_COMMAND": "headers", "BUILDRAY_MAX_HEADER_EDITS": "0"},
+        {"BUILDRAY_COMMAND": "unity"},
+        {"BUILDRAY_UNITY_TARGET": "sample"},
+        {"BUILDRAY_COMMAND": "unity", "BUILDRAY_UNITY_TARGET": "sample", "BUILDRAY_UNITY_BATCH_SIZE": "1"},
+        {"BUILDRAY_COMMAND": "unity", "BUILDRAY_UNITY_TARGET": "sample", "BUILDRAY_UNITY_EXCLUDE": '"main.cpp"'},
     ]:
         execute([sys.executable, script], env={**environment, **changes}, expected=1)
     assert not (source / "injected").exists()
@@ -103,6 +107,15 @@ add_test(NAME works COMMAND sample)
     assert auto_report["automatic_selection"]["header"] == "common.hpp"
     assert all(Path(automatic[key]).is_file() for key in ["headers", "selection", "patch"])
     assert "Automatic candidate:" in summary.read_text()
+    unity_outputs = root / "unity-outputs"
+    execute([sys.executable, script], env={**environment, "BUILDRAY_COMMAND": "unity",
+            "BUILDRAY_UNITY_TARGET": "sample", "BUILDRAY_UNITY_BATCH_SIZE": "2",
+            "BUILDRAY_RUNS": "1", "GITHUB_OUTPUT": str(unity_outputs)})
+    unity = dict(line.split("=", 1) for line in unity_outputs.read_text().splitlines())
+    assert "baseline-sha" not in unity and all(Path(unity[key]).is_file() for key in ["unity", "patch", "report"])
+    unity_report = json.loads(Path(unity["report"]).read_text())
+    assert unity_report["patch_validated"] and unity_report["performance_result"] == "insufficient_samples"
+    assert "Unity target:" in summary.read_text()
     cmake.write_text(original_cmake)
     (source / "main.cpp").write_text("int main() { return 0; }\n")
     (source / "common.hpp").unlink()

@@ -124,6 +124,25 @@ experiment and requires at least three build pairs. Profiling is outside those
 measurements. Selection does not establish a gain; only the measured result can
 recommend the patch. `selection.json` records the decision and its metrics.
 
+## Unity builds
+
+```bash
+buildray unity --source /path/to/project --target my_library \
+  --batch-size 4 --compiler clang++-21 --runs 3 --jobs 2
+```
+
+`unity` groups C/C++ files on one target to reduce repeated header parsing. It
+checks that every original source remains compiled on the same target, runs the
+complete build and CTest, then compares alternating clean builds. Name collisions
+and failing tests reject the experiment. Repeat `--unity-exclude path/to/file.cpp`
+to keep incompatible files separate; CMake's existing per-file exclusions are
+also respected. PCH stays disabled in both variants.
+
+The generated `unity.patch` adds an option that defaults to off. After reviewing
+and applying it, configure your project with `-DBUILDRAY_UNITY=ON` to enable the
+tested batches. `unity.json` records source coverage and generated groups.
+[Validation, memory tradeoffs and Action usage](docs/unity.md).
+
 ## Dependency graphs
 
 ```bash
@@ -196,6 +215,7 @@ headers.patch                  Header include and forward-declaration patch (hea
 header-cleanup.json            Header findings, rejected proposals and validation counts
 pch.patch                      CMake PCH patch (pch only)
 cmake.patch                    Redundant target-link patch (prune-links)
+unity.patch, unity.json         Opt-in unity patch and verified source groups (unity)
 links.json                     Eligible link candidates and selected experiment
 cmake-before.json, cmake-after.json Configured target graph evidence
 headers.json, headers.md        Inclusive header costs and target rankings (profile)
@@ -214,14 +234,15 @@ baseline-build/, candidate-build/
 when a nonempty validated patch also has an `improved` performance result. A
 failed candidate can leave a patch for diagnosis: its existence is not validation.
 
-For `optimize`, `headers`, `prune-links` and `pch`, `performance_result` is `improved`, `regressed`, `inconclusive`,
+For `optimize`, `headers`, `prune-links`, `unity` and `pch`, `performance_result` is `improved`, `regressed`, `inconclusive`,
 `insufficient_samples` (fewer than three runs), or `no_changes`. The noise
 threshold is the larger of 2% of baseline time and three times the larger MAD.
 This is a reporting heuristic, not a statistical significance test. A noisy
 runner can produce an inconclusive result even when the candidate median is lower.
 
 Timings cover full builds with a warm filesystem cache, fixed parallelism and
-compiler caches disabled. Unity builds are disabled. PCH is disabled for include
+compiler caches disabled. Unity builds are disabled except on the selected `unity`
+candidate target. PCH is disabled for include
 cleanup and revision comparisons; only `pch` enables it in the candidate. Cleaning, configuration, analysis and
 tests are outside the measured interval. Build wall time includes dependency
 scans, compilation, code generation, linking and launcher overhead. Per-compiler
@@ -237,10 +258,10 @@ time. RSS is the maximum of individual compiler peaks, not aggregate build memor
   Launcher overrides and `EXCLUDE_FROM_ALL` C++ targets cause a coverage error.
   Disable optional targets that are not part of the build you want to validate.
   Active unity compilation and unexpected PCH are refused, including target overrides.
-  `deps` and `headers` instead check every C/C++ object reachable from Ninja's default `all`
+  `deps`, `headers` and `unity` instead check every C/C++ object reachable from Ninja's default `all`
   target, allowing optional excluded targets. The `deps` CMake graph still lists configured
   excluded targets; their includes are not claimed as observed. `headers` also
-  requires Ninja 1.13+ and counts inactive compilation commands.
+  requires Ninja 1.13+ and counts inactive compilation commands. `unity` also requires Ninja 1.13+.
 - CTest tests are required. Missing tests fail unless `--allow-no-tests` is
   explicit; that report says `build_only`. Disabled, skipped and failing tests
   are refused. Each test has a 120-second timeout.

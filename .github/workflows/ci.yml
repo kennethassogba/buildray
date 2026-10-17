@@ -42,6 +42,15 @@ on:
         description: Validate and benchmark one redundant CMake link on pinned XGrammar.
         type: boolean
         default: false
+      unity_corpus:
+        description: Validate and measure target-scoped unity builds on SentencePiece, XGrammar and MuJoCo.
+        type: boolean
+        default: false
+      unity_runs:
+        description: Unity clean-build pairs. One validates without a performance recommendation.
+        type: choice
+        options: ['1', '3', '5']
+        default: '3'
 
 permissions:
   contents: read
@@ -295,3 +304,59 @@ jobs:
           runs: ${{ inputs.header_runs }}
           jobs: '2'
           artifact-name: ${{ matrix.name }}-header-cleanup
+
+  unity-corpus:
+    name: unity-corpus (${{ matrix.name }})
+    if: github.event_name == 'workflow_dispatch' && inputs.unity_corpus
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: sentencepiece
+            repository: google/sentencepiece
+            revision: e0cce7d37b065b5140349dbe12c6bcf6192fdd78
+            target: sentencepiece-static
+            cmake_args: '["-DSPM_BUILD_TEST=ON", "-DSPM_ENABLE_SHARED=OFF", "-DSPM_ENABLE_TCMALLOC=OFF"]'
+          - name: xgrammar
+            repository: mlc-ai/xgrammar
+            revision: 7e269d56c74c89de52bc8c31e42191155416371f
+            target: xgrammar
+            cmake_args: '[]'
+          - name: mujoco
+            repository: google-deepmind/mujoco
+            revision: f640345f72b773e7ec52cd9426a57335cf9c6c28
+            target: mujoco
+            cmake_args: '["-DMUJOCO_BUILD_EXAMPLES=OFF", "-DMUJOCO_BUILD_SIMULATE=OFF", "-DMUJOCO_BUILD_TESTS=ON", "-DMUJOCO_TEST_PYTHON_UTIL=OFF"]'
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - uses: actions/checkout@v6
+        with:
+          repository: ${{ matrix.repository }}
+          ref: ${{ matrix.revision }}
+          path: fixtures/${{ matrix.name }}
+          persist-credentials: false
+      - name: Prepare XGrammar C++ configuration
+        if: matrix.name == 'xgrammar'
+        working-directory: fixtures/xgrammar
+        run: |
+          git submodule update --init --depth 1 3rdparty/dlpack 3rdparty/googletest
+          printf '%s\n' 'set(XGRAMMAR_BUILD_PYTHON_BINDINGS OFF)' 'set(XGRAMMAR_BUILD_CXX_TESTS ON)' > config.cmake
+      - name: Prepare MuJoCo test locale
+        if: matrix.name == 'mujoco'
+        run: sudo locale-gen de_DE.UTF-8
+      - name: Validate and measure a unity build
+        uses: ./
+        with:
+          command: unity
+          source: fixtures/${{ matrix.name }}
+          unity-target: ${{ matrix.target }}
+          unity-batch-size: '4'
+          cmake-args: ${{ matrix.cmake_args }}
+          runs: ${{ inputs.unity_runs }}
+          jobs: '2'
+          artifact-name: ${{ matrix.name }}-unity

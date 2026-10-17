@@ -21,6 +21,8 @@ Usage:
   buildray pch --source DIR --target NAME --header HEADER [--header HEADER ...]
                [options] [-- -DNAME=VALUE ...]
   buildray pch --auto --source DIR [--target NAME] [options] [-- -DNAME=VALUE ...]
+  buildray unity --source DIR --target NAME [--batch-size N] [options]
+                 [--unity-exclude FILE ...] [-- -DNAME=VALUE ...]
   buildray prune-links --source DIR [--target NAME] [--dependency NAME] [options]
                        [-- -DNAME=VALUE ...]
   buildray compare --baseline-source DIR --source DIR [options] [-- -DNAME=VALUE ...]
@@ -31,7 +33,7 @@ Options:
   --source DIR          CMake source tree (default: current directory)
   --work-dir DIR        New output directory (default: SOURCE/.buildray/unique-id)
   --compiler PATH       Clang C++ compiler (default: clang++)
-  --c-compiler PATH     Clang C compiler for deps/headers (headers defaults to the C++ driver version)
+  --c-compiler PATH     Clang C compiler for deps/headers/unity (headers/unity derive the C++ driver version)
   --fail-on-cycles      deps: return 5 if include or target-link cycles exist
   --clang-tidy PATH     clang-tidy with misc-include-cleaner (default: clang-tidy)
   --runs N              Clean build samples per variant, 1..100 (default: 3)
@@ -40,7 +42,9 @@ Options:
   --baseline-source DIR  Base revision source for paired comparison
   --max-regression-percent N  Regression budget (default: 5)
   --session ID          Optional label shared by comparable measurements
-  --target NAME         PCH target, or optional prune-links target restriction
+  --target NAME         PCH/unity target, or optional prune-links target restriction
+  --batch-size N        unity: maximum sources per batch, 2..32 (default: 4)
+  --unity-exclude FILE  unity: keep this relative source file separate; repeatable
   --dependency NAME     prune-links: restrict selection to this direct dependency
   --header HEADER       PCH header: <system> or source-root-relative path; repeatable
   --auto                pch: profile, select one project header/target, validate and measure
@@ -85,6 +89,10 @@ C/C++ users, then pass the complete clean build and CTest. --forward-declaration
 tries simple project class/struct declarations for pointer/reference uses. Templates,
 aliases, nested classes, inline/anonymous namespaces and attributed records are kept.
 Outputs: headers.patch and header-cleanup.json. Original headers stay unchanged.
+unity tests an opt-in CMake unity build on one target, with PCH disabled.
+It verifies original C/C++ source/target coverage, builds, tests and measures the
+complete default build. Name collisions and runtime failures reject the patch.
+Outputs: unity.patch and unity.json. Enable an applied patch with -DBUILDRAY_UNITY=ON.
 
 Exit codes: 0 completed, 1 pipeline/validation failure, 2 invalid arguments,
 3 regression over budget and noise, 4 incomparable reports, 5 cycles, 130 interrupted.
@@ -138,7 +146,7 @@ buildray::Options parse(const std::vector<std::string>& args) {
     bool explicit_c_compiler = false;
     if (options.command != "optimize" && options.command != "measure" &&
         options.command != "compare" && options.command != "profile" && options.command != "pch" &&
-        options.command != "deps" && options.command != "prune-links" && options.command != "headers")
+        options.command != "deps" && options.command != "prune-links" && options.command != "headers" && options.command != "unity")
         throw std::runtime_error("Unknown command: " + options.command);
     for (std::size_t i = 1; i < args.size(); ++i) {
         const auto& arg = args[i];
@@ -167,7 +175,7 @@ buildray::Options parse(const std::vector<std::string>& args) {
             arg != "--clang-tidy" && arg != "--runs" && arg != "--jobs" &&
             arg != "--baseline-source" && arg != "--max-regression-percent" && arg != "--session" &&
             arg != "--target" && arg != "--header" && arg != "--c-compiler" && arg != "--exclude" && arg != "--dependency" &&
-            arg != "--header-path" && arg != "--max-header-edits")
+            arg != "--header-path" && arg != "--max-header-edits" && arg != "--batch-size" && arg != "--unity-exclude")
             throw std::runtime_error("Unknown option: " + arg);
         if (++i == args.size() || args[i].starts_with("--"))
             throw std::runtime_error("Missing value for " + arg);
@@ -175,6 +183,8 @@ buildray::Options parse(const std::vector<std::string>& args) {
         if (value.empty()) throw std::runtime_error("Empty value for " + arg);
         if (arg == "--max-header-edits" && options.command != "headers")
             throw std::runtime_error("--max-header-edits requires headers");
+        if ((arg == "--batch-size" || arg == "--unity-exclude") && options.command != "unity")
+            throw std::runtime_error(arg + " requires unity");
         if (arg == "--source")
             options.source = value;
         else if (arg == "--work-dir")
@@ -193,6 +203,10 @@ buildray::Options parse(const std::vector<std::string>& args) {
             options.jobs = number(value, 1024);
         else if (arg == "--max-header-edits")
             options.max_header_edits = number(value, 1000);
+        else if (arg == "--batch-size") {
+            options.batch_size = number(value, 32);
+            if (options.batch_size < 2) throw std::runtime_error("Unity batch size must be at least 2");
+        }
         else if (arg == "--baseline-source")
             options.baseline_source = value;
         else if (arg == "--session")
@@ -203,12 +217,13 @@ buildray::Options parse(const std::vector<std::string>& args) {
             options.dependency = value;
         else if (arg == "--header")
             options.headers.push_back(value);
-        else if (arg == "--exclude" || arg == "--header-path") {
+        else if (arg == "--exclude" || arg == "--header-path" || arg == "--unity-exclude") {
             auto path = buildray::fs::path(value).lexically_normal();
             if (path.filename().empty()) path = path.parent_path();
             if (path.empty() || path.is_absolute() || path == "." || *path.begin() == "..")
                 throw std::runtime_error(arg + " requires a relative file/directory inside the source tree");
             if (arg == "--exclude") options.exclusions.push_back(std::move(path));
+            else if (arg == "--unity-exclude") options.unity_exclusions.push_back(std::move(path));
             else options.header_paths.push_back(std::move(path));
         }
         else if (arg == "--max-regression-percent")
@@ -224,17 +239,19 @@ buildray::Options parse(const std::vector<std::string>& args) {
         throw std::runtime_error("--auto requires pch, at least three runs, and no --header; --target is optional");
     if (options.command != "pch" && !options.headers.empty())
         throw std::runtime_error("--header requires pch");
-    if (options.command != "pch" && options.command != "prune-links" && !options.target.empty())
-        throw std::runtime_error("--target requires pch or prune-links");
+    if (options.command != "pch" && options.command != "prune-links" && options.command != "unity" && !options.target.empty())
+        throw std::runtime_error("--target requires pch, unity or prune-links");
+    if (options.command == "unity" && options.target.empty())
+        throw std::runtime_error("unity requires --target");
     if (options.command != "prune-links" && !options.dependency.empty())
         throw std::runtime_error("--dependency requires prune-links");
     if (options.command == "prune-links" && options.runs < 3)
         throw std::runtime_error("prune-links requires at least three runs");
     if (options.command != "deps" && options.fail_on_cycles)
         throw std::runtime_error("--fail-on-cycles requires deps");
-    if (options.command != "deps" && options.command != "headers" && explicit_c_compiler)
-        throw std::runtime_error("--c-compiler requires deps or headers");
-    if (options.command == "headers" && !explicit_c_compiler) {
+    if (options.command != "deps" && options.command != "headers" && options.command != "unity" && explicit_c_compiler)
+        throw std::runtime_error("--c-compiler requires deps, headers or unity");
+    if ((options.command == "headers" || options.command == "unity") && !explicit_c_compiler) {
         auto driver = buildray::fs::path(options.compiler);
         auto name = driver.filename().string();
         if (name.starts_with("clang++")) {
