@@ -34,8 +34,11 @@ measurement, outside the timed interval.
 
 CMake excludes files with per-source compile settings, module scanning or
 `SKIP_UNITY_BUILD_INCLUSION` from its batches. Buildray preserves that behavior.
-For additional files, repeat `--unity-exclude src/special.cpp`. Each path must be
-an existing source file relative to the source root. The generated CMake uses the
+For additional exclusions, repeat `--unity-exclude src/special.cpp` or
+`--unity-exclude third_party`. Paths must exist relative to the source root.
+Directories expand deterministically to their original C/C++ source files;
+files generated later during configuration are not part of that expansion.
+The generated CMake uses the
 target's directory when setting the source property, including targets declared
 in subdirectories.
 

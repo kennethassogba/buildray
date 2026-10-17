@@ -246,7 +246,7 @@ candidate target. PCH is disabled for include
 cleanup and revision comparisons; only `pch` enables it in the candidate. Cleaning, configuration, analysis and
 tests are outside the measured interval. Build wall time includes dependency
 scans, compilation, code generation, linking and launcher overhead. Per-compiler
-totals cover C++ compiler invocations (C/C++ for `headers` and `deps`); their sum is not the parallel build's wall
+totals cover C++ compiler invocations (C/C++ for `headers`, `deps` and `unity`); their sum is not the parallel build's wall
 time. RSS is the maximum of individual compiler peaks, not aggregate build memory.
 
 ## Validation scope

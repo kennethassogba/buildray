@@ -26,6 +26,7 @@ with tempfile.TemporaryDirectory(prefix="buildray unity ") as folder:
     source = root / "source tree"
     lib = source / "lib"
     lib.mkdir(parents=True)
+    (lib / "c").mkdir()
     top = source / "CMakeLists.txt"
     top.write_text('''cmake_minimum_required(VERSION 3.30)
 project(unity_fixture LANGUAGES C CXX)
@@ -36,7 +37,7 @@ enable_testing()
 add_test(NAME works COMMAND sample)
 ''')
     cmake = lib / "CMakeLists.txt"
-    cmake.write_text('''add_executable(sample "main file.cpp" second.cpp third.cpp a.c b.c)
+    cmake.write_text('''add_executable(sample "main file.cpp" second.cpp third.cpp c/a.c c/b.c)
 set_source_files_properties(third.cpp PROPERTIES COMPILE_DEFINITIONS MUST_STAY_SEPARATE=1)
 ''')
     main = lib / "main file.cpp"
@@ -50,8 +51,8 @@ int main() { return second() + third() + a() + b(); }
 #endif
 int third() { return 0; }
 ''')
-    (lib / "a.c").write_text("int a(void) { return 0; }\n")
-    (lib / "b.c").write_text("int b(void) { return 0; }\n")
+    (lib / "c/a.c").write_text("int a(void) { return 0; }\n")
+    (lib / "c/b.c").write_text("int b(void) { return 0; }\n")
     (source / "other.cpp").write_text("int main() { return 0; }\n")
     (source / "broken.cpp").write_text("#error excluded target must remain outside the experiment\n")
     original = digest(source)
@@ -96,6 +97,9 @@ int third() { return 0; }
     _, short = invoke("one-pair", "--unity-exclude", "lib/main file.cpp")
     assert short["patch_validated"] and short["performance_result"] == "insufficient_samples"
     assert not short["patch_recommended"]
+    _, directory = invoke("directory-exclusion", "--unity-exclude", "lib/c")
+    assert directory["patch_validated"]
+    assert all(not any(f.endswith(".c") for f in g["sources"]) for g in directory["unity_plan"]["groups"])
 
     # A clean baseline cannot hide unity collisions or changed runtime behavior.
     saved_main, saved_second = main.read_text(), (lib / "second.cpp").read_text()
@@ -135,7 +139,7 @@ endif()
     for name, addition, message in [
         ("outside-target", "if(BUILDRAY_UNITY)\nset_property(TARGET other PROPERTY UNITY_BUILD ON)\nendif()\n", "unity builds"),
         ("bypass-c", "set_property(TARGET sample PROPERTY C_COMPILER_LAUNCHER \"\")\n", "Compiler coverage"),
-        ("no-groups", "set_source_files_properties(\"main file.cpp\" second.cpp a.c b.c PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)\n", "did not combine"),
+        ("no-groups", "set_source_files_properties(\"main file.cpp\" second.cpp c/a.c c/b.c PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)\n", "did not combine"),
     ]:
         # other is declared in the parent after lib, so put target overrides there.
         top.write_text(saved_top + addition if name == "outside-target" else saved_top)
@@ -144,7 +148,7 @@ endif()
         assert message in failed["error"], failed
     top.write_text(saved_top)
     cmake.write_text(saved_cmake)
-    _, scanned = invoke("scanned-modules", "--unity-exclude", "lib/a.c", "--unity-exclude", "lib/b.c",
+    _, scanned = invoke("scanned-modules", "--unity-exclude", "lib/c/a.c", "--unity-exclude", "lib/c/b.c",
                         "--", "-DCMAKE_CXX_STANDARD=26", "-DCMAKE_CXX_SCAN_FOR_MODULES=ON", expected=1)
     assert "did not combine" in scanned["error"], scanned
     assert digest(source) == original

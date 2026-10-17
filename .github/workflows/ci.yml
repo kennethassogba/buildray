@@ -318,16 +318,19 @@ jobs:
             repository: google/sentencepiece
             revision: e0cce7d37b065b5140349dbe12c6bcf6192fdd78
             target: sentencepiece-static
+            exclusions: '["third_party", "src/builtin_pb"]'
             cmake_args: '["-DSPM_BUILD_TEST=ON", "-DSPM_ENABLE_SHARED=OFF", "-DSPM_ENABLE_TCMALLOC=OFF"]'
           - name: xgrammar
             repository: mlc-ai/xgrammar
             revision: 7e269d56c74c89de52bc8c31e42191155416371f
             target: xgrammar
+            exclusions: '[]'
             cmake_args: '[]'
           - name: mujoco
             repository: google-deepmind/mujoco
             revision: f640345f72b773e7ec52cd9426a57335cf9c6c28
             target: mujoco
+            exclusions: '[]'
             cmake_args: '["-DMUJOCO_BUILD_EXAMPLES=OFF", "-DMUJOCO_BUILD_SIMULATE=OFF", "-DMUJOCO_BUILD_TESTS=ON", "-DMUJOCO_TEST_PYTHON_UTIL=OFF"]'
     steps:
       - uses: actions/checkout@v6
@@ -356,6 +359,7 @@ jobs:
           source: fixtures/${{ matrix.name }}
           unity-target: ${{ matrix.target }}
           unity-batch-size: '4'
+          unity-exclude: ${{ matrix.exclusions }}
           cmake-args: ${{ matrix.cmake_args }}
           runs: ${{ inputs.unity_runs }}
           jobs: '2'

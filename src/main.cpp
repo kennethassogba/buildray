@@ -22,7 +22,7 @@ Usage:
                [options] [-- -DNAME=VALUE ...]
   buildray pch --auto --source DIR [--target NAME] [options] [-- -DNAME=VALUE ...]
   buildray unity --source DIR --target NAME [--batch-size N] [options]
-                 [--unity-exclude FILE ...] [-- -DNAME=VALUE ...]
+                 [--unity-exclude PATH ...] [-- -DNAME=VALUE ...]
   buildray prune-links --source DIR [--target NAME] [--dependency NAME] [options]
                        [-- -DNAME=VALUE ...]
   buildray compare --baseline-source DIR --source DIR [options] [-- -DNAME=VALUE ...]
@@ -44,7 +44,7 @@ Options:
   --session ID          Optional label shared by comparable measurements
   --target NAME         PCH/unity target, or optional prune-links target restriction
   --batch-size N        unity: maximum sources per batch, 2..32 (default: 4)
-  --unity-exclude FILE  unity: keep this relative source file separate; repeatable
+  --unity-exclude PATH  unity: keep source files under this relative path separate; repeatable
   --dependency NAME     prune-links: restrict selection to this direct dependency
   --header HEADER       PCH header: <system> or source-root-relative path; repeatable
   --auto                pch: profile, select one project header/target, validate and measure

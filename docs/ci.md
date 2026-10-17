@@ -125,3 +125,7 @@ bootstrap on GitHub, and retained report replay.
 
 Header cleanup and forward declarations are available with `command: headers`.
 See [the inputs, outputs and validation limits](header-cleanup.md#github-action).
+
+Unity experiments are available with `command: unity`, `unity-target`,
+`unity-batch-size` and `unity-exclude`. The `unity` output retains verified source
+groups; [usage and validation limits](unity.md).

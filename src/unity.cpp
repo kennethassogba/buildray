@@ -111,11 +111,31 @@ std::string unity_cmake(const Options& options, const fs::path& source) {
         throw std::runtime_error("Unity batch size must be between 2 and 32");
     std::string exclusions;
     std::set<fs::path> unique;
+    std::set<fs::path> files;
     for (const auto& path : options.unity_exclusions) {
         if (!safe(path.generic_string(), true) || path.is_absolute() ||
             !within(absolute_path(source / path), absolute_path(source)) ||
-            !fs::is_regular_file(source / path) || !compiled(path) || !unique.insert(path).second)
-            throw std::runtime_error("Unity exclusions must be distinct source files inside the project");
+            !fs::exists(source / path) || !unique.insert(path).second)
+            throw std::runtime_error("Unity exclusions must be distinct source paths inside the project");
+        bool supported = false;
+        const auto add = [&](const fs::path& file) {
+            if (!compiled(file)) return;
+            const auto relative = file.lexically_relative(source);
+            if (!safe(relative.generic_string(), true) ||
+                !within(absolute_path(file), absolute_path(source)))
+                throw std::runtime_error("Unsupported unity exclusion file: " + file.string());
+            files.insert(relative);
+            supported = true;
+        };
+        if (fs::is_directory(source / path)) {
+            for (const auto& entry : fs::recursive_directory_iterator(source / path)) {
+                if (interrupted()) throw std::runtime_error("Interrupted");
+                if (entry.is_regular_file()) add(entry.path());
+            }
+        } else if (fs::is_regular_file(source / path)) add(source / path);
+        if (!supported) throw std::runtime_error("Unity exclusion contains no supported source files");
+    }
+    for (const auto& path : files) {
         exclusions += "  set_source_files_properties(\"${CMAKE_CURRENT_SOURCE_DIR}/" +
                       path.generic_string() + "\" TARGET_DIRECTORY " + options.target +
                       " PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)\n";

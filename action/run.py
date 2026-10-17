@@ -159,7 +159,7 @@ def main():
     if batch_size < 2:
         raise ValueError("unity-batch-size must be at least 2")
     if not isinstance(unity_exclusions, list) or not all(isinstance(item, str) and item for item in unity_exclusions):
-        raise ValueError("unity-exclude must be a JSON array of nonempty relative source files")
+        raise ValueError("unity-exclude must be a JSON array of nonempty relative source paths")
     if mode == "unity" and not unity_target:
         raise ValueError("unity requires unity-target")
     if mode != "unity" and (unity_target or unity_exclusions or batch_size != 4):

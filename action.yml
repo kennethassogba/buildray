@@ -57,7 +57,7 @@ inputs:
     description: Maximum source files per unity batch (2-32). Larger batches can increase compiler memory use.
     default: '4'
   unity-exclude:
-    description: JSON array of source-root-relative source files to keep outside unity batches.
+    description: JSON array of source-root-relative files/directories to keep outside unity batches.
     default: '[]'
   link-target:
     description: Optional CMake target restriction for command prune-links.
