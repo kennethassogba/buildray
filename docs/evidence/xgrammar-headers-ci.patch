@@ -1,0 +1,40 @@
+--- a/cpp/grammar_builder.h
++++ b/cpp/grammar_builder.h
+@@ -7,7 +7,6 @@
+ #ifndef XGRAMMAR_GRAMMAR_BUILDER_H_
+ #define XGRAMMAR_GRAMMAR_BUILDER_H_
+ 
+-#include <xgrammar/xgrammar.h>
+ 
+ #include <cstdint>
+ #include <optional>
+--- a/cpp/grammar_impl.h
++++ b/cpp/grammar_impl.h
+@@ -7,7 +7,6 @@
+ #ifndef XGRAMMAR_GRAMMAR_IMPL_H_
+ #define XGRAMMAR_GRAMMAR_IMPL_H_
+ 
+-#include <xgrammar/xgrammar.h>
+ 
+ #include <cstddef>
+ #include <optional>
+--- a/cpp/json_schema_converter.h
++++ b/cpp/json_schema_converter.h
+@@ -22,7 +22,6 @@
+ #include <vector>
+ 
+ #include "grammar_builder.h"
+-#include "support/utils.h"
+ 
+ namespace xgrammar {
+ 
+--- a/cpp/support/compact_2d_array.h
++++ b/cpp/support/compact_2d_array.h
+@@ -5,7 +5,6 @@
+ #ifndef XGRAMMAR_SUPPORT_COMPACT_2D_ARRAY_H_
+ #define XGRAMMAR_SUPPORT_COMPACT_2D_ARRAY_H_
+ 
+-#include <picojson.h>
+ 
+ #include <algorithm>
+ #include <climits>

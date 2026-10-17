@@ -87,7 +87,7 @@ buildray headers --source /path/to/project --forward-declarations \
 `headers` removes unused includes from observed project headers. With
 `--forward-declarations`, it also tries replacing a direct project include with
 class or struct declarations derived from Clang's AST. It checks standalone
-headers, recompiles every observed C/C++ user, then builds, links, tests and
+headers, checks every observed C/C++ user, then builds, links, tests and
 measures the combined patch. Your original tree stays intact.
 
 The run writes `headers.patch` and `header-cleanup.json`, including rejected
@@ -201,7 +201,7 @@ cmake-before.json, cmake-after.json Configured target graph evidence
 headers.json, headers.md        Inclusive header costs and target rankings (profile)
 selection.json                 Automatic PCH candidate and selection metrics (pch --auto)
 dependencies.json, .md, .dot    Include graph, cycles and CMake relationships (deps)
-logs/*-compilers.json           Duration, CPU time, RSS and argv per C++ compilation
+logs/*-compilers.json           Duration, CPU time, RSS and argv per compiler invocation
 logs/*-build.log                Build output for each sample
 logs/*-tests.xml                CTest validation results
 analysis/*/fixes.yaml           Original clang-tidy findings
@@ -238,7 +238,7 @@ time. RSS is the maximum of individual compiler peaks, not aggregate build memor
   Disable optional targets that are not part of the build you want to validate.
   Active unity compilation and unexpected PCH are refused, including target overrides.
   `deps` and `headers` instead check every C/C++ object reachable from Ninja's default `all`
-  target, allowing optional excluded targets. Its CMake graph still lists configured
+  target, allowing optional excluded targets. The `deps` CMake graph still lists configured
   excluded targets; their includes are not claimed as observed. `headers` also
   requires Ninja 1.13+ and counts inactive compilation commands.
 - CTest tests are required. Missing tests fail unless `--allow-no-tests` is

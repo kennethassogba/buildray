@@ -1,0 +1,63 @@
+{
+  "added_forward_declarations": 0,
+  "ast_commands": 44,
+  "budget_reached": true,
+  "findings": [
+    {
+      "directive": "#include <picojson.h>\n",
+      "file": "cpp/support/compact_2d_array.h",
+      "kind": "unused_include",
+      "observed_users": 29,
+      "offset": 182,
+      "replacement": "",
+      "standalone_contexts": 2
+    },
+    {
+      "directive": "#include <climits>\n",
+      "file": "cpp/support/compact_2d_array.h",
+      "kind": "unused_include",
+      "observed_users": 29,
+      "offset": 226,
+      "replacement": "",
+      "standalone_contexts": 2
+    },
+    {
+      "directive": "#include <xgrammar/xgrammar.h>\n",
+      "file": "cpp/grammar_impl.h",
+      "kind": "unused_include",
+      "observed_users": 25,
+      "offset": 210,
+      "replacement": "",
+      "standalone_contexts": 2
+    },
+    {
+      "directive": "#include <xgrammar/xgrammar.h>\n",
+      "file": "cpp/grammar_builder.h",
+      "kind": "unused_include",
+      "observed_users": 20,
+      "offset": 208,
+      "replacement": "",
+      "standalone_contexts": 2
+    }
+  ],
+  "forward_declarations_enabled": true,
+  "forward_vetoed_ranges": 281,
+  "forwarded_includes": 0,
+  "header_paths": [
+    "cpp/support/compact_2d_array.h",
+    "cpp/grammar_impl.h",
+    "cpp/grammar_builder.h"
+  ],
+  "inactive_compile_commands": 0,
+  "max_header_edits": 3,
+  "modified_headers": 3,
+  "observed_headers": 42,
+  "preflight_commands": 80,
+  "rejected": [],
+  "scope": "Ninja default all target; observed original project headers; standalone checks use observed C++ flags; all observed C/C++ users are preflighted; one accepted forward include per header; full build and CTest still required",
+  "selection_order": "descending observed user count, then path",
+  "skipped": [],
+  "standalone_checks": 12,
+  "tidy_commands": 6,
+  "unused_includes": 4
+}

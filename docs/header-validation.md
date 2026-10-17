@@ -24,9 +24,9 @@ for this generated-patch experiment.
 ## Corpus
 
 The opt-in `header_corpus` workflow restricts edits to internal headers in the
-existing pinned corpus. Each run enables forward declarations, limits accepted
-changes to four headers, and uses three alternating clean-build pairs with two
-jobs. XGrammar and MuJoCo public include trees are outside the selected edit paths;
+existing pinned corpus. Each run enables forward declarations and limits accepted changes to four
+headers. The default is three alternating clean-build pairs with two jobs;
+`header_runs: 1` is available for validation without a performance recommendation. XGrammar and MuJoCo public include trees are outside the selected edit paths;
 vendored code is excluded from edits. SentencePiece’s `src` also contains
 installed API headers, so its selected findings need individual API review.
 The configured default build and CTest remain covered.
@@ -112,15 +112,15 @@ include. Passing standalone and user compilations alone had missed that conditio
 The AST helper now vetoes providers used by value or as base classes, and defers
 headers containing inline code or compile-time definitions. Those vetoes are
 merged across contexts, so a declaration-only context cannot override a context
-that needs the definition. The helper protocol is checked to prevent mixing
-executables from different versions.
+that needs the definition. The helper protocol is checked to prevent mixing incompatible executables.
 
 Regression fixtures preserve a by-value use and inline member access even when a
 transitive include makes their forward-declaration variants compile. The
 multi-configuration fixture also supplies the full type transitively, requiring
-the AST veto to survive across contexts. The upstream cleanup is restricted to
-the three justified unused-include removals; the initial timing above is for the
-older combined patch and is not a measurement of that smaller cleanup.
+the AST veto to survive across contexts. The initial cleanup selection keeps only the three justified unused-include
+removals. The final local run below finds an additional unused `<climits>` include;
+the initial timing above is for the older combined patch and is not a measurement
+of the final upstream cleanup.
 
 ## Syntax-only argument regression
 
@@ -173,3 +173,66 @@ module offline. Its pretty-printed bytes differ between the two executables,
 while execution filters stay stable; validation must pass. Changing the filters
 with the same test count must still fail. The existing ordinary renamed-test
 regression also remains required.
+
+The local 3,496-case MuJoCo inventory contains 153 opaque byte-dump parameter
+names, all matching the narrowly supported whole-value format. The focused
+CMake discovery regression passes with the corrected comparator. The final local
+action, CMake-link and header suites pass in Release (269.24 s) and Debug with
+ASan/UBSan (299.86 s), including the `-Werror` argument check, array/template
+completeness vetoes and changed GoogleTest filters.
+
+At `18156f6`, all eight suites pass in both native CI jobs (Release and Debug with
+ASan/UBSan, including default LeakSanitizer) in
+[the PR run](https://github.com/kennethassogba/buildray/actions/runs/39037728471)
+and [the push run](https://github.com/kennethassogba/buildray/actions/runs/39037724961).
+The final three-include XGrammar cleanup also passes all upstream pre-commit hooks,
+Ruff, a fresh standalone Clang 21 Release build and all 83 CTest cases (1.97 s).
+
+## Final XGrammar cleanup
+
+The local run at `18156f6` restricts edits to `cpp/grammar_impl.h`,
+`cpp/grammar_builder.h` and `cpp/support/compact_2d_array.h`. The input is a pristine
+source copy of the pinned XGrammar revision, with its pinned submodules and native
+C++ tests enabled, Python bindings disabled. Linux, Clang/clang-tidy 21.1.8,
+CMake 4.2.3, Ninja 1.13.2 and two build jobs are used. Local
+`CXXFLAGS=--gcc-install-dir=/usr/lib/gcc/x86_64-linux-gnu/15` selects the complete
+libstdc++ installation; it is not an upstream requirement.
+
+All 44 compile commands are indexed. The patch removes four includes in those
+three headers, including the additional `<climits>` removal found in this local
+configuration. No forward declaration is accepted. Eighty preflight compilations
+check the affected users and standalone contexts. Baseline and candidate build,
+link and pass all 83 CTest cases before measurement.
+
+| Three alternating clean-build pairs | Baseline | Candidate |
+| --- | ---: | ---: |
+| Median | 121.899 s | 123.292 s |
+| MAD | 0.046 s | 1.688 s |
+
+The median change is +1.143%. The 1.393 s difference is below the 5.063 s noise
+threshold, so the result is `inconclusive` and the patch is not recommended as a
+performance optimization. The first candidate sample is 149.737 s; all raw
+samples are retained in the [report](evidence/xgrammar-headers-safe-report.json).
+The [findings](evidence/xgrammar-headers-safe-findings.json) and
+[measured patch](evidence/xgrammar-headers-safe.patch) are also checked in.
+No build-time gain is established.
+
+The formatted [upstream draft #994](https://github.com/mlc-ai/xgrammar/pull/994)
+contains exactly these four include deletions, plus empty-line cleanup. Both
+commits pass their applicable pre-commit hooks. A fresh Release build followed by
+all 83 CTest cases (0.79 s) passes after the final formatting and fourth deletion.
+The earlier full pre-commit run and Ruff checks also pass; no Python file changes.
+
+The corrected [CI corpus run](https://github.com/kennethassogba/buildray/actions/runs/39037818246)
+validates four includes in four XGrammar headers, with 83 passing cases per
+variant. Its [report](evidence/xgrammar-headers-ci-report.json),
+[findings](evidence/xgrammar-headers-ci-findings.json) and
+[patch](evidence/xgrammar-headers-ci.patch) cover a different scope: selection is
+allowed throughout `cpp`, and the fourth change removes `support/utils.h` from
+`json_schema_converter.h`, while keeping `<climits>`. That run has one pair and
+reports `insufficient_samples`. Its timings are not used for the upstream patch.
+
+The same CI run validates SentencePiece’s unchanged eight-removal patch again;
+see its [report](evidence/sentencepiece-headers-ci-report.json) and
+[findings](evidence/sentencepiece-headers-ci-findings.json). One pair does not
+recommend a performance change, and these removals are already present upstream.

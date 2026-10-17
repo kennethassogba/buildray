@@ -15,8 +15,7 @@ declarations in one run. Selection and the budget are recorded in the report.
 
 ## Validation
 
-Buildray snapshots the project and builds/tests the baseline and candidate before
-analysis. A separate native helper uses Clang's AST and preprocessor callbacks to
+Buildray snapshots the project and builds/tests the baseline before analysis. A separate native helper uses Clang's AST and preprocessor callbacks to
 index original project headers and their C/C++ compilation users in Ninja’s
 default `all` target. Ninja 1.13+ is required. Launcher records must cover every
 C/C++ object in that target; optional excluded targets are counted separately
