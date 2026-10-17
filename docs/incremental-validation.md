@@ -37,9 +37,10 @@ the listed target; all default-build targets remain inside the measured command.
 
 The completed XGrammar and SentencePiece jobs use two compiler jobs, Clang 21,
 CMake 4.2.3 and Ninja 1.13 on Ubuntu 24.04. The MuJoCo rerun uses four compiler
-jobs for both variants on a runner with four CPUs. Its final configuration also
+jobs for both variants on runners with four CPUs. Each edited MuJoCo file has
+its own job and measurement context, at Buildray `b5d22c2`. The configuration
 sets `CMAKE_LINK_DEPENDS_USE_LINKER=OFF` in both variants, for the readiness issue
-described below. Those incremental results are pending.
+described below.
 
 ## Completed measurements
 
@@ -48,7 +49,9 @@ count each original input file once, excluding PCH wrappers. The first reports
 were recorded at Buildray `f3440f1`; their input-source counts below are derived
 from saved compiler sources and the verified Unity plan. The CLI now emits these
 counts directly. Every timed rebuild in these jobs passes the original CTest
-inventory: 83 entries for XGrammar and the `spm_test` entry for SentencePiece.
+inventory: 83 entries for XGrammar, the aggregate `spm_test` entry for
+SentencePiece, and 3,519 entries for MuJoCo. All 18 scenarios are complete and
+independently verified against their raw compiler records and test results.
 
 | Project | Strategy / edit | Before (s) | After (s) | Change | Result | Compiler calls | Input sources |
 | --- | --- | ---: | ---: | ---: | --- | ---: | ---: |
@@ -64,6 +67,12 @@ inventory: 83 entries for XGrammar and the `spm_test` entry for SentencePiece.
 | sentencepiece | pch / implementation | 3.933 | 3.257 | -17.19% | improved | 1 → 1 | 1 → 1 |
 | sentencepiece | pch / internal header | 50.036 | 51.494 | +2.91% | inconclusive | 50 → 79 | 50 → 78 |
 | sentencepiece | pch / public header | 51.981 | 49.117 | -5.51% | improved | 50 → 50 | 50 → 50 |
+| mujoco | unity / implementation | 293.836 | 281.238 | -4.29% | inconclusive | 1 → 1 | 1 → 1 |
+| mujoco | unity / internal header | 419.756 | 420.551 | +0.19% | inconclusive | 12 → 9 | 12 → 24 |
+| mujoco | unity / public header | 503.957 | 500.472 | -0.69% | inconclusive | 123 → 106 | 123 → 134 |
+| mujoco | pch / implementation | 227.502 | 227.547 | +0.02% | inconclusive | 1 → 1 | 1 → 1 |
+| mujoco | pch / internal header | 404.643 | 401.343 | -0.82% | inconclusive | 12 → 12 | 12 → 12 |
+| mujoco | pch / public header | 446.770 | 440.304 | -1.45% | inconclusive | 123 → 131 | 123 → 130 |
 
 Unity recompiles four input sources after the selected implementation-file edit
 in both XGrammar and SentencePiece. Each still has one compiler invocation, so
@@ -71,6 +80,22 @@ an invocation count alone would hide that extra work. These scenarios regress
 even though their header scenarios improve. SentencePiece's PCH regenerates and
 increases compiler calls from 50 to 79 after the internal-header edit, with no
 established timing improvement for that case.
+
+None of the six MuJoCo scenarios establishes a whole-build timing gain. The selected
+`user_model.cc` is one of the 12 files kept separate after Unity compiler
+collisions; it recompiles one input file in both variants and does not exercise
+grouped-file fan-out. The PCH case reuses its PCH. Its median compiler wall time
+changes from 5.453 to 5.295 seconds, while the complete default rebuild stays near
+227.5 seconds. The [baseline build log](evidence/mujoco-pch-implementation-incremental-build.log)
+contains 80 linking steps, which helps explain why a small compilation saving
+barely changes this whole-build time.
+The Unity decrease remains below its 22.312-second noise threshold.
+
+MuJoCo's internal-header Unity case drops compiler calls from 12 to 9 but doubles
+the original sources recompiled from 12 to 24. Its public-header case changes
+123 calls to 106 while increasing original sources from 123 to 134. Neither
+establishes a timing improvement. The public-header PCH case regenerates its PCH
+and increases original sources from 123 to 130, also without an established gain.
 
 ## MuJoCo readiness check
 
@@ -116,26 +141,43 @@ pairs and all 3,519 CTest entries. This scheduling change was made before
 accepting any MuJoCo timings. Unity reuses the same 12 source exclusions found
 and validated in the earlier attempts, avoiding repeated collision discovery.
 Both variants use the common linker setting above. Compiler header dependencies
-and complete source coverage remain required. These measurements are pending;
-no timing from a refused readiness check or a cancelled run is used.
+and complete source coverage remain required. All six jobs pass and their
+measurements are included above. No timing from a refused readiness check or
+a cancelled run is used. The saved Unity groups match the earlier validated
+candidate, and each strategy measures the same patch across its three jobs.
 
 ## Evidence and reproduction
 
-The completed measurements come from independent jobs in
+XGrammar and SentencePiece measurements come from independent jobs in
 [run 39063875317](https://github.com/kennethassogba/buildray/actions/runs/39063875317).
 The run also contains the rejected MuJoCo attempt, so its overall status must not
-be used as proof of success for every project. Completed job links:
+be used as proof of success for every project. All six final MuJoCo jobs pass in
+[run 39071066598](https://github.com/kennethassogba/buildray/actions/runs/39071066598).
+Completed job links:
 
 - [XGrammar / Unity](https://github.com/kennethassogba/buildray/actions/runs/39063875317/job/117487317222).
 - [XGrammar / PCH](https://github.com/kennethassogba/buildray/actions/runs/39063875317/job/117487317186).
 - [SentencePiece / Unity](https://github.com/kennethassogba/buildray/actions/runs/39063875317/job/117487317292).
 - [SentencePiece / PCH](https://github.com/kennethassogba/buildray/actions/runs/39063875317/job/117487317399).
+- [MuJoCo / Unity / implementation](https://github.com/kennethassogba/buildray/actions/runs/39071066598/job/117508611986).
+- [MuJoCo / Unity / internal header](https://github.com/kennethassogba/buildray/actions/runs/39071066598/job/117508612073).
+- [MuJoCo / Unity / public header](https://github.com/kennethassogba/buildray/actions/runs/39071066598/job/117508612067).
+- [MuJoCo / PCH / implementation](https://github.com/kennethassogba/buildray/actions/runs/39071066598/job/117508612066).
+- [MuJoCo / PCH / internal header](https://github.com/kennethassogba/buildray/actions/runs/39071066598/job/117508612012).
+- [MuJoCo / PCH / public header](https://github.com/kennethassogba/buildray/actions/runs/39071066598/job/117508612145).
 
-Each matching `evidence/<project>-<mode>-incremental-report.json` retains all
-samples and validation counts; its `.patch` retains the measured candidate.
+The `evidence/<project>-<mode>-incremental-report.json` files retain the XGrammar
+and SentencePiece samples and validation counts. MuJoCo retains one report per
+file as `evidence/mujoco-<mode>-<implementation|internal-header|public-header>-incremental-report.json`,
+each with its own machine context. Each matching `<project>-<mode>-incremental.patch`
+retains the measured candidate. All six patches also pass `git apply --check`
+against the original CMakeLists.txt from their pinned Git revisions.
 Action artifacts retain individual compiler records, inventories, JUnit files,
 no-op checks and build logs. Independent checks recompute medians, MAD, changes
 and verdicts, and verify raw compiler counts/CPU/RSS/PCH creation and JUnit totals.
+The native regression suite passes all ten suites in Release and Debug with
+ASan/UBSan; [CI at the verified code checkpoint](https://github.com/kennethassogba/buildray/actions/runs/39071272800)
+also exercises the composite Action and tinyxml2.
 
 Trigger the opt-in corpus with `incremental_corpus=true`. Optional
 `incremental_project` and `incremental_mode` inputs restrict a rerun. The
