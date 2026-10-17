@@ -36,7 +36,7 @@ Options:
   --c-compiler PATH     Clang C compiler for deps/headers/unity or incremental pch
   --fail-on-cycles      deps: return 5 if include or target-link cycles exist
   --clang-tidy PATH     clang-tidy with misc-include-cleaner (default: clang-tidy)
-  --runs N              Clean build samples per variant, 1..100 (default: 3)
+  --runs N              Samples per variant and rebuild scenario, 1..100 (default: 3)
   --rebuild-file PATH   pch/unity: also measure a single-file incremental rebuild; repeatable
   --incremental-only    Skip repeated clean timings; requires --rebuild-file (full validation still runs)
   --jobs N              Fixed build parallelism, 1..1024 (default: 2)
@@ -97,6 +97,11 @@ It verifies original C/C++ source/target coverage, builds, tests and measures th
 complete default build. --unity-retries can isolate failed compiler groups before
 validation. Link, runtime and coverage failures always reject the patch.
 Outputs: unity.patch and unity.json. Enable an applied patch with -DBUILDRAY_UNITY=ON.
+Add --rebuild-file for incremental timings after single-file comment edits. Each
+sample requires an up-to-date build first, then compiles, links and passes CTest.
+--incremental-only skips clean timings but keeps full baseline/candidate validation.
+Outputs: incremental.json and incremental.md. Per-scenario regressions prevent a
+clean-build patch recommendation; compiler RSS is not aggregate build memory.
 
 Exit codes: 0 completed, 1 pipeline/validation failure, 2 invalid arguments,
 3 regression over budget and noise, 4 incomparable reports, 5 cycles, 130 interrupted.

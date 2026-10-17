@@ -5,6 +5,7 @@ each file separately in the baseline and candidate build trees. Select files
 that reflect your workload: an implementation file, an internal header and a
 public header are useful starting points. Header visibility is chosen by the
 caller; Buildray does not infer it from directory names.
+Incremental coverage checks require Ninja 1.13 or newer.
 
 ```bash
 buildray unity --source /path/to/project --target core --unity-retries 4 \
@@ -58,8 +59,11 @@ dependency fan-out matters; three files do not describe every developer edit.
 
 `incremental.json`, `incremental.md` and the `incremental` field in `report.json`
 retain the scenarios. Raw samples include wall time, compiler invocation count,
-compiled source paths, PCH creation count, compiler CPU time, maximum individual
+compiled source paths, unique original input source files (expanding Unity groups),
+PCH creation count, compiler CPU time, maximum individual
 compiler RSS, no-op duration and test count. RSS is not aggregate build memory.
+Generated files and PCH wrappers stay in `compiled_sources` but do not count as
+original input source files.
 Compiler records, build logs, inventories and JUnit results are kept under
 `logs/incremental-*`. The GitHub Action retains these artifacts too.
 

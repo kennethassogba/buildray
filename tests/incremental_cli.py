@@ -1,16 +1,16 @@
 """Measure actual Ninja invalidation with Unity/PCH, including failure and restoration."""
 import hashlib
 import json
-from pathlib import Path
 import subprocess
 import sys
 import tempfile
+from pathlib import Path
 
 binary, compiler = sys.argv[1:]
 
 
 def run(*args, expected=0):
-    result = subprocess.run([str(a) for a in args], text=True, stdout=subprocess.PIPE,
+    result = subprocess.run([str(a) for a in args], check=False, text=True, stdout=subprocess.PIPE,
                             stderr=subprocess.STDOUT)
     assert result.returncode == expected, (args, result.returncode, result.stdout)
     return result.stdout
@@ -72,6 +72,9 @@ add_test(NAME works COMMAND sample)
                 assert len(samples) == 3
                 assert all(s["compiler_invocations"] == expected_count for s in samples), scenario
                 assert all(s["tests_passed"] == 1 and s["max_compiler_rss_kib"] > 0 for s in samples)
+                original_count = ([1, 1, 3, 1] if variant == "baseline" else
+                                  [2, 2, 3, 1] if mode == "unity" else [1, 2, 3, 1])[index]
+                assert all(s["original_source_count"] == len(s["original_source_files"]) == original_count for s in samples)
                 assert all((work / (s["log_prefix"] + "-compilers.json")).is_file() for s in samples)
             if mode == "pch" and index in [1, 2]:
                 assert all(s["pch_creations"] == 1 for s in scenario["candidate"]["samples"])

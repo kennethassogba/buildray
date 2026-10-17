@@ -55,8 +55,9 @@ The candidate then passes a clean build, linking and the same CTest count.
 Both variants undergo repeated alternating clean builds without time traces.
 PCH creation, all C++ compilation, code generation and linking are included in
 elapsed candidate time. CPU and individual compiler RSS measurements include PCH
-creation. This release measures clean builds only; it does not estimate incremental
-rebuild cost or aggregate memory across concurrent compiler processes.
+creation. Add `--rebuild-file` to also measure
+[incremental rebuilds](incremental.md). RSS does not estimate aggregate memory
+across concurrent compiler processes.
 
 `report.json` retains raw measurements, validation and the performance verdict.
 `patch_recommended` requires a validated patch, at least three samples per variant,

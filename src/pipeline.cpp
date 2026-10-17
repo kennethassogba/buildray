@@ -489,15 +489,36 @@ void incremental_samples(const Options& options, const Variant& baseline, const 
                 }
                 auto summary = compiler_sample(result, records);  // Also rejects no-op probes.
                 json::Array sources;
+                std::set<std::string> original_sources;
                 for (const auto& record : records) {
                     const auto* object = record.getAsObject();
                     fs::path path = object->getString("source")->str();
                     if (path.is_relative()) path = fs::path(object->getString("directory")->str()) / path;
                     path = absolute_path(path);
-                    sources.push_back(within(path, variant.source) ? "<SOURCE>/" + path.lexically_relative(variant.source).generic_string() :
-                        within(path, variant.build) ? "<BUILD>/" + path.lexically_relative(variant.build).generic_string() : path.generic_string());
+                    const auto display = within(path, variant.source) ? "<SOURCE>/" + path.lexically_relative(variant.source).generic_string() :
+                        within(path, variant.build) ? "<BUILD>/" + path.lexically_relative(variant.build).generic_string() : path.generic_string();
+                    sources.push_back(display);
+                    if (within(path, variant.source) &&
+                        fs::is_regular_file(options.source / path.lexically_relative(variant.source)))
+                        original_sources.insert(display);
+                    if (!before && !variant.unity_target.empty()) {
+                        for (const auto& item : *report.getObject("unity_plan")->getArray("groups")) {
+                            const auto& group = *item.getAsObject();
+                            if (group.getString("file") != display) continue;
+                            for (const auto& member : *group.getArray("sources")) {
+                                const auto member_path = member.getAsString()->str();
+                                if (member_path.starts_with("<SOURCE>/") &&
+                                    fs::is_regular_file(options.source / member_path.substr(9)))
+                                    original_sources.insert(member_path);
+                            }
+                        }
+                    }
                 }
                 summary["compiled_sources"] = std::move(sources);
+                json::Array originals;
+                for (const auto& original_path : original_sources) originals.push_back(original_path);
+                summary["original_source_files"] = std::move(originals);
+                summary["original_source_count"] = static_cast<std::int64_t>(original_sources.size());
                 if (read_file(file) != probe)
                     throw std::runtime_error("Build rewrote the incremental probe");
                 const auto count = test(options, variant, logs, name);
@@ -791,6 +812,9 @@ void print_summary(const json::Object& report, const fs::path& work) {
         std::cout << "Patch: " << (work / "unity.patch") << '\n';
     if (fs::exists(work / "headers.json"))
         std::cout << "Header profile: " << (work / "headers.json") << '\n';
+    if (fs::exists(work / "incremental.json"))
+        std::cout << "Incremental report: " << (work / "incremental.json")
+                  << "\nIncremental summary: " << (work / "incremental.md") << '\n';
 }
 
 int automatic_pch(const Options& options, const fs::path& executable) {
