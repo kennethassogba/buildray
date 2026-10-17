@@ -128,9 +128,17 @@ std::string unity_cmake(const Options& options, const fs::path& source) {
             supported = true;
         };
         if (fs::is_directory(source / path)) {
-            for (const auto& entry : fs::recursive_directory_iterator(source / path)) {
+            for (auto it = fs::recursive_directory_iterator(source / path);
+                 it != fs::recursive_directory_iterator(); ++it) {
                 if (interrupted()) throw std::runtime_error("Interrupted");
-                if (entry.is_regular_file()) add(entry.path());
+                const auto name = it->path().filename();
+                if (it->is_directory() && (name == ".git" || name == ".cache" ||
+                    name == ".buildray" || fs::exists(it->path() / "CMakeCache.txt"))) {
+                    // These directories are absent from the source snapshots too.
+                    it.disable_recursion_pending();
+                    continue;
+                }
+                if (it->is_regular_file()) add(it->path());
             }
         } else if (fs::is_regular_file(source / path)) add(source / path);
         if (!supported) throw std::runtime_error("Unity exclusion contains no supported source files");

@@ -1,0 +1,32 @@
+{
+  "upstream_base": "7e269d56c74c89de52bc8c31e42191155416371f",
+  "candidate": "f95f769b2eca1ca10a2820ff6566eca20efddc23",
+  "upstream_pr": "https://github.com/mlc-ai/xgrammar/pull/995",
+  "configuration": {
+    "build_type": "Release",
+    "compiler": "Clang 21.1.8",
+    "cpp_tests": true,
+    "python_bindings": false,
+    "jobs": 2,
+    "local_CXXFLAGS": "--gcc-install-dir=/usr/lib/gcc/x86_64-linux-gnu/15"
+  },
+  "native_validation": {
+    "on": {
+      "tests": 83,
+      "failures": 0,
+      "disabled": 0,
+      "skipped": 0
+    },
+    "off": {
+      "tests": 83,
+      "failures": 0,
+      "disabled": 0,
+      "skipped": 0
+    }
+  },
+  "enabled_groups_match_measured_groups": true,
+  "enabled_groups": 8,
+  "disabled_individual_compile_commands": 44,
+  "full_pre_commit_hooks": "passed",
+  "ruff": "passed"
+}

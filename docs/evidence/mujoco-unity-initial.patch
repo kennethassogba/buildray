@@ -1,0 +1,23 @@
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -380,3 +380,20 @@
+     endif()
+   endforeach()
+ endif()
++
++# Buildray: opt-in unity experiment, validated for the measured configuration.
++option(BUILDRAY_UNITY "Enable the measured unity build on mujoco" OFF)
++if(BUILDRAY_UNITY)
++  if(NOT TARGET mujoco)
++    message(FATAL_ERROR "Unity target does not exist")
++  endif()
++  get_target_property(_buildray_unity_type mujoco TYPE)
++  get_target_property(_buildray_unity_imported mujoco IMPORTED)
++  get_target_property(_buildray_unity_alias mujoco ALIASED_TARGET)
++  if(_buildray_unity_imported OR _buildray_unity_alias OR NOT _buildray_unity_type
++     MATCHES "^(EXECUTABLE|STATIC_LIBRARY|SHARED_LIBRARY|MODULE_LIBRARY|OBJECT_LIBRARY)$")
++    message(FATAL_ERROR "Unity requires a local compiled target")
++  endif()
++  set_target_properties(mujoco PROPERTIES
++    UNITY_BUILD ON UNITY_BUILD_MODE BATCH UNITY_BUILD_BATCH_SIZE 4)
++endif()

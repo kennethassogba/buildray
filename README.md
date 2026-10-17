@@ -312,3 +312,5 @@ exported requirements and failed experiments.
 
 [Header cleanup evidence](docs/header-validation.md) covers forward declarations,
 standalone checks and C/C++ user validation.
+[Unity build evidence](docs/unity-validation.md) covers the measured XGrammar
+improvement, memory tradeoff and rejected corpus candidates.

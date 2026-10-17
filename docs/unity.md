@@ -38,6 +38,8 @@ For additional exclusions, repeat `--unity-exclude src/special.cpp` or
 `--unity-exclude third_party`. Paths must exist relative to the source root.
 Directories expand deterministically to their original C/C++ source files;
 files generated later during configuration are not part of that expansion.
+Existing build trees, `.git`, `.cache` and `.buildray` are skipped as they are
+in the source snapshots.
 The generated CMake uses the
 target's directory when setting the source property, including targets declared
 in subdirectories.

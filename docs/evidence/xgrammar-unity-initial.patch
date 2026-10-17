@@ -1,0 +1,23 @@
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -147,3 +147,20 @@
+ else()
+   target_compile_definitions(xgrammar PUBLIC XGRAMMAR_ENABLE_INTERNAL_CHECK=0)
+ endif()
++
++# Buildray: opt-in unity experiment, validated for the measured configuration.
++option(BUILDRAY_UNITY "Enable the measured unity build on xgrammar" OFF)
++if(BUILDRAY_UNITY)
++  if(NOT TARGET xgrammar)
++    message(FATAL_ERROR "Unity target does not exist")
++  endif()
++  get_target_property(_buildray_unity_type xgrammar TYPE)
++  get_target_property(_buildray_unity_imported xgrammar IMPORTED)
++  get_target_property(_buildray_unity_alias xgrammar ALIASED_TARGET)
++  if(_buildray_unity_imported OR _buildray_unity_alias OR NOT _buildray_unity_type
++     MATCHES "^(EXECUTABLE|STATIC_LIBRARY|SHARED_LIBRARY|MODULE_LIBRARY|OBJECT_LIBRARY)$")
++    message(FATAL_ERROR "Unity requires a local compiled target")
++  endif()
++  set_target_properties(xgrammar PROPERTIES
++    UNITY_BUILD ON UNITY_BUILD_MODE BATCH UNITY_BUILD_BATCH_SIZE 4)
++endif()

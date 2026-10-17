@@ -1,0 +1,303 @@
+{
+  "baseline": {
+    "mad_seconds": 0.15022500899999613,
+    "max_seconds": 105.497796118,
+    "median_seconds": 105.347571109,
+    "min_seconds": 104.626279403,
+    "samples": [
+      {
+        "compiler_cpu_seconds": 146.022323,
+        "compiler_wall_sum_seconds": 146.08063682299999,
+        "max_compiler_rss_kib": 375564,
+        "wall_seconds": 105.347571109
+      },
+      {
+        "compiler_cpu_seconds": 145.18317000000002,
+        "compiler_wall_sum_seconds": 145.24132368200003,
+        "max_compiler_rss_kib": 376160,
+        "wall_seconds": 105.497796118
+      },
+      {
+        "compiler_cpu_seconds": 144.17952500000001,
+        "compiler_wall_sum_seconds": 144.238442607,
+        "max_compiler_rss_kib": 375892,
+        "wall_seconds": 104.626279403
+      }
+    ]
+  },
+  "baseline_tests_passed": 83,
+  "buildray_version": "0.8.0",
+  "c_compiler_version": "Ubuntu clang version 21.1.8 (++20251221032922+2078da43e25a-1~exp1~20251221153059.70)\nTarget: x86_64-pc-linux-gnu\nThread model: posix\nInstalledDir: /usr/lib/llvm-21/bin\n",
+  "candidate": {
+    "mad_seconds": 0.090816406000001848,
+    "max_seconds": 86.680716246000003,
+    "median_seconds": 85.882403022000005,
+    "min_seconds": 85.791586616000004,
+    "samples": [
+      {
+        "compiler_cpu_seconds": 108.648928,
+        "compiler_wall_sum_seconds": 108.687525013,
+        "max_compiler_rss_kib": 519216,
+        "wall_seconds": 86.680716246000003
+      },
+      {
+        "compiler_cpu_seconds": 107.47964300000002,
+        "compiler_wall_sum_seconds": 107.524632328,
+        "max_compiler_rss_kib": 520400,
+        "wall_seconds": 85.791586616000004
+      },
+      {
+        "compiler_cpu_seconds": 107.38682599999999,
+        "compiler_wall_sum_seconds": 107.42196899899999,
+        "max_compiler_rss_kib": 520652,
+        "wall_seconds": 85.882403022000005
+      }
+    ]
+  },
+  "candidate_measurement_context": {
+    "architecture": "x86_64",
+    "buildray_version": "0.8.0",
+    "cache_flags": {
+      "CMAKE_BUILD_TYPE": "Release",
+      "CMAKE_CXX_FLAGS": "",
+      "CMAKE_CXX_FLAGS-ADVANCED": "1",
+      "CMAKE_CXX_FLAGS_DEBUG": "-g",
+      "CMAKE_CXX_FLAGS_DEBUG-ADVANCED": "1",
+      "CMAKE_CXX_FLAGS_MINSIZEREL": "-Os -DNDEBUG",
+      "CMAKE_CXX_FLAGS_MINSIZEREL-ADVANCED": "1",
+      "CMAKE_CXX_FLAGS_RELEASE": "-O3 -DNDEBUG",
+      "CMAKE_CXX_FLAGS_RELEASE-ADVANCED": "1",
+      "CMAKE_CXX_FLAGS_RELWITHDEBINFO": "-O2 -g -DNDEBUG",
+      "CMAKE_CXX_FLAGS_RELWITHDEBINFO-ADVANCED": "1",
+      "CMAKE_C_FLAGS": "",
+      "CMAKE_C_FLAGS-ADVANCED": "1",
+      "CMAKE_C_FLAGS_DEBUG": "-g",
+      "CMAKE_C_FLAGS_DEBUG-ADVANCED": "1",
+      "CMAKE_C_FLAGS_MINSIZEREL": "-Os -DNDEBUG",
+      "CMAKE_C_FLAGS_MINSIZEREL-ADVANCED": "1",
+      "CMAKE_C_FLAGS_RELEASE": "-O3 -DNDEBUG",
+      "CMAKE_C_FLAGS_RELEASE-ADVANCED": "1",
+      "CMAKE_C_FLAGS_RELWITHDEBINFO": "-O2 -g -DNDEBUG",
+      "CMAKE_C_FLAGS_RELWITHDEBINFO-ADVANCED": "1",
+      "CMAKE_EXE_LINKER_FLAGS": "",
+      "CMAKE_EXE_LINKER_FLAGS-ADVANCED": "1",
+      "CMAKE_EXE_LINKER_FLAGS_DEBUG": "",
+      "CMAKE_EXE_LINKER_FLAGS_DEBUG-ADVANCED": "1",
+      "CMAKE_EXE_LINKER_FLAGS_MINSIZEREL": "",
+      "CMAKE_EXE_LINKER_FLAGS_MINSIZEREL-ADVANCED": "1",
+      "CMAKE_EXE_LINKER_FLAGS_RELEASE": "",
+      "CMAKE_EXE_LINKER_FLAGS_RELEASE-ADVANCED": "1",
+      "CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO": "",
+      "CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO-ADVANCED": "1",
+      "CMAKE_PROJECT_NAME": "xgrammar",
+      "CMAKE_SHARED_LINKER_FLAGS": "",
+      "CMAKE_SHARED_LINKER_FLAGS-ADVANCED": "1",
+      "CMAKE_SHARED_LINKER_FLAGS_DEBUG": "",
+      "CMAKE_SHARED_LINKER_FLAGS_DEBUG-ADVANCED": "1",
+      "CMAKE_SHARED_LINKER_FLAGS_MINSIZEREL": "",
+      "CMAKE_SHARED_LINKER_FLAGS_MINSIZEREL-ADVANCED": "1",
+      "CMAKE_SHARED_LINKER_FLAGS_RELEASE": "",
+      "CMAKE_SHARED_LINKER_FLAGS_RELEASE-ADVANCED": "1",
+      "CMAKE_SHARED_LINKER_FLAGS_RELWITHDEBINFO": "",
+      "CMAKE_SHARED_LINKER_FLAGS_RELWITHDEBINFO-ADVANCED": "1"
+    },
+    "cmake_args": [],
+    "cpu_affinity_count": 4,
+    "cpu_model": "AMD EPYC 7763 64-Core Processor",
+    "cpu_quota": "unavailable",
+    "environment_flags": {
+      "CFLAGS": "",
+      "CXXFLAGS": "",
+      "LDFLAGS": ""
+    },
+    "jobs": 2,
+    "kernel": "6.17.0-1022-azure",
+    "method": "clean-build-warm-filesystem-v1",
+    "precompiled_headers": false,
+    "sampling": "paired_alternating",
+    "session": "4f63117c-54b9-48ef-89e2-8e8c3a4e087b",
+    "tests_required": true,
+    "unity_build": true
+  },
+  "candidate_tests_passed": 83,
+  "candidate_unity_build": true,
+  "cmake_args": [],
+  "cmake_version": "cmake version 4.2.3\n\nCMake suite maintained and supported by Kitware (kitware.com/cmake).\n",
+  "command": "unity",
+  "compiler_version": "Ubuntu clang version 21.1.8 (++20251221032922+2078da43e25a-1~exp1~20251221153059.70)\nTarget: x86_64-pc-linux-gnu\nThread model: posix\nInstalledDir: /usr/lib/llvm-21/bin\n",
+  "excluded_paths": [],
+  "jobs": 2,
+  "measurement": "clean builds; warm filesystem cache; compiler caches disabled; alternating order",
+  "measurement_context": {
+    "architecture": "x86_64",
+    "buildray_version": "0.8.0",
+    "cache_flags": {
+      "CMAKE_BUILD_TYPE": "Release",
+      "CMAKE_CXX_FLAGS": "",
+      "CMAKE_CXX_FLAGS-ADVANCED": "1",
+      "CMAKE_CXX_FLAGS_DEBUG": "-g",
+      "CMAKE_CXX_FLAGS_DEBUG-ADVANCED": "1",
+      "CMAKE_CXX_FLAGS_MINSIZEREL": "-Os -DNDEBUG",
+      "CMAKE_CXX_FLAGS_MINSIZEREL-ADVANCED": "1",
+      "CMAKE_CXX_FLAGS_RELEASE": "-O3 -DNDEBUG",
+      "CMAKE_CXX_FLAGS_RELEASE-ADVANCED": "1",
+      "CMAKE_CXX_FLAGS_RELWITHDEBINFO": "-O2 -g -DNDEBUG",
+      "CMAKE_CXX_FLAGS_RELWITHDEBINFO-ADVANCED": "1",
+      "CMAKE_C_FLAGS": "",
+      "CMAKE_C_FLAGS-ADVANCED": "1",
+      "CMAKE_C_FLAGS_DEBUG": "-g",
+      "CMAKE_C_FLAGS_DEBUG-ADVANCED": "1",
+      "CMAKE_C_FLAGS_MINSIZEREL": "-Os -DNDEBUG",
+      "CMAKE_C_FLAGS_MINSIZEREL-ADVANCED": "1",
+      "CMAKE_C_FLAGS_RELEASE": "-O3 -DNDEBUG",
+      "CMAKE_C_FLAGS_RELEASE-ADVANCED": "1",
+      "CMAKE_C_FLAGS_RELWITHDEBINFO": "-O2 -g -DNDEBUG",
+      "CMAKE_C_FLAGS_RELWITHDEBINFO-ADVANCED": "1",
+      "CMAKE_EXE_LINKER_FLAGS": "",
+      "CMAKE_EXE_LINKER_FLAGS-ADVANCED": "1",
+      "CMAKE_EXE_LINKER_FLAGS_DEBUG": "",
+      "CMAKE_EXE_LINKER_FLAGS_DEBUG-ADVANCED": "1",
+      "CMAKE_EXE_LINKER_FLAGS_MINSIZEREL": "",
+      "CMAKE_EXE_LINKER_FLAGS_MINSIZEREL-ADVANCED": "1",
+      "CMAKE_EXE_LINKER_FLAGS_RELEASE": "",
+      "CMAKE_EXE_LINKER_FLAGS_RELEASE-ADVANCED": "1",
+      "CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO": "",
+      "CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO-ADVANCED": "1",
+      "CMAKE_PROJECT_NAME": "xgrammar",
+      "CMAKE_SHARED_LINKER_FLAGS": "",
+      "CMAKE_SHARED_LINKER_FLAGS-ADVANCED": "1",
+      "CMAKE_SHARED_LINKER_FLAGS_DEBUG": "",
+      "CMAKE_SHARED_LINKER_FLAGS_DEBUG-ADVANCED": "1",
+      "CMAKE_SHARED_LINKER_FLAGS_MINSIZEREL": "",
+      "CMAKE_SHARED_LINKER_FLAGS_MINSIZEREL-ADVANCED": "1",
+      "CMAKE_SHARED_LINKER_FLAGS_RELEASE": "",
+      "CMAKE_SHARED_LINKER_FLAGS_RELEASE-ADVANCED": "1",
+      "CMAKE_SHARED_LINKER_FLAGS_RELWITHDEBINFO": "",
+      "CMAKE_SHARED_LINKER_FLAGS_RELWITHDEBINFO-ADVANCED": "1"
+    },
+    "cmake_args": [],
+    "cpu_affinity_count": 4,
+    "cpu_model": "AMD EPYC 7763 64-Core Processor",
+    "cpu_quota": "unavailable",
+    "environment_flags": {
+      "CFLAGS": "",
+      "CXXFLAGS": "",
+      "LDFLAGS": ""
+    },
+    "jobs": 2,
+    "kernel": "6.17.0-1022-azure",
+    "method": "clean-build-warm-filesystem-v1",
+    "precompiled_headers": false,
+    "sampling": "paired_alternating",
+    "session": "4f63117c-54b9-48ef-89e2-8e8c3a4e087b",
+    "tests_required": true,
+    "unity_build": false
+  },
+  "ninja_version": "1.13.0.git.kitware.jobserver-pipe-1\n",
+  "noise_threshold_seconds": 2.1069514221799999,
+  "patch_recommended": true,
+  "patch_validated": true,
+  "performance_result": "improved",
+  "performance_rule": "heuristic: difference exceeds max(2% baseline, 3x max MAD); not a significance test",
+  "phase": "complete",
+  "precompiled_headers": false,
+  "runs": 3,
+  "schema_version": 1,
+  "source": "/home/runner/work/buildray/buildray/fixtures/xgrammar",
+  "status": "passed",
+  "test_inventory_identity": {
+    "baseline_opaque_values": 0,
+    "candidate_opaque_values": 0,
+    "policy": "CTest names with multiplicity; GTest opaque-byte values use stable filters"
+  },
+  "tests_required": true,
+  "unity_batch_size": 4,
+  "unity_build": false,
+  "unity_exclusions": [],
+  "unity_plan": {
+    "baseline_compiler_invocations": 44,
+    "batch_size": 4,
+    "candidate_compiler_invocations": 23,
+    "groups": [
+      {
+        "file": "<BUILD>/CMakeFiles/xgrammar.dir/Unity/unity_7_cxx.cxx",
+        "sources": [
+          "<SOURCE>/cpp/tokenizer_info.cc"
+        ]
+      },
+      {
+        "file": "<BUILD>/CMakeFiles/xgrammar.dir/Unity/unity_6_cxx.cxx",
+        "sources": [
+          "<SOURCE>/cpp/suffix_automata.cc",
+          "<SOURCE>/cpp/support/logging.cc",
+          "<SOURCE>/cpp/support/recursion_guard.cc",
+          "<SOURCE>/cpp/testing.cc"
+        ]
+      },
+      {
+        "file": "<BUILD>/CMakeFiles/xgrammar.dir/Unity/unity_5_cxx.cxx",
+        "sources": [
+          "<SOURCE>/cpp/json_schema_converter.cc",
+          "<SOURCE>/cpp/lark_converter.cc",
+          "<SOURCE>/cpp/regex_converter.cc",
+          "<SOURCE>/cpp/structural_tag.cc"
+        ]
+      },
+      {
+        "file": "<BUILD>/CMakeFiles/xgrammar.dir/Unity/unity_4_cxx.cxx",
+        "sources": [
+          "<SOURCE>/cpp/grammar_functor.cc",
+          "<SOURCE>/cpp/grammar_matcher.cc",
+          "<SOURCE>/cpp/grammar_parser.cc",
+          "<SOURCE>/cpp/grammar_printer.cc"
+        ]
+      },
+      {
+        "file": "<BUILD>/CMakeFiles/xgrammar.dir/Unity/unity_3_cxx.cxx",
+        "sources": [
+          "<SOURCE>/cpp/fsm_builder.cc",
+          "<SOURCE>/cpp/grammar.cc",
+          "<SOURCE>/cpp/grammar_builder.cc",
+          "<SOURCE>/cpp/grammar_compiler.cc"
+        ]
+      },
+      {
+        "file": "<BUILD>/CMakeFiles/xgrammar.dir/Unity/unity_2_cxx.cxx",
+        "sources": [
+          "<SOURCE>/cpp/converter_ext/minimax_m3.cc",
+          "<SOURCE>/cpp/converter_ext/qwen.cc",
+          "<SOURCE>/cpp/earley_parser.cc",
+          "<SOURCE>/cpp/fsm.cc"
+        ]
+      },
+      {
+        "file": "<BUILD>/CMakeFiles/xgrammar.dir/Unity/unity_1_cxx.cxx",
+        "sources": [
+          "<SOURCE>/cpp/converter_ext/gemma.cc",
+          "<SOURCE>/cpp/converter_ext/glm.cc",
+          "<SOURCE>/cpp/converter_ext/kimi_k3.cc",
+          "<SOURCE>/cpp/converter_ext/minimax.cc"
+        ]
+      },
+      {
+        "file": "<BUILD>/CMakeFiles/xgrammar.dir/Unity/unity_0_cxx.cxx",
+        "sources": [
+          "<SOURCE>/cpp/compiled_grammar.cc",
+          "<SOURCE>/cpp/config.cc",
+          "<SOURCE>/cpp/converter_ext/cohere.cc",
+          "<SOURCE>/cpp/converter_ext/deepseek.cc"
+        ]
+      }
+    ],
+    "original_compilations": 44,
+    "scope": "one configured Ninja default all target; C/C++ commands; original source/target multiset preserved; generated unity groups only on the selected target",
+    "selected_target_sources": 29,
+    "source_target_coverage_verified": true,
+    "target": "xgrammar"
+  },
+  "unity_target": "xgrammar",
+  "validation": "build_and_tests_passed",
+  "validation_scope": "one configured Ninja default all target; unity on one selected target; original C/C++ source/target multiset preserved; complete build and CTest",
+  "wall_change_percent": -18.477092430408256,
+  "work_dir": "/home/runner/work/_temp/buildray-action-pxos8sbh/run"
+}

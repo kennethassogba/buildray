@@ -1,0 +1,81 @@
+{
+  "baseline_compiler_invocations": 44,
+  "batch_size": 4,
+  "candidate_compiler_invocations": 23,
+  "groups": [
+    {
+      "file": "<BUILD>/CMakeFiles/xgrammar.dir/Unity/unity_7_cxx.cxx",
+      "sources": [
+        "<SOURCE>/cpp/tokenizer_info.cc"
+      ]
+    },
+    {
+      "file": "<BUILD>/CMakeFiles/xgrammar.dir/Unity/unity_6_cxx.cxx",
+      "sources": [
+        "<SOURCE>/cpp/suffix_automata.cc",
+        "<SOURCE>/cpp/support/logging.cc",
+        "<SOURCE>/cpp/support/recursion_guard.cc",
+        "<SOURCE>/cpp/testing.cc"
+      ]
+    },
+    {
+      "file": "<BUILD>/CMakeFiles/xgrammar.dir/Unity/unity_5_cxx.cxx",
+      "sources": [
+        "<SOURCE>/cpp/json_schema_converter.cc",
+        "<SOURCE>/cpp/lark_converter.cc",
+        "<SOURCE>/cpp/regex_converter.cc",
+        "<SOURCE>/cpp/structural_tag.cc"
+      ]
+    },
+    {
+      "file": "<BUILD>/CMakeFiles/xgrammar.dir/Unity/unity_4_cxx.cxx",
+      "sources": [
+        "<SOURCE>/cpp/grammar_functor.cc",
+        "<SOURCE>/cpp/grammar_matcher.cc",
+        "<SOURCE>/cpp/grammar_parser.cc",
+        "<SOURCE>/cpp/grammar_printer.cc"
+      ]
+    },
+    {
+      "file": "<BUILD>/CMakeFiles/xgrammar.dir/Unity/unity_3_cxx.cxx",
+      "sources": [
+        "<SOURCE>/cpp/fsm_builder.cc",
+        "<SOURCE>/cpp/grammar.cc",
+        "<SOURCE>/cpp/grammar_builder.cc",
+        "<SOURCE>/cpp/grammar_compiler.cc"
+      ]
+    },
+    {
+      "file": "<BUILD>/CMakeFiles/xgrammar.dir/Unity/unity_2_cxx.cxx",
+      "sources": [
+        "<SOURCE>/cpp/converter_ext/minimax_m3.cc",
+        "<SOURCE>/cpp/converter_ext/qwen.cc",
+        "<SOURCE>/cpp/earley_parser.cc",
+        "<SOURCE>/cpp/fsm.cc"
+      ]
+    },
+    {
+      "file": "<BUILD>/CMakeFiles/xgrammar.dir/Unity/unity_1_cxx.cxx",
+      "sources": [
+        "<SOURCE>/cpp/converter_ext/gemma.cc",
+        "<SOURCE>/cpp/converter_ext/glm.cc",
+        "<SOURCE>/cpp/converter_ext/kimi_k3.cc",
+        "<SOURCE>/cpp/converter_ext/minimax.cc"
+      ]
+    },
+    {
+      "file": "<BUILD>/CMakeFiles/xgrammar.dir/Unity/unity_0_cxx.cxx",
+      "sources": [
+        "<SOURCE>/cpp/compiled_grammar.cc",
+        "<SOURCE>/cpp/config.cc",
+        "<SOURCE>/cpp/converter_ext/cohere.cc",
+        "<SOURCE>/cpp/converter_ext/deepseek.cc"
+      ]
+    }
+  ],
+  "original_compilations": 44,
+  "scope": "one configured Ninja default all target; C/C++ commands; original source/target multiset preserved; generated unity groups only on the selected target",
+  "selected_target_sources": 29,
+  "source_target_coverage_verified": true,
+  "target": "xgrammar"
+}

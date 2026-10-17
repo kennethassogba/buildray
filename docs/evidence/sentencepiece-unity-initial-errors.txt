@@ -1,0 +1,63 @@
+In file included from /home/runner/work/_temp/buildray-action-i8zz440i/run/candidate-build/src/CMakeFiles/sentencepiece-static.dir/Unity/unity_3_cxx.cxx:7:
+In file included from /home/runner/work/_temp/buildray-action-i8zz440i/run/candidate-source/third_party/protobuf-lite/parse_context.cc:42:
+/home/runner/work/_temp/buildray-action-i8zz440i/run/candidate-source/src/../third_party/protobuf-lite/google/protobuf/port_def.inc:56:2: error: PROTOBUF_NAMESPACE was previously defined
+   56 | #error PROTOBUF_NAMESPACE was previously defined
+      |  ^
+/home/runner/work/_temp/buildray-action-i8zz440i/run/candidate-source/src/../third_party/protobuf-lite/google/protobuf/port_def.inc:59:2: error: PROTOBUF_NAMESPACE_ID was previously defined
+   59 | #error PROTOBUF_NAMESPACE_ID was previously defined
+
+   56 | #error PROTOBUF_NAMESPACE was previously defined
+      |  ^
+/home/runner/work/_temp/buildray-action-i8zz440i/run/candidate-source/src/../third_party/protobuf-lite/google/protobuf/port_def.inc:59:2: error: PROTOBUF_NAMESPACE_ID was previously defined
+   59 | #error PROTOBUF_NAMESPACE_ID was previously defined
+      |  ^
+/home/runner/work/_temp/buildray-action-i8zz440i/run/candidate-source/src/../third_party/protobuf-lite/google/protobuf/port_def.inc:62:2: error: PROTOBUF_ALWAYS_INLINE was previously defined
+   62 | #error PROTOBUF_ALWAYS_INLINE was previously defined
+
+   59 | #error PROTOBUF_NAMESPACE_ID was previously defined
+      |  ^
+/home/runner/work/_temp/buildray-action-i8zz440i/run/candidate-source/src/../third_party/protobuf-lite/google/protobuf/port_def.inc:62:2: error: PROTOBUF_ALWAYS_INLINE was previously defined
+   62 | #error PROTOBUF_ALWAYS_INLINE was previously defined
+      |  ^
+/home/runner/work/_temp/buildray-action-i8zz440i/run/candidate-source/src/../third_party/protobuf-lite/google/protobuf/port_def.inc:65:2: error: PROTOBUF_COLD was previously defined
+   65 | #error PROTOBUF_COLD was previously defined
+
+   62 | #error PROTOBUF_ALWAYS_INLINE was previously defined
+      |  ^
+/home/runner/work/_temp/buildray-action-i8zz440i/run/candidate-source/src/../third_party/protobuf-lite/google/protobuf/port_def.inc:65:2: error: PROTOBUF_COLD was previously defined
+   65 | #error PROTOBUF_COLD was previously defined
+      |  ^
+/home/runner/work/_temp/buildray-action-i8zz440i/run/candidate-source/src/../third_party/protobuf-lite/google/protobuf/port_def.inc:68:2: error: PROTOBUF_NOINLINE was previously defined
+   68 | #error PROTOBUF_NOINLINE was previously defined
+
+   65 | #error PROTOBUF_COLD was previously defined
+      |  ^
+/home/runner/work/_temp/buildray-action-i8zz440i/run/candidate-source/src/../third_party/protobuf-lite/google/protobuf/port_def.inc:68:2: error: PROTOBUF_NOINLINE was previously defined
+   68 | #error PROTOBUF_NOINLINE was previously defined
+      |  ^
+/home/runner/work/_temp/buildray-action-i8zz440i/run/candidate-source/src/../third_party/protobuf-lite/google/protobuf/port_def.inc:71:2: error: PROTOBUF_SECTION_VARIABLE was previously defined
+   71 | #error PROTOBUF_SECTION_VARIABLE was previously defined
+
+   68 | #error PROTOBUF_NOINLINE was previously defined
+      |  ^
+/home/runner/work/_temp/buildray-action-i8zz440i/run/candidate-source/src/../third_party/protobuf-lite/google/protobuf/port_def.inc:71:2: error: PROTOBUF_SECTION_VARIABLE was previously defined
+   71 | #error PROTOBUF_SECTION_VARIABLE was previously defined
+      |  ^
+/home/runner/work/_temp/buildray-action-i8zz440i/run/candidate-source/src/../third_party/protobuf-lite/google/protobuf/port_def.inc:74:2: error: PROTOBUF_DEPRECATED was previously defined
+   74 | #error PROTOBUF_DEPRECATED was previously defined
+
+   71 | #error PROTOBUF_SECTION_VARIABLE was previously defined
+      |  ^
+/home/runner/work/_temp/buildray-action-i8zz440i/run/candidate-source/src/../third_party/protobuf-lite/google/protobuf/port_def.inc:74:2: error: PROTOBUF_DEPRECATED was previously defined
+   74 | #error PROTOBUF_DEPRECATED was previously defined
+      |  ^
+/home/runner/work/_temp/buildray-action-i8zz440i/run/candidate-source/src/../third_party/protobuf-lite/google/protobuf/port_def.inc:77:2: error: PROTOBUF_DEPRECATED_MSG was previously defined
+   77 | #error PROTOBUF_DEPRECATED_MSG was previously defined
+
+   74 | #error PROTOBUF_DEPRECATED was previously defined
+      |  ^
+/home/runner/work/_temp/buildray-action-i8zz440i/run/candidate-source/src/../third_party/protobuf-lite/google/protobuf/port_def.inc:77:2: error: PROTOBUF_DEPRECATED_MSG was previously defined
+   77 | #error PROTOBUF_DEPRECATED_MSG was previously defined
+      |  ^
+/home/runner/work/_temp/buildray-action-i8zz440i/run/candidate-source/src/../third_party/protobuf-lite/google/protobuf/port_def.inc:80:2: error: PROTOBUF_FUNC_ALIGN was previously defined
+   80 | #error PROTOBUF_FUNC_ALIGN was previously defined

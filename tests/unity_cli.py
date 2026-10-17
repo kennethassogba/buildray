@@ -53,6 +53,10 @@ int third() { return 0; }
 ''')
     (lib / "c/a.c").write_text("int a(void) { return 0; }\n")
     (lib / "c/b.c").write_text("int b(void) { return 0; }\n")
+    old_build = lib / "c/previous-build"
+    old_build.mkdir()
+    (old_build / "CMakeCache.txt").write_text("// An unrelated existing build tree.\n")
+    (old_build / "generated;skip.cpp").write_text("#error generated file outside the snapshot\n")
     (source / "other.cpp").write_text("int main() { return 0; }\n")
     (source / "broken.cpp").write_text("#error excluded target must remain outside the experiment\n")
     original = digest(source)
@@ -97,9 +101,10 @@ int third() { return 0; }
     _, short = invoke("one-pair", "--unity-exclude", "lib/main file.cpp")
     assert short["patch_validated"] and short["performance_result"] == "insufficient_samples"
     assert not short["patch_recommended"]
-    _, directory = invoke("directory-exclusion", "--unity-exclude", "lib/c")
+    directory_work, directory = invoke("directory-exclusion", "--unity-exclude", "lib/c")
     assert directory["patch_validated"]
     assert all(not any(f.endswith(".c") for f in g["sources"]) for g in directory["unity_plan"]["groups"])
+    assert "previous-build" not in (directory_work / "unity.patch").read_text()
 
     # A clean baseline cannot hide unity collisions or changed runtime behavior.
     saved_main, saved_second = main.read_text(), (lib / "second.cpp").read_text()
