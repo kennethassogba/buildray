@@ -10,6 +10,7 @@
 #include <iterator>
 #include <map>
 #include <optional>
+#include <regex>
 #include <set>
 #include <sstream>
 #include <stdexcept>
@@ -182,17 +183,34 @@ json::Array compiler_records(const fs::path& records) {
     return result;
 }
 
-std::set<std::string> test_names(const fs::path& inventory) {
+std::multiset<std::string> test_names(const fs::path& inventory, unsigned& normalized) {
     const auto document = read_json(inventory);
     const auto* object = document.getAsObject();
     const auto* tests = object ? object->getArray("tests") : nullptr;
     if (!tests) throw std::runtime_error("Invalid CTest inventory");
-    std::set<std::string> names;
+    std::multiset<std::string> names;
+    static const std::regex opaque(R"(([0-9]+)-byte object <[0-9A-Fa-f .-]+>)");
     for (const auto& entry : *tests) {
         const auto* definition = entry.getAsObject();
         const auto name = definition ? definition->getString("name") : std::nullopt;
         if (!name) throw std::runtime_error("Missing CTest name");
-        names.insert(name->str());
+        auto identity = name->str();
+        std::string filter;
+        if (const auto* command = definition->getArray("command"))
+            for (const auto& value : *command)
+                if (const auto argument = value.getAsString();
+                    argument && argument->starts_with("--gtest_filter="))
+                    filter = argument->str();
+        const auto slash = identity.rfind('/');
+        if (!filter.empty() && slash != std::string::npos &&
+            std::regex_match(identity.substr(slash + 1), opaque)) {
+            // GTest's opaque value printer can dump ASLR pointers. Preserve the display
+            // prefix and object size, and distinguish cases by their real execution filter.
+            identity = std::regex_replace(identity, opaque, "$1-byte object <opaque>");
+            identity += " [" + filter + "]";
+            ++normalized;
+        }
+        names.insert(std::move(identity));
     }
     return names;
 }
@@ -1014,37 +1032,60 @@ int pipeline(const Options& options, const fs::path& executable) {
             verify_coverage(candidate);
             const auto candidate_tests = test(options, candidate, logs, "candidate");
             report["candidate_tests_passed"] = static_cast<std::int64_t>(candidate_tests);
-            if (baseline_tests != candidate_tests ||
-                test_names(logs / "baseline-tests.json") != test_names(logs / "candidate-tests.json"))
+            unsigned baseline_opaque = 0, candidate_opaque = 0;
+            const auto baseline_names = test_names(logs / "baseline-tests.json", baseline_opaque);
+            const auto candidate_names = test_names(logs / "candidate-tests.json", candidate_opaque);
+            report["test_inventory_identity"] = json::Object{
+                {"policy", "CTest names with multiplicity; GTest opaque-byte values use stable filters"},
+                {"baseline_opaque_values", baseline_opaque},
+                {"candidate_opaque_values", candidate_opaque}};
+            if (baseline_tests != candidate_tests || baseline_names != candidate_names) {
+                json::Array missing, added;
+                for (const auto& name : baseline_names)
+                    if (baseline_names.count(name) != candidate_names.count(name) && missing.size() < 10)
+                        missing.push_back(name);
+                for (const auto& name : candidate_names)
+                    if (baseline_names.count(name) != candidate_names.count(name) && added.size() < 10)
+                        added.push_back(name);
+                report["test_inventory_difference"] = json::Object{
+                    {"missing_or_changed_multiplicity", std::move(missing)},
+                    {"added_or_changed_multiplicity", std::move(added)}};
                 throw std::runtime_error("CTest inventory changed");
+            }
             report["validation"] = baseline_tests ? "build_and_tests_passed" : "build_only";
             report["patch_validated"] = true;
-            report["phase"] = "measurement";
-            const auto [before, after] = paired_samples(options, baseline, candidate, logs);
-            auto before_summary = summarize(before);
-            auto after_summary = summarize(after);
-            const double before_median = *before_summary.getNumber("median_seconds");
-            const double after_median = *after_summary.getNumber("median_seconds");
-            const double delta = 100.0 * (after_median - before_median) / before_median;
-            const double threshold = std::max(
-                0.02 * before_median, 3 * std::max(*before_summary.getNumber("mad_seconds"),
-                                                   *after_summary.getNumber("mad_seconds")));
-            const bool changed = options.command == "pch" || !changes.empty();
-            const std::string verdict = !changed    ? "no_changes"
-                                        : options.runs < 3 ? "insufficient_samples"
-                                        : std::abs(after_median - before_median) <= threshold
-                                            ? "inconclusive"
-                                        : after_median < before_median ? "improved"
-                                                                       : "regressed";
-            report["baseline"] = std::move(before_summary);
-            report["candidate"] = std::move(after_summary);
-            report["wall_change_percent"] = delta;
-            report["performance_result"] = verdict;
-            report["noise_threshold_seconds"] = threshold;
-            report["performance_rule"] =
-                "heuristic: difference exceeds max(2% baseline, 3x max MAD); not a significance "
-                "test";
-            report["patch_recommended"] = changed && verdict == "improved";
+            if (options.command == "headers" && changes.empty()) {
+                report["performance_result"] = "no_changes";
+                report["patch_recommended"] = false;
+                report["measurement"] = "no eligible header changes; build and tests validated; benchmark skipped";
+            } else {
+                report["phase"] = "measurement";
+                const auto [before, after] = paired_samples(options, baseline, candidate, logs);
+                auto before_summary = summarize(before);
+                auto after_summary = summarize(after);
+                const double before_median = *before_summary.getNumber("median_seconds");
+                const double after_median = *after_summary.getNumber("median_seconds");
+                const double delta = 100.0 * (after_median - before_median) / before_median;
+                const double threshold = std::max(
+                    0.02 * before_median, 3 * std::max(*before_summary.getNumber("mad_seconds"),
+                                                       *after_summary.getNumber("mad_seconds")));
+                const bool changed = options.command == "pch" || !changes.empty();
+                const std::string verdict = !changed    ? "no_changes"
+                                            : options.runs < 3 ? "insufficient_samples"
+                                            : std::abs(after_median - before_median) <= threshold
+                                                ? "inconclusive"
+                                            : after_median < before_median ? "improved"
+                                                                           : "regressed";
+                report["baseline"] = std::move(before_summary);
+                report["candidate"] = std::move(after_summary);
+                report["wall_change_percent"] = delta;
+                report["performance_result"] = verdict;
+                report["noise_threshold_seconds"] = threshold;
+                report["performance_rule"] =
+                    "heuristic: difference exceeds max(2% baseline, 3x max MAD); not a significance "
+                    "test";
+                report["patch_recommended"] = changed && verdict == "improved";
+            }
         }
         if (interrupted()) throw std::runtime_error("Interrupted");
         report["phase"] = "complete";

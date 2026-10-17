@@ -40,7 +40,9 @@ Forward declarations come from actual class/struct definitions used through dire
 pointers or references in header declarations. The first version excludes
 aliases, templates, specializations, nested/local classes, attributed classes,
 standard-library types, inline/anonymous namespaces and includes inside lexical
-scopes. By-value fields, base classes and function signatures keep their record provider.
+scopes. By-value fields, arrays, base classes and function signatures keep their record
+provider. Template argument types are conservatively treated as requiring their
+providers too; smart-pointer-specific rewrites are deferred.
 Forward rewrites are limited to declaration-oriented headers: inline function
 bodies, object/field initializers, default arguments, aliases, templates, enums
 and static assertions defer the whole header until those requirements are modeled. A transitive include supplying a complete type is not
@@ -53,17 +55,21 @@ suppressions normally.
 
 Every proposal must compile as a standalone header and with every observed user,
 including C users and users in excluded directories. User preflights reuse the
-original flags with `-fsyntax-only`; code generation and linking are checked by
+original flags with `-c` removed and `-fsyntax-only` added; code generation and linking are checked by
 the subsequent clean build. Failed proposals are restored
 while independent changes continue. Accepted changes remain staged during later
 checks, so those checks cover the combined changes. A final standalone pass checks
 all changed headers again. Buildray then emits the patch, performs a clean build,
-links and reruns the same CTest suite. A failure leaves the patch unvalidated.
+links and reruns the same CTest suite. Inventory matching keeps names and
+multiplicity; opaque GoogleTest byte-dump parameters use their actual stable
+filters, with the normalization counts recorded. A failure leaves the patch unvalidated.
 
 Clean baseline/candidate builds alternate using the existing measurement workflow.
 Analysis, AST indexing, preflight compilations and tests are outside the measured
 interval. The AST helper is not loaded by the compiler timing launcher. Three or
-more pairs are needed for a performance recommendation.
+more pairs are needed for a performance recommendation. When there are no eligible
+changes, both builds and their CTest inventories are still validated, then the
+command returns `no_changes` without benchmarking identical source copies.
 
 ## Results and limits
 

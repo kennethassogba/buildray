@@ -1,0 +1,126 @@
+{
+  "added_forward_declarations": 0,
+  "ast_commands": 44,
+  "budget_reached": false,
+  "findings": [],
+  "forward_declarations_enabled": true,
+  "forwarded_includes": 0,
+  "header_paths": [
+    "cpp"
+  ],
+  "inactive_compile_commands": 0,
+  "max_header_edits": 4,
+  "modified_headers": 0,
+  "observed_headers": 42,
+  "preflight_commands": 38,
+  "rejected": [
+    {
+      "file": "cpp/support/compact_2d_array.h",
+      "kind": "unused_includes",
+      "log": "logs/header-preflight-2.log",
+      "reason": "standalone header or observed user failed compilation"
+    },
+    {
+      "file": "cpp/grammar_impl.h",
+      "kind": "unused_includes",
+      "log": "logs/header-preflight-5.log",
+      "reason": "standalone header or observed user failed compilation"
+    },
+    {
+      "file": "cpp/grammar_builder.h",
+      "kind": "unused_includes",
+      "log": "logs/header-preflight-8.log",
+      "reason": "standalone header or observed user failed compilation"
+    },
+    {
+      "file": "cpp/grammar_builder.h",
+      "kind": "forward_declarations",
+      "log": "logs/header-preflight-11.log",
+      "reason": "standalone header or observed user failed compilation"
+    },
+    {
+      "file": "cpp/earley_parser.h",
+      "kind": "forward_declarations",
+      "log": "logs/header-preflight-14.log",
+      "reason": "standalone header or observed user failed compilation"
+    },
+    {
+      "file": "cpp/compiled_grammar_impl.h",
+      "kind": "forward_declarations",
+      "log": "logs/header-preflight-17.log",
+      "reason": "standalone header or observed user failed compilation"
+    },
+    {
+      "file": "cpp/json_schema_converter.h",
+      "kind": "unused_includes",
+      "log": "logs/header-preflight-19.log",
+      "reason": "standalone header or observed user failed compilation"
+    },
+    {
+      "file": "cpp/json_schema_converter.h",
+      "kind": "forward_declarations",
+      "log": "logs/header-preflight-21.log",
+      "reason": "standalone header or observed user failed compilation"
+    },
+    {
+      "file": "cpp/grammar_functor.h",
+      "kind": "unused_includes",
+      "log": "logs/header-preflight-24.log",
+      "reason": "standalone header or observed user failed compilation"
+    },
+    {
+      "file": "cpp/grammar_functor.h",
+      "kind": "forward_declarations",
+      "log": "logs/header-preflight-27.log",
+      "reason": "standalone header or observed user failed compilation"
+    },
+    {
+      "file": "cpp/grammar_functor.h",
+      "kind": "forward_declarations",
+      "log": "logs/header-preflight-28.log",
+      "reason": "standalone header or observed user failed compilation"
+    },
+    {
+      "file": "cpp/grammar_functor.h",
+      "kind": "forward_declarations",
+      "log": "logs/header-preflight-31.log",
+      "reason": "standalone header or observed user failed compilation"
+    },
+    {
+      "file": "cpp/json_schema_converter_ext.h",
+      "kind": "forward_declarations",
+      "log": "logs/header-preflight-32.log",
+      "reason": "standalone header or observed user failed compilation"
+    },
+    {
+      "file": "cpp/fsm_builder.h",
+      "kind": "forward_declarations",
+      "log": "logs/header-preflight-33.log",
+      "reason": "standalone header or observed user failed compilation"
+    },
+    {
+      "file": "cpp/grammar_parser.h",
+      "kind": "unused_includes",
+      "log": "logs/header-preflight-34.log",
+      "reason": "standalone header or observed user failed compilation"
+    },
+    {
+      "file": "cpp/testing.h",
+      "kind": "unused_includes",
+      "log": "logs/header-preflight-35.log",
+      "reason": "standalone header or observed user failed compilation"
+    },
+    {
+      "file": "cpp/grammar_printer.h",
+      "kind": "unused_includes",
+      "log": "logs/header-preflight-37.log",
+      "reason": "standalone header or observed user failed compilation"
+    }
+  ],
+  "scope": "Ninja default all target; observed original project headers; standalone checks use observed C++ flags; all observed C/C++ users are preflighted; one accepted forward include per header; full build and CTest still required",
+  "selection_order": "descending observed user count, then path",
+  "skipped": [],
+  "standalone_checks": 56,
+  "tidy_commands": 56,
+  "unused_includes": 0
+}

@@ -1,0 +1,138 @@
+{
+  "added_forward_declarations": 0,
+  "ast_commands": 326,
+  "budget_reached": false,
+  "findings": [],
+  "forward_declarations_enabled": true,
+  "forwarded_includes": 0,
+  "header_paths": [
+    "src"
+  ],
+  "inactive_compile_commands": 167,
+  "max_header_edits": 4,
+  "modified_headers": 0,
+  "observed_headers": 106,
+  "preflight_commands": 34,
+  "rejected": [
+    {
+      "file": "src/engine/engine_util_sparse.h",
+      "kind": "unused_includes",
+      "log": "logs/header-preflight-2.log",
+      "reason": "standalone header or observed user failed compilation"
+    },
+    {
+      "file": "src/engine/engine_crossplatform.h",
+      "kind": "unused_includes",
+      "log": "logs/header-preflight-5.log",
+      "reason": "standalone header or observed user failed compilation"
+    },
+    {
+      "file": "src/engine/engine_io.h",
+      "kind": "unused_includes",
+      "log": "logs/header-preflight-8.log",
+      "reason": "standalone header or observed user failed compilation"
+    },
+    {
+      "file": "src/user/user_model.h",
+      "kind": "forward_declarations",
+      "log": "logs/header-preflight-9.log",
+      "reason": "standalone header or observed user failed compilation"
+    },
+    {
+      "file": "src/user/user_objects.h",
+      "kind": "unused_includes",
+      "log": "logs/header-preflight-11.log",
+      "reason": "standalone header or observed user failed compilation"
+    },
+    {
+      "file": "src/user/user_objects.h",
+      "kind": "forward_declarations",
+      "log": "logs/header-preflight-13.log",
+      "reason": "standalone header or observed user failed compilation"
+    },
+    {
+      "file": "src/user/user_resource.h",
+      "kind": "unused_includes",
+      "log": "logs/header-preflight-14.log",
+      "reason": "standalone header or observed user failed compilation"
+    },
+    {
+      "file": "src/user/user_flexcomp.h",
+      "kind": "unused_includes",
+      "log": "logs/header-preflight-16.log",
+      "reason": "standalone header or observed user failed compilation"
+    },
+    {
+      "file": "src/user/user_flexcomp.h",
+      "kind": "forward_declarations",
+      "log": "logs/header-preflight-18.log",
+      "reason": "standalone header or observed user failed compilation"
+    },
+    {
+      "file": "src/user/user_flexcomp.h",
+      "kind": "forward_declarations",
+      "log": "logs/header-preflight-20.log",
+      "reason": "standalone header or observed user failed compilation"
+    },
+    {
+      "file": "src/xml/xml_util.h",
+      "kind": "unused_includes",
+      "log": "logs/header-preflight-21.log",
+      "reason": "standalone header or observed user failed compilation"
+    },
+    {
+      "file": "src/user/user_composite.h",
+      "kind": "unused_includes",
+      "log": "logs/header-preflight-23.log",
+      "reason": "standalone header or observed user failed compilation"
+    },
+    {
+      "file": "src/user/user_composite.h",
+      "kind": "forward_declarations",
+      "log": "logs/header-preflight-25.log",
+      "reason": "standalone header or observed user failed compilation"
+    },
+    {
+      "file": "src/user/user_vfs.h",
+      "kind": "unused_includes",
+      "log": "logs/header-preflight-26.log",
+      "reason": "standalone header or observed user failed compilation"
+    },
+    {
+      "file": "src/xml/xml_native_reader.h",
+      "kind": "unused_includes",
+      "log": "logs/header-preflight-28.log",
+      "reason": "standalone header or observed user failed compilation"
+    },
+    {
+      "file": "src/xml/xml_native_reader.h",
+      "kind": "forward_declarations",
+      "log": "logs/header-preflight-29.log",
+      "reason": "standalone header or observed user failed compilation"
+    },
+    {
+      "file": "src/xml/xml_global.h",
+      "kind": "unused_includes",
+      "log": "logs/header-preflight-30.log",
+      "reason": "standalone header or observed user failed compilation"
+    },
+    {
+      "file": "src/xml/xml_native_writer.h",
+      "kind": "forward_declarations",
+      "log": "logs/header-preflight-32.log",
+      "reason": "standalone header or observed user failed compilation"
+    },
+    {
+      "file": "src/xml/xml_native_writer.h",
+      "kind": "forward_declarations",
+      "log": "logs/header-preflight-33.log",
+      "reason": "standalone header or observed user failed compilation"
+    }
+  ],
+  "scope": "Ninja default all target; observed original project headers; standalone checks use observed C++ flags; all observed C/C++ users are preflighted; one accepted forward include per header; full build and CTest still required",
+  "selection_order": "descending observed user count, then path",
+  "skipped": [],
+  "standalone_checks": 95,
+  "tidy_commands": 95,
+  "unused_includes": 0
+}

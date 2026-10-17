@@ -36,6 +36,7 @@ check_ipo_supported(RESULT ipo_supported)
 if(ipo_supported)
   set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
 endif()
+add_compile_options(-Werror=unused-command-line-argument)
 add_executable(sample main.cpp api.cpp helper.c)
 add_library(configured OBJECT variant.cpp)
 target_compile_definitions(configured PRIVATE DETAIL_REQUIRED=1)
@@ -89,8 +90,9 @@ void keep(demo::Detail*);
     (source / "kept_next.hpp").write_text('#pragma once\n// NOLINTNEXTLINE(misc-include-cleaner)\n#include "detail.hpp"\nvoid keep_next(demo::Detail*);\n')
     (source / "kept_block.hpp").write_text('#pragma once\n// NOLINTBEGIN(misc-include-cleaner)\n#include "detail.hpp"\n// NOLINTEND(misc-include-cleaner)\nvoid keep_block(demo::Detail*);\n')
     (source / "transitive.hpp").write_text('#pragma once\n#include "detail.hpp"\nnamespace demo { struct Marker {}; }\n')
-    (source / "by_value.hpp").write_text('#pragma once\n#include "detail.hpp"\n#include "transitive.hpp"\nnamespace demo { struct ByValue { Detail value; Marker marker; }; void opaque_value(Detail*); }\n')
+    (source / "by_value.hpp").write_text('#pragma once\n#include "detail.hpp"\n#include "transitive.hpp"\nnamespace demo { struct ByValue { Detail value[1]; Marker marker; }; void opaque_value(Detail*); }\n')
     (source / "inline.hpp").write_text('#pragma once\n#include "detail.hpp"\n#include "transitive.hpp"\ninline unsigned count(demo::Detail* value, const demo::Marker&) { return value->values.size(); }\n')
+    (source / "container.hpp").write_text('#pragma once\n#include <array>\n#include "detail.hpp"\n#include "transitive.hpp"\nnamespace demo { struct ByContainer { std::array<Detail, 1> values; Marker marker; }; void opaque_container(Detail*); }\n')
     (source / "context_only.hpp").write_text('void context_only(demo::Detail*);\n')
     (source / "c_required.h").write_text('#pragma once\nstruct CThing { int value; };\n')
     (source / "shared.h").write_text('#pragma once\n#include "c_required.h"\n')
@@ -105,6 +107,7 @@ void keep(demo::Detail*);
 #include "context_only.hpp"
 #include "by_value.hpp"
 #include "inline.hpp"
+#include "container.hpp"
 #include "shared.h"
 extern "C" int helper(void);
 int main() { demo::Detail value; return demo::inspect(value) + helper(); }
@@ -144,9 +147,11 @@ int main() { demo::Detail value; return demo::inspect(value) + helper(); }
                           ("kept", "kept.hpp"), ("kept-next", "kept_next.hpp"),
                           ("kept-block", "kept_block.hpp"), ("c-users", "shared.h"),
                           ("not-standalone", "context_only.hpp"),
-                          ("by-value", "by_value.hpp"), ("inline-body", "inline.hpp")]:
+                          ("by-value", "by_value.hpp"), ("inline-body", "inline.hpp"),
+                          ("container", "container.hpp")]:
         _, report = invoke(label, "--forward-declarations", "--header-path", header)
         assert report["performance_result"] == "no_changes", (label, report)
+        assert "baseline" not in report and "candidate" not in report, "No-change runs must skip benchmarks"
         if label == "contexts":
             assert report["header_cleanup"]["forward_vetoed_ranges"] > 0
         if label == "c-users":
@@ -175,5 +180,50 @@ namespace demo { class Opaque {}; }
     run(binary, "measure", "--forward-declarations", expected=2)
     run(binary, "headers", "--header-path", "../escape", expected=2)
     run(binary, "headers", "--max-header-edits", 0, expected=2)
+
+    # Exercise real CMake GoogleTest discovery with deterministic opaque-value variation.
+    inventory_source = root / "inventory-source"
+    inventory_source.mkdir()
+    (inventory_source / "CMakeLists.txt").write_text('''cmake_minimum_required(VERSION 3.30)
+project(inventory_fixture LANGUAGES CXX)
+add_executable(sample main.cpp)
+if(REPLACE_CASE)
+  target_compile_definitions(sample PRIVATE REPLACE_CASE=1)
+endif()
+enable_testing()
+include(GoogleTest)
+gtest_discover_tests(sample)
+''')
+    (inventory_source / "main.cpp").write_text(r'''#include <iostream>
+#include <string>
+int main(int argc, char** argv) {
+  if (argc > 1 && std::string(argv[1]) == "--gtest_list_tests") {
+    const bool candidate = std::string(argv[0]).find("candidate-build") != std::string::npos;
+    unsigned offset = 0;
+#ifdef REPLACE_CASE
+    if (candidate) offset = 2;
+#endif
+    std::cout << "Opaque.\n";
+    for (unsigned i = 0; i < 2; ++i)
+      std::cout << "  Works/" << i + offset << "  # GetParam() = 8-byte object <"
+                << (candidate ? "BB" : "AA") << "-00 00-00 00-00 00-0" << i << ">\n";
+  }
+  return 0;
+}
+''')
+    for label, extra, expected in [("opaque-values", [], 0),
+                                    ("changed-filter", ["--", "-DREPLACE_CASE=ON"], 1)]:
+        work = root / label
+        run(binary, "headers", "--source", inventory_source, "--work-dir", work,
+            "--compiler", compiler, "--clang-tidy", tidy, "--runs", 1, *extra, expected=expected)
+        state = json.loads((work / "report.json").read_text())
+        assert state["baseline_tests_passed"] == state["candidate_tests_passed"] == 2
+        assert state["test_inventory_identity"]["baseline_opaque_values"] == 2
+        assert state["test_inventory_identity"]["candidate_opaque_values"] == 2
+        if expected:
+            assert "CTest inventory changed" in state["error"]
+            assert state["test_inventory_difference"] and not state["patch_validated"]
+        else:
+            assert state["performance_result"] == "no_changes" and state["patch_validated"]
 
 print("Header cleanup, AST declarations, context coverage, C users and behavioral rejection passed")

@@ -135,10 +135,27 @@ class Consumer : public clang::ASTConsumer {
     }
     void require_complete(clang::QualType type, clang::SourceLocation location) {
         if (type.isNull() || type->isPointerType() || type->isReferenceType()) return;
+        if (const auto* array =
+                llvm::dyn_cast<clang::ArrayType>(type.getCanonicalType().getTypePtr())) {
+            require_complete(array->getElementType(), location);
+            return;
+        }
         const auto file = facts.path(location, *sm);
         const auto* record = type->getAsCXXRecordDecl();
         const auto* definition = record ? record->getDefinition() : nullptr;
         if (!header(file) || !definition) return;
+        if (const auto* specialization =
+                llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(definition)) {
+            const auto require_argument = [&](auto&& self,
+                                              const clang::TemplateArgument& argument) -> void {
+                if (argument.getKind() == clang::TemplateArgument::Type)
+                    require_complete(argument.getAsType(), location);
+                else if (argument.getKind() == clang::TemplateArgument::Pack)
+                    for (const auto& element : argument.pack_elements()) self(self, element);
+            };
+            for (const auto& argument : specialization->getTemplateArgs().asArray())
+                require_argument(require_argument, argument);
+        }
         const auto provider = facts.path(definition->getLocation(), *sm);
         if (header(provider) && provider != file) facts.complete_providers.insert({file, provider});
     }

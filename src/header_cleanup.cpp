@@ -306,6 +306,7 @@ std::vector<Replacement> analyze_headers(const Options& options, const fs::path&
                             const auto log =
                                 logs / ("header-preflight-" + std::to_string(preflight++) + ".log");
                             auto arguments = compile_arguments(context);
+                            std::erase(arguments, "-c");
                             arguments.push_back("-fsyntax-only");
                             if (run(arguments, context.getString("directory")->str(), log).code !=
                                 0) {

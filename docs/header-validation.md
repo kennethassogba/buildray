@@ -121,3 +121,55 @@ multi-configuration fixture also supplies the full type transitively, requiring
 the AST veto to survive across contexts. The upstream cleanup is restricted to
 the three justified unused-include removals; the initial timing above is for the
 older combined patch and is not a measurement of that smaller cleanup.
+
+## Syntax-only argument regression
+
+The second XGrammar experiment at `0e3b76e` incorrectly rejected its valid
+unused-include proposals. Its [report](evidence/xgrammar-headers-v2-report.json)
+and [findings](evidence/xgrammar-headers-v2-findings.json) show `no_changes` and
+38 preflight commands. Replaying the actual compilation locally reproduces
+`argument unused during compilation: '-c' [-Werror,-Wunused-command-line-argument]`:
+appending `-fsyntax-only` while retaining `-c` conflicts under XGrammar’s `-Werror`.
+Removing `-c` makes that same command pass without weakening warnings.
+The integration project now treats unused compiler arguments as errors too.
+
+Header runs with no eligible changes still validate both clean builds and the
+CTest inventories, but skip timing identical copies. The long MuJoCo experiment
+from the affected version completes both 3,496-case test passes, then rejects
+the candidate because of the opaque GoogleTest display names described below. A fresh one-pair corpus run will validate the corrected tool;
+one pair cannot recommend a performance change. The manual workflow defaults to
+three pairs and exposes `header_runs` for these shorter validation runs.
+
+SentencePiece’s second [report](evidence/sentencepiece-headers-v2-report.json)
+and [findings](evidence/sentencepiece-headers-v2-findings.json) validate the same
+eight-removal patch. Three pairs give medians of 137.215 s and 134.634 s (−1.880%):
+`inconclusive` again. These independent runner sessions have different baselines;
+compare variants within a run, not absolute times between runs.
+
+## MuJoCo opaque GoogleTest names
+
+The second MuJoCo [report](evidence/mujoco-headers-v2-rejected-report.json)
+records 3,496 passing CTest cases in both trees, 326 indexed commands and 167
+configured commands outside the default build. Its
+[header findings](evidence/mujoco-headers-v2-findings.json) record no accepted
+changes; the unused `-c` argument caused false preflight rejections under
+`-Werror`. The run then fails the test-name comparison before measurements.
+
+GoogleTest’s default value printer exposes opaque parameter objects as byte dumps,
+including pointer addresses and padding. CMake uses those dumps in friendly CTest
+names, which differ between independently linked processes even with unchanged
+code. The local MuJoCo inventory reproduces names ending in `160-byte object <...>`
+and `16-byte object <...>`.
+
+Buildray now canonicalizes only an entire opaque byte-dump parameter on a test
+with an actual `--gtest_filter=` command argument. It preserves the test-name
+prefix and object size, and appends the exact filter to distinguish parameter
+cases. Other names stay strict; identities retain multiplicity. Counts and
+bounded mismatch details are recorded. This is inventory validation, not proof
+that opaque parameter data is semantically unchanged.
+
+A compiled protocol fixture exercises the real CMake `gtest_discover_tests`
+module offline. Its pretty-printed bytes differ between the two executables,
+while execution filters stay stable; validation must pass. Changing the filters
+with the same test count must still fail. The existing ordinary renamed-test
+regression also remains required.
