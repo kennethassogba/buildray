@@ -219,7 +219,7 @@ class Factory : public clang::tooling::FrontendActionFactory {
 int main(int argc, char** argv) {
     try {
         if (argc == 2 && std::string(argv[1]) == "--version") {
-            llvm::outs() << json::Value(json::Object{{"schema_version", 1},
+            llvm::outs() << json::Value(json::Object{{"schema_version", 2},
                                                      {"clang_major", CLANG_VERSION_MAJOR}})
                          << '\n';
             return 0;
@@ -240,7 +240,7 @@ int main(int argc, char** argv) {
             clang::tooling::ArgumentInsertPosition::BEGIN));
         Factory factory(facts);
         if (tool.run(&factory) != 0) return 1;
-        json::Array headers, includes, forwards;
+        json::Array headers, includes, forwards, blocked;
         for (const auto& file : facts.headers) headers.push_back(file);
         for (const auto& include : facts.includes) {
             json::Object item{{"header", include.file},
@@ -253,10 +253,10 @@ int main(int argc, char** argv) {
                     return range.first <= include.offset && include.offset <= range.second;
                 });
             const auto found = facts.declarations.find({include.file, include.provider});
-            if (scoped || found == facts.declarations.end() ||
-                facts.definition_headers.contains(include.file) ||
-                facts.complete_providers.contains({include.file, include.provider}))
-                continue;
+            const bool veto = scoped || facts.definition_headers.contains(include.file) ||
+                              facts.complete_providers.contains({include.file, include.provider});
+            if (veto) blocked.push_back(json::Object(item));
+            if (veto || found == facts.declarations.end()) continue;
             json::Array declarations;
             for (const auto& declaration : found->second) declarations.push_back(declaration);
             item["declarations"] = std::move(declarations);
@@ -266,11 +266,12 @@ int main(int argc, char** argv) {
         if (!out) throw std::runtime_error("Cannot write header facts");
         std::string data;
         llvm::raw_string_ostream stream(data);
-        stream << json::Value(json::Object{{"schema_version", 1},
+        stream << json::Value(json::Object{{"schema_version", 2},
                                            {"clang_major", CLANG_VERSION_MAJOR},
                                            {"headers", std::move(headers)},
                                            {"includes", std::move(includes)},
-                                           {"forwards", std::move(forwards)}});
+                                           {"forwards", std::move(forwards)},
+                                           {"blocked", std::move(blocked)}});
         out << data << '\n';
         if (!out) throw std::runtime_error("Cannot finish header facts");
         return 0;

@@ -94,3 +94,30 @@ Before contributing, the eight directives were checked against current upstream
 `d6b191ec50dc4302b262688f0250b9b677bb15d2`: all are already absent from their
 respective headers. The [check](evidence/sentencepiece-headers-upstream-check.json)
 records each one. No duplicate upstream PR is opened for this older-tag result.
+
+## XGrammar transitive-definition regression
+
+The initial [run](https://github.com/kennethassogba/buildray/actions/runs/39032931360)
+indexes 44 compilation commands and validates three unused-include removals plus
+two forward declarations in four internal headers. Both variants pass all 83
+CTest cases. Its [report](evidence/xgrammar-headers-initial-report.json),
+[findings](evidence/xgrammar-headers-initial-findings.json) and
+[patch](evidence/xgrammar-headers-initial.patch) are retained as the initial result.
+Three clean-build pairs give medians of 107.635 s and 107.032 s (−0.560%):
+`inconclusive`, with no recommended patch.
+
+Review found that the two forward declarations were unnecessary. `Grammar` still
+needs a full definition in those headers, supplied transitively by another
+include. Passing standalone and user compilations alone had missed that condition.
+The AST helper now vetoes providers used by value or as base classes, and defers
+headers containing inline code or compile-time definitions. Those vetoes are
+merged across contexts, so a declaration-only context cannot override a context
+that needs the definition. The helper protocol is checked to prevent mixing
+executables from different versions.
+
+Regression fixtures preserve a by-value use and inline member access even when a
+transitive include makes their forward-declaration variants compile. The
+multi-configuration fixture also supplies the full type transitively, requiring
+the AST veto to survive across contexts. The upstream cleanup is restricted to
+the three justified unused-include removals; the initial timing above is for the
+older combined patch and is not a measurement of that smaller cleanup.

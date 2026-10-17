@@ -1,0 +1,223 @@
+{
+  "added_forward_declarations": 2,
+  "baseline": {
+    "mad_seconds": 0.1387355219999904,
+    "max_seconds": 107.773522863,
+    "median_seconds": 107.63478734100001,
+    "min_seconds": 107.295616044,
+    "samples": [
+      {
+        "compiler_cpu_seconds": 148.05356399999999,
+        "compiler_wall_sum_seconds": 148.083097159,
+        "max_compiler_rss_kib": 376544,
+        "wall_seconds": 107.63478734100001
+      },
+      {
+        "compiler_cpu_seconds": 147.79349599999998,
+        "compiler_wall_sum_seconds": 147.84832273199999,
+        "max_compiler_rss_kib": 375052,
+        "wall_seconds": 107.295616044
+      },
+      {
+        "compiler_cpu_seconds": 147.84776499999998,
+        "compiler_wall_sum_seconds": 147.90945234699998,
+        "max_compiler_rss_kib": 376244,
+        "wall_seconds": 107.773522863
+      }
+    ]
+  },
+  "baseline_tests_passed": 83,
+  "buildray_version": "0.7.0",
+  "candidate": {
+    "mad_seconds": 0.1596694240000005,
+    "max_seconds": 107.191217967,
+    "median_seconds": 107.031548543,
+    "min_seconds": 106.38481482900001,
+    "samples": [
+      {
+        "compiler_cpu_seconds": 147.41448500000001,
+        "compiler_wall_sum_seconds": 147.44557361999998,
+        "max_compiler_rss_kib": 375868,
+        "wall_seconds": 106.38481482900001
+      },
+      {
+        "compiler_cpu_seconds": 147.58726300000004,
+        "compiler_wall_sum_seconds": 147.64764948800001,
+        "max_compiler_rss_kib": 375956,
+        "wall_seconds": 107.191217967
+      },
+      {
+        "compiler_cpu_seconds": 147.299711,
+        "compiler_wall_sum_seconds": 147.358291116,
+        "max_compiler_rss_kib": 375888,
+        "wall_seconds": 107.031548543
+      }
+    ]
+  },
+  "candidate_tests_passed": 83,
+  "clang_tidy_version": "Ubuntu LLVM version 21.1.8\n  Optimized build.\n",
+  "cmake_args": [],
+  "cmake_version": "cmake version 4.2.3\n\nCMake suite maintained and supported by Kitware (kitware.com/cmake).\n",
+  "command": "headers",
+  "compiler_version": "Ubuntu clang version 21.1.8 (++20251221032922+2078da43e25a-1~exp1~20251221153059.70)\nTarget: x86_64-pc-linux-gnu\nThread model: posix\nInstalledDir: /usr/lib/llvm-21/bin\n",
+  "excluded_paths": [
+    "3rdparty"
+  ],
+  "forwarded_includes": 2,
+  "header_changes": 5,
+  "header_cleanup": {
+    "added_forward_declarations": 2,
+    "ast_commands": 44,
+    "budget_reached": true,
+    "findings": [
+      {
+        "directive": "#include <picojson.h>\n",
+        "file": "cpp/support/compact_2d_array.h",
+        "kind": "unused_include",
+        "observed_users": 29,
+        "offset": 182,
+        "replacement": "",
+        "standalone_contexts": 2
+      },
+      {
+        "directive": "#include <xgrammar/xgrammar.h>\n",
+        "file": "cpp/grammar_impl.h",
+        "kind": "unused_include",
+        "observed_users": 25,
+        "offset": 210,
+        "replacement": "",
+        "standalone_contexts": 2
+      },
+      {
+        "directive": "#include <xgrammar/xgrammar.h>\n",
+        "file": "cpp/grammar_builder.h",
+        "kind": "unused_include",
+        "observed_users": 20,
+        "offset": 208,
+        "replacement": "",
+        "standalone_contexts": 2
+      },
+      {
+        "directive": "#include \"xgrammar/grammar.h\"\n",
+        "file": "cpp/grammar_builder.h",
+        "kind": "forward_declaration",
+        "observed_users": 20,
+        "offset": 367,
+        "replacement": "namespace xgrammar { class Grammar; }\n",
+        "standalone_contexts": 2
+      },
+      {
+        "directive": "#include \"xgrammar/grammar.h\"\n",
+        "file": "cpp/earley_parser.h",
+        "kind": "forward_declaration",
+        "observed_users": 13,
+        "offset": 480,
+        "replacement": "namespace xgrammar { class Grammar; }\n",
+        "standalone_contexts": 2
+      }
+    ],
+    "forward_declarations_enabled": true,
+    "forwarded_includes": 2,
+    "header_paths": [
+      "cpp"
+    ],
+    "max_header_edits": 4,
+    "modified_headers": 4,
+    "observed_headers": 42,
+    "preflight_commands": 117,
+    "rejected": [],
+    "scope": "observed original project headers; standalone checks use observed C++ flags; all observed C/C++ users are preflighted; one accepted forward include per header; full build and CTest still required",
+    "selection_order": "descending observed user count, then path",
+    "skipped": [],
+    "standalone_checks": 36,
+    "tidy_commands": 28,
+    "unused_includes": 3
+  },
+  "header_unused_includes": 3,
+  "jobs": 2,
+  "measurement": "clean builds; warm filesystem cache; compiler caches disabled; alternating order",
+  "measurement_context": {
+    "architecture": "x86_64",
+    "buildray_version": "0.7.0",
+    "cache_flags": {
+      "CMAKE_BUILD_TYPE": "Release",
+      "CMAKE_CXX_FLAGS": "",
+      "CMAKE_CXX_FLAGS-ADVANCED": "1",
+      "CMAKE_CXX_FLAGS_DEBUG": "-g",
+      "CMAKE_CXX_FLAGS_DEBUG-ADVANCED": "1",
+      "CMAKE_CXX_FLAGS_MINSIZEREL": "-Os -DNDEBUG",
+      "CMAKE_CXX_FLAGS_MINSIZEREL-ADVANCED": "1",
+      "CMAKE_CXX_FLAGS_RELEASE": "-O3 -DNDEBUG",
+      "CMAKE_CXX_FLAGS_RELEASE-ADVANCED": "1",
+      "CMAKE_CXX_FLAGS_RELWITHDEBINFO": "-O2 -g -DNDEBUG",
+      "CMAKE_CXX_FLAGS_RELWITHDEBINFO-ADVANCED": "1",
+      "CMAKE_C_FLAGS": "",
+      "CMAKE_C_FLAGS-ADVANCED": "1",
+      "CMAKE_C_FLAGS_DEBUG": "-g",
+      "CMAKE_C_FLAGS_DEBUG-ADVANCED": "1",
+      "CMAKE_C_FLAGS_MINSIZEREL": "-Os -DNDEBUG",
+      "CMAKE_C_FLAGS_MINSIZEREL-ADVANCED": "1",
+      "CMAKE_C_FLAGS_RELEASE": "-O3 -DNDEBUG",
+      "CMAKE_C_FLAGS_RELEASE-ADVANCED": "1",
+      "CMAKE_C_FLAGS_RELWITHDEBINFO": "-O2 -g -DNDEBUG",
+      "CMAKE_C_FLAGS_RELWITHDEBINFO-ADVANCED": "1",
+      "CMAKE_EXE_LINKER_FLAGS": "",
+      "CMAKE_EXE_LINKER_FLAGS-ADVANCED": "1",
+      "CMAKE_EXE_LINKER_FLAGS_DEBUG": "",
+      "CMAKE_EXE_LINKER_FLAGS_DEBUG-ADVANCED": "1",
+      "CMAKE_EXE_LINKER_FLAGS_MINSIZEREL": "",
+      "CMAKE_EXE_LINKER_FLAGS_MINSIZEREL-ADVANCED": "1",
+      "CMAKE_EXE_LINKER_FLAGS_RELEASE": "",
+      "CMAKE_EXE_LINKER_FLAGS_RELEASE-ADVANCED": "1",
+      "CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO": "",
+      "CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO-ADVANCED": "1",
+      "CMAKE_PROJECT_NAME": "xgrammar",
+      "CMAKE_SHARED_LINKER_FLAGS": "",
+      "CMAKE_SHARED_LINKER_FLAGS-ADVANCED": "1",
+      "CMAKE_SHARED_LINKER_FLAGS_DEBUG": "",
+      "CMAKE_SHARED_LINKER_FLAGS_DEBUG-ADVANCED": "1",
+      "CMAKE_SHARED_LINKER_FLAGS_MINSIZEREL": "",
+      "CMAKE_SHARED_LINKER_FLAGS_MINSIZEREL-ADVANCED": "1",
+      "CMAKE_SHARED_LINKER_FLAGS_RELEASE": "",
+      "CMAKE_SHARED_LINKER_FLAGS_RELEASE-ADVANCED": "1",
+      "CMAKE_SHARED_LINKER_FLAGS_RELWITHDEBINFO": "",
+      "CMAKE_SHARED_LINKER_FLAGS_RELWITHDEBINFO-ADVANCED": "1"
+    },
+    "cmake_args": [],
+    "cpu_affinity_count": 4,
+    "cpu_model": "AMD EPYC 7763 64-Core Processor",
+    "cpu_quota": "unavailable",
+    "environment_flags": {
+      "CFLAGS": "",
+      "CXXFLAGS": "",
+      "LDFLAGS": ""
+    },
+    "jobs": 2,
+    "kernel": "6.17.0-1022-azure",
+    "method": "clean-build-warm-filesystem-v1",
+    "precompiled_headers": false,
+    "sampling": "paired_alternating",
+    "session": "7942b1bb-293c-4690-a57f-6ccee78d9d71",
+    "tests_required": true,
+    "unity_build": false
+  },
+  "modified_headers": 4,
+  "ninja_version": "1.13.0.git.kitware.jobserver-pipe-1\n",
+  "noise_threshold_seconds": 2.1526957468200001,
+  "patch_recommended": false,
+  "patch_validated": true,
+  "performance_result": "inconclusive",
+  "performance_rule": "heuristic: difference exceeds max(2% baseline, 3x max MAD); not a significance test",
+  "phase": "complete",
+  "precompiled_headers": false,
+  "runs": 3,
+  "schema_version": 1,
+  "source": "/home/runner/work/buildray/buildray/fixtures/xgrammar",
+  "status": "passed",
+  "tests_required": true,
+  "unity_build": false,
+  "validation": "build_and_tests_passed",
+  "validation_scope": "one configured CMake build; observed original project headers; standalone and observed-user preflights; complete build and CTest",
+  "wall_change_percent": -0.56044965842583339,
+  "work_dir": "/home/runner/work/_temp/buildray-action-9z9tlxfq/run"
+}

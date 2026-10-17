@@ -61,10 +61,11 @@ namespace demo { class Detail { public: std::vector<std::string> values; }; }
     (source / "api.cpp").write_text('#include "api.hpp"\n#include "detail.hpp"\nint demo::inspect(const Detail& value) { return value.values.size(); }\n')
     (source / "guarded.hpp").write_text('''#pragma once
 #include "detail.hpp"
+#include "transitive.hpp"
 #if DETAIL_REQUIRED
-namespace demo { struct Guarded { Detail value; }; }
+namespace demo { struct Guarded { Detail value; Marker marker; }; }
 #else
-namespace demo { void guarded(const Detail& value); }
+namespace demo { void guarded(const Detail& value, const Marker& marker); }
 #endif
 ''')
     (source / "variant.cpp").write_text('#include "guarded.hpp"\n')
@@ -146,7 +147,9 @@ int main() { demo::Detail value; return demo::inspect(value) + helper(); }
                           ("by-value", "by_value.hpp"), ("inline-body", "inline.hpp")]:
         _, report = invoke(label, "--forward-declarations", "--header-path", header)
         assert report["performance_result"] == "no_changes", (label, report)
-        if label in ("contexts", "c-users"):
+        if label == "contexts":
+            assert report["header_cleanup"]["forward_vetoed_ranges"] > 0
+        if label == "c-users":
             assert report["header_cleanup"]["rejected"], label
         if label == "not-standalone":
             assert report["header_cleanup"]["skipped"]

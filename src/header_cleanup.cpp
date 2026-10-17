@@ -58,6 +58,7 @@ json::Object header_command(const json::Object& entry, const fs::path& header) {
 }
 struct Header {
     std::set<std::size_t> users;
+    std::set<std::pair<std::size_t, std::size_t>> blocked;
     std::map<std::pair<std::size_t, std::size_t>, std::set<std::string>> forwards;
 };
 }  // namespace
@@ -78,6 +79,10 @@ std::vector<Replacement> analyze_headers(const Options& options, const fs::path&
     };
     checked({helper.string(), "--version"}, source, logs / "header-tool-version.json");
     const auto helper_version = read_json(logs / "header-tool-version.json");
+    if (!helper_version.getAsObject() ||
+        helper_version.getAsObject()->getInteger("schema_version") != 2)
+        throw std::runtime_error(
+            "Incompatible header AST helper; install matching Buildray executables");
     std::smatch version;
     const auto compiler_version = report.getString("compiler_version")->str();
     if (!std::regex_search(compiler_version, version, std::regex(R"(clang version ([0-9]+)\.)")) ||
@@ -149,7 +154,8 @@ std::vector<Replacement> analyze_headers(const Options& options, const fs::path&
             std::cout << "Indexed " << scan_count << " compilation commands...\n" << std::flush;
         const auto facts_doc = read_json(directory / "facts.json");
         const auto* facts = facts_doc.getAsObject();
-        if (!facts || !facts->getArray("headers") || !facts->getArray("forwards"))
+        if (!facts || !facts->getArray("headers") || !facts->getArray("forwards") ||
+            !facts->getArray("blocked"))
             throw std::runtime_error("Invalid header AST facts");
         for (const auto& value : *facts->getArray("headers")) {
             if (!value.getAsString()) throw std::runtime_error("Invalid observed header");
@@ -157,6 +163,18 @@ std::vector<Replacement> analyze_headers(const Options& options, const fs::path&
             if (editable(file)) headers[file].users.insert(index);
         }
         if (!options.forward_declarations) continue;
+        for (const auto& value : *facts->getArray("blocked")) {
+            const auto* row = value.getAsObject();
+            if (!row || !row->getString("header") || !row->getInteger("offset") ||
+                !row->getInteger("length") || *row->getInteger("offset") < 0 ||
+                *row->getInteger("length") < 1)
+                throw std::runtime_error("Invalid forward-declaration veto");
+            const auto file = absolute_path(row->getString("header")->str());
+            if (editable(file))
+                headers[file].blocked.insert(
+                    {static_cast<std::size_t>(*row->getInteger("offset")),
+                     static_cast<std::size_t>(*row->getInteger("length"))});
+        }
         for (const auto& value : *facts->getArray("forwards")) {
             const auto* row = value.getAsObject();
             if (!row || !row->getString("header") || !row->getString("provider") ||
@@ -321,6 +339,7 @@ std::vector<Replacement> analyze_headers(const Options& options, const fs::path&
             // conservatively retain every provider in a header carrying any NOLINT.
             if (options.forward_declarations && original.find("NOLINT") == std::string::npos)
                 for (const auto& [range, declarations] : headers.at(file).forwards) {
+                    if (headers.at(file).blocked.contains(range)) continue;
                     if (std::ranges::any_of(
                             accepted, [&](const auto& item) { return item.offset == range.first; }))
                         continue;
@@ -364,6 +383,8 @@ std::vector<Replacement> analyze_headers(const Options& options, const fs::path&
         throw;
     }
     unsigned unused = 0, forwarded = 0, declarations = 0;
+    std::size_t vetoed = 0;
+    for (const auto& [file, header] : headers) vetoed += header.blocked.size();
     for (const auto& item : result) {
         if (item.text.empty())
             ++unused;
@@ -386,6 +407,7 @@ std::vector<Replacement> analyze_headers(const Options& options, const fs::path&
                          {"forward_declarations_enabled", options.forward_declarations},
                          {"unused_includes", unused},
                          {"forwarded_includes", forwarded},
+                         {"forward_vetoed_ranges", static_cast<std::int64_t>(vetoed)},
                          {"added_forward_declarations", declarations},
                          {"header_paths", std::move(selected_paths)},
                          {"budget_reached", saved.size() >= options.max_header_edits},

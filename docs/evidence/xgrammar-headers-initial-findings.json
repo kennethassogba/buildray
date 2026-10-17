@@ -1,0 +1,68 @@
+{
+  "added_forward_declarations": 2,
+  "ast_commands": 44,
+  "budget_reached": true,
+  "findings": [
+    {
+      "directive": "#include <picojson.h>\n",
+      "file": "cpp/support/compact_2d_array.h",
+      "kind": "unused_include",
+      "observed_users": 29,
+      "offset": 182,
+      "replacement": "",
+      "standalone_contexts": 2
+    },
+    {
+      "directive": "#include <xgrammar/xgrammar.h>\n",
+      "file": "cpp/grammar_impl.h",
+      "kind": "unused_include",
+      "observed_users": 25,
+      "offset": 210,
+      "replacement": "",
+      "standalone_contexts": 2
+    },
+    {
+      "directive": "#include <xgrammar/xgrammar.h>\n",
+      "file": "cpp/grammar_builder.h",
+      "kind": "unused_include",
+      "observed_users": 20,
+      "offset": 208,
+      "replacement": "",
+      "standalone_contexts": 2
+    },
+    {
+      "directive": "#include \"xgrammar/grammar.h\"\n",
+      "file": "cpp/grammar_builder.h",
+      "kind": "forward_declaration",
+      "observed_users": 20,
+      "offset": 367,
+      "replacement": "namespace xgrammar { class Grammar; }\n",
+      "standalone_contexts": 2
+    },
+    {
+      "directive": "#include \"xgrammar/grammar.h\"\n",
+      "file": "cpp/earley_parser.h",
+      "kind": "forward_declaration",
+      "observed_users": 13,
+      "offset": 480,
+      "replacement": "namespace xgrammar { class Grammar; }\n",
+      "standalone_contexts": 2
+    }
+  ],
+  "forward_declarations_enabled": true,
+  "forwarded_includes": 2,
+  "header_paths": [
+    "cpp"
+  ],
+  "max_header_edits": 4,
+  "modified_headers": 4,
+  "observed_headers": 42,
+  "preflight_commands": 117,
+  "rejected": [],
+  "scope": "observed original project headers; standalone checks use observed C++ flags; all observed C/C++ users are preflighted; one accepted forward include per header; full build and CTest still required",
+  "selection_order": "descending observed user count, then path",
+  "skipped": [],
+  "standalone_checks": 36,
+  "tidy_commands": 28,
+  "unused_includes": 3
+}

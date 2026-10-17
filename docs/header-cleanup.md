@@ -44,7 +44,9 @@ scopes. By-value fields, base classes and function signatures keep their record 
 Forward rewrites are limited to declaration-oriented headers: inline function
 bodies, object/field initializers, default arguments, aliases, templates, enums
 and static assertions defer the whole header until those requirements are modeled. A transitive include supplying a complete type is not
-sufficient justification for these proposals. It changes only original project files outside excluded paths. A header carrying
+sufficient justification for these proposals. AST vetoes are merged across all
+observed contexts: one context requiring the definition blocks that include
+rewrite everywhere, even when another context only uses pointers. It changes only original project files outside excluded paths. A header carrying
 any `NOLINT` marker is conservatively excluded from forward-declaration rewrites,
 including next-line and block suppressions; tidy still handles unused-include
 suppressions normally.
