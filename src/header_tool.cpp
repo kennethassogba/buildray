@@ -48,6 +48,8 @@ struct Include {
 struct Facts {
     fs::path root;
     std::set<std::string> headers;
+    std::set<std::string> definition_headers;
+    std::set<std::pair<std::string, std::string>> complete_providers;
     std::vector<Include> includes;
     std::map<std::pair<std::string, std::string>, std::set<std::string>> declarations;
     std::map<std::string, std::vector<std::pair<unsigned, unsigned>>> scopes;
@@ -131,17 +133,46 @@ class Consumer : public clang::ASTConsumer {
         for (std::size_t i = 0; i < namespaces.size(); ++i) declaration += " }";
         facts.declarations[{file, provider}].insert(std::move(declaration));
     }
+    void require_complete(clang::QualType type, clang::SourceLocation location) {
+        if (type.isNull() || type->isPointerType() || type->isReferenceType()) return;
+        const auto file = facts.path(location, *sm);
+        const auto* record = type->getAsCXXRecordDecl();
+        const auto* definition = record ? record->getDefinition() : nullptr;
+        if (!header(file) || !definition) return;
+        const auto provider = facts.path(definition->getLocation(), *sm);
+        if (header(provider) && provider != file) facts.complete_providers.insert({file, provider});
+    }
     void walk(clang::DeclContext* context) {
         if (!visited.insert(context).second) return;
         for (auto* decl : context->decls()) {
             const auto file = facts.path(decl->getLocation(), *sm);
             if (file.empty() || decl->isImplicit()) continue;
-            if (const auto* value = llvm::dyn_cast<clang::ValueDecl>(decl))
+            if (const auto* value = llvm::dyn_cast<clang::ValueDecl>(decl)) {
                 reference(value->getType(), decl->getLocation());
+                require_complete(value->getType(), decl->getLocation());
+            }
+            if (llvm::isa<clang::StaticAssertDecl, clang::TypedefNameDecl, clang::TemplateDecl,
+                          clang::EnumDecl>(decl))
+                facts.definition_headers.insert(file);
+            if (const auto* variable = llvm::dyn_cast<clang::VarDecl>(decl))
+                if (variable->hasInit()) facts.definition_headers.insert(file);
+            if (const auto* field = llvm::dyn_cast<clang::FieldDecl>(decl))
+                if (field->hasInClassInitializer()) facts.definition_headers.insert(file);
+            if (const auto* record = llvm::dyn_cast<clang::CXXRecordDecl>(decl))
+                if (record->isCompleteDefinition())
+                    for (const auto& base : record->bases())
+                        require_complete(base.getType(), record->getLocation());
             if (const auto* function = llvm::dyn_cast<clang::FunctionDecl>(decl)) {
+                // Parsing can still succeed through a transitive definition. Keep providers
+                // for by-value uses, and defer inline-code headers until body uses are modeled.
+                if (function->doesThisDeclarationHaveABody()) facts.definition_headers.insert(file);
                 reference(function->getReturnType(), function->getLocation());
-                for (const auto* parameter : function->parameters())
+                require_complete(function->getReturnType(), function->getLocation());
+                for (const auto* parameter : function->parameters()) {
+                    if (parameter->hasDefaultArg()) facts.definition_headers.insert(file);
                     reference(parameter->getType(), parameter->getLocation());
+                    require_complete(parameter->getType(), parameter->getLocation());
+                }
             }
             if (llvm::isa<clang::NamespaceDecl, clang::RecordDecl, clang::LinkageSpecDecl>(decl)) {
                 const auto begin = sm->getExpansionLoc(decl->getBeginLoc());
@@ -222,7 +253,10 @@ int main(int argc, char** argv) {
                     return range.first <= include.offset && include.offset <= range.second;
                 });
             const auto found = facts.declarations.find({include.file, include.provider});
-            if (scoped || found == facts.declarations.end()) continue;
+            if (scoped || found == facts.declarations.end() ||
+                facts.definition_headers.contains(include.file) ||
+                facts.complete_providers.contains({include.file, include.provider}))
+                continue;
             json::Array declarations;
             for (const auto& declaration : found->second) declarations.push_back(declaration);
             item["declarations"] = std::move(declarations);

@@ -40,7 +40,11 @@ Forward declarations come from actual class/struct definitions used through dire
 pointers or references in header declarations. The first version excludes
 aliases, templates, specializations, nested/local classes, attributed classes,
 standard-library types, inline/anonymous namespaces and includes inside lexical
-scopes. It changes only original project files outside excluded paths. A header carrying
+scopes. By-value fields, base classes and function signatures keep their record provider.
+Forward rewrites are limited to declaration-oriented headers: inline function
+bodies, object/field initializers, default arguments, aliases, templates, enums
+and static assertions defer the whole header until those requirements are modeled. A transitive include supplying a complete type is not
+sufficient justification for these proposals. It changes only original project files outside excluded paths. A header carrying
 any `NOLINT` marker is conservatively excluded from forward-declaration rewrites,
 including next-line and block suppressions; tidy still handles unused-include
 suppressions normally.

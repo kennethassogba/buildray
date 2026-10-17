@@ -87,6 +87,9 @@ void keep(demo::Detail*);
 ''')
     (source / "kept_next.hpp").write_text('#pragma once\n// NOLINTNEXTLINE(misc-include-cleaner)\n#include "detail.hpp"\nvoid keep_next(demo::Detail*);\n')
     (source / "kept_block.hpp").write_text('#pragma once\n// NOLINTBEGIN(misc-include-cleaner)\n#include "detail.hpp"\n// NOLINTEND(misc-include-cleaner)\nvoid keep_block(demo::Detail*);\n')
+    (source / "transitive.hpp").write_text('#pragma once\n#include "detail.hpp"\nnamespace demo { struct Marker {}; }\n')
+    (source / "by_value.hpp").write_text('#pragma once\n#include "detail.hpp"\n#include "transitive.hpp"\nnamespace demo { struct ByValue { Detail value; Marker marker; }; void opaque_value(Detail*); }\n')
+    (source / "inline.hpp").write_text('#pragma once\n#include "detail.hpp"\n#include "transitive.hpp"\ninline unsigned count(demo::Detail* value, const demo::Marker&) { return value->values.size(); }\n')
     (source / "context_only.hpp").write_text('void context_only(demo::Detail*);\n')
     (source / "c_required.h").write_text('#pragma once\nstruct CThing { int value; };\n')
     (source / "shared.h").write_text('#pragma once\n#include "c_required.h"\n')
@@ -99,6 +102,8 @@ void keep(demo::Detail*);
 #include "kept_next.hpp"
 #include "kept_block.hpp"
 #include "context_only.hpp"
+#include "by_value.hpp"
+#include "inline.hpp"
 #include "shared.h"
 extern "C" int helper(void);
 int main() { demo::Detail value; return demo::inspect(value) + helper(); }
@@ -137,7 +142,8 @@ int main() { demo::Detail value; return demo::inspect(value) + helper(); }
     for label, header in [("contexts", "guarded.hpp"), ("metadata", "meta_api.hpp"),
                           ("kept", "kept.hpp"), ("kept-next", "kept_next.hpp"),
                           ("kept-block", "kept_block.hpp"), ("c-users", "shared.h"),
-                          ("not-standalone", "context_only.hpp")]:
+                          ("not-standalone", "context_only.hpp"),
+                          ("by-value", "by_value.hpp"), ("inline-body", "inline.hpp")]:
         _, report = invoke(label, "--forward-declarations", "--header-path", header)
         assert report["performance_result"] == "no_changes", (label, report)
         if label in ("contexts", "c-users"):
