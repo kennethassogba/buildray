@@ -36,7 +36,7 @@ inputs:
     description: Include analyzer for optimize and headers.
     default: clang-tidy-21
   c-compiler:
-    description: Clang C compiler for command deps.
+    description: Clang C compiler for deps and headers; must match the C++ compiler major version for headers.
     default: clang-21
   fail-on-cycles:
     description: For deps, fail with exit 5 if observed include or target-link cycles exist.

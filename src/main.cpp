@@ -31,7 +31,7 @@ Options:
   --source DIR          CMake source tree (default: current directory)
   --work-dir DIR        New output directory (default: SOURCE/.buildray/unique-id)
   --compiler PATH       Clang C++ compiler (default: clang++)
-  --c-compiler PATH     Clang C compiler for deps (default: clang)
+  --c-compiler PATH     Clang C compiler for deps/headers (headers defaults to the C++ driver version)
   --fail-on-cycles      deps: return 5 if include or target-link cycles exist
   --clang-tidy PATH     clang-tidy with misc-include-cleaner (default: clang-tidy)
   --runs N              Clean build samples per variant, 1..100 (default: 3)
@@ -83,7 +83,7 @@ headers analyzes observed original project headers with Clang AST and include-cl
 Each candidate must compile standalone in observed C++ contexts and in all observed
 C/C++ users, then pass the complete clean build and CTest. --forward-declarations
 tries simple project class/struct declarations for pointer/reference uses. Templates,
-aliases, nested/inline/anonymous namespaces and attributed records are kept.
+aliases, nested classes, inline/anonymous namespaces and attributed records are kept.
 Outputs: headers.patch and header-cleanup.json. Original headers stay unchanged.
 
 Exit codes: 0 completed, 1 pipeline/validation failure, 2 invalid arguments,
@@ -135,6 +135,7 @@ buildray::CheckOptions parse_check(const std::vector<std::string>& args) {
 buildray::Options parse(const std::vector<std::string>& args) {
     buildray::Options options;
     options.command = args.front();
+    bool explicit_c_compiler = false;
     if (options.command != "optimize" && options.command != "measure" &&
         options.command != "compare" && options.command != "profile" && options.command != "pch" &&
         options.command != "deps" && options.command != "prune-links" && options.command != "headers")
@@ -180,8 +181,10 @@ buildray::Options parse(const std::vector<std::string>& args) {
             options.work = value;
         else if (arg == "--compiler")
             options.compiler = value;
-        else if (arg == "--c-compiler")
+        else if (arg == "--c-compiler") {
             options.c_compiler = value;
+            explicit_c_compiler = true;
+        }
         else if (arg == "--clang-tidy")
             options.tidy = value;
         else if (arg == "--runs")
@@ -227,8 +230,18 @@ buildray::Options parse(const std::vector<std::string>& args) {
         throw std::runtime_error("--dependency requires prune-links");
     if (options.command == "prune-links" && options.runs < 3)
         throw std::runtime_error("prune-links requires at least three runs");
-    if (options.command != "deps" && (options.fail_on_cycles || options.c_compiler != "clang"))
-        throw std::runtime_error("--c-compiler and --fail-on-cycles require deps");
+    if (options.command != "deps" && options.fail_on_cycles)
+        throw std::runtime_error("--fail-on-cycles requires deps");
+    if (options.command != "deps" && options.command != "headers" && explicit_c_compiler)
+        throw std::runtime_error("--c-compiler requires deps or headers");
+    if (options.command == "headers" && !explicit_c_compiler) {
+        auto driver = buildray::fs::path(options.compiler);
+        auto name = driver.filename().string();
+        if (name.starts_with("clang++")) {
+            name.replace(0, 7, "clang");
+            options.c_compiler = (driver.parent_path() / name).string();
+        }
+    }
     if (options.command != "optimize" && options.command != "prune-links" && options.command != "headers" && !options.exclusions.empty())
         throw std::runtime_error("--exclude requires optimize, headers or prune-links");
     if (options.command != "headers" && (options.forward_declarations || !options.header_paths.empty() || options.max_header_edits != 8))

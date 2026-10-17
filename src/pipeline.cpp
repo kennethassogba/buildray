@@ -109,8 +109,9 @@ void configure(const Options& options, const Variant& variant, const fs::path& e
         "-DCMAKE_UNITY_BUILD=OFF", "-DCMAKE_DISABLE_PRECOMPILE_HEADERS=ON",
         "-DCMAKE_CXX_COMPILER_LAUNCHER=" + launcher(executable, variant.records, variant.trace, variant.dependencies)};
     args.insert(args.end(), controlled.begin(), controlled.end());
-    if (variant.dependencies) {
+    if (variant.dependencies || options.command == "headers")
         args.push_back("-DCMAKE_C_COMPILER=" + options.c_compiler);
+    if (variant.dependencies) {
         args.push_back("-DCMAKE_C_COMPILER_LAUNCHER=" + launcher(executable, variant.records, false, true));
     }
     checked(args, variant.source, log);
@@ -759,11 +760,11 @@ int pipeline(const Options& options, const fs::path& executable) {
         checked({"ninja", "--version"}, source, logs / "ninja-version.log");
         report["cmake_version"] = read_file(logs / "cmake-version.log");
         report["ninja_version"] = read_file(logs / "ninja-version.log");
-        if (options.command == "deps") {
+        if (options.command == "deps" || options.command == "headers") {
             checked({options.c_compiler, "--version"}, source, logs / "c-compiler-version.log");
             report["c_compiler_version"] = read_file(logs / "c-compiler-version.log");
             if (report.getString("c_compiler_version")->find("clang") == llvm::StringRef::npos)
-                throw std::runtime_error("deps requires Clang for C as well as C++");
+                throw std::runtime_error("This command requires Clang for C as well as C++");
         }
         if (options.command == "deps" || options.command == "prune-links") {
             checked({"cmake", "-E", "capabilities"}, source, logs / "cmake-capabilities.json");

@@ -19,7 +19,10 @@ Buildray snapshots the project and builds/tests the baseline and candidate befor
 analysis. A separate native helper uses Clang's AST and preprocessor callbacks to
 index original project headers and their C/C++ compilation users. It runs one
 translation unit per subprocess to bound the AST lifetime. The helper and project
-compiler must use the same Clang major version. Install both Buildray executables
+C and C++ compilers must use the same Clang major version. `headers` derives the
+C driver from the C++ driver name (`clang++-21` → `clang-21`); `--c-compiler`
+can set it explicitly. Both variants use those compilers, including C targets
+and mixed C/C++ LTO builds. Install both Buildray executables
 next to each other, together with their matching LLVM/Clang runtime libraries.
 Building the helper also requires the Clang development headers (`libclang-21-dev`
 for LLVM 21).

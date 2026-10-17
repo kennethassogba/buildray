@@ -207,8 +207,9 @@ def main():
             command.extend(["--max-header-edits", str(max_header_edits)])
             for path in header_paths:
                 command.extend(["--header-path", path])
-        if mode == "deps":
+        if mode in ("deps", "headers"):
             command.extend(["--c-compiler", os.environ.get("BUILDRAY_C_COMPILER", "clang-21")])
+        if mode == "deps":
             if fail_on_cycles:
                 command.append("--fail-on-cycles")
         if mode == "pch":

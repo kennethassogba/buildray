@@ -28,6 +28,14 @@ with tempfile.TemporaryDirectory(prefix="buildray headers ") as temporary:
     (source / "CMakeLists.txt").write_text('''cmake_minimum_required(VERSION 3.30)
 project(header_fixture LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 26)
+if(NOT CMAKE_C_COMPILER_ID STREQUAL "Clang")
+  message(FATAL_ERROR "Header validation must select the matching Clang C driver")
+endif()
+include(CheckIPOSupported)
+check_ipo_supported(RESULT ipo_supported)
+if(ipo_supported)
+  set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
+endif()
 add_executable(sample main.cpp api.cpp helper.c)
 add_library(configured OBJECT variant.cpp)
 target_compile_definitions(configured PRIVATE DETAIL_REQUIRED=1)
@@ -83,7 +91,8 @@ void keep(demo::Detail*);
 #include "kept.hpp"
 #include "context_only.hpp"
 #include "shared.h"
-int main() { demo::Detail value; return demo::inspect(value); }
+extern "C" int helper(void);
+int main() { demo::Detail value; return demo::inspect(value) + helper(); }
 ''')
 
     def invoke(label, *args, expected=0, runs=1):
@@ -108,7 +117,7 @@ int main() { demo::Detail value; return demo::inspect(value); }
     run("git", "apply", "--check", work / "headers.patch", cwd=source)
     original = api.read_text()
     run("git", "apply", work / "headers.patch", cwd=source)
-    run("cmake", "-S", source, "-B", root / "applied", "-G", "Ninja", f"-DCMAKE_CXX_COMPILER={compiler}")
+    run("cmake", "-S", source, "-B", root / "applied", "-G", "Ninja", f"-DCMAKE_CXX_COMPILER={compiler}", f"-DCMAKE_C_COMPILER={compiler.replace("clang++", "clang")}")
     run("cmake", "--build", root / "applied", "--parallel", 2)
     run("ctest", "--test-dir", root / "applied", "--output-on-failure")
     api.write_text(original)

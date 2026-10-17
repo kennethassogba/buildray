@@ -85,6 +85,13 @@ std::vector<Replacement> analyze_headers(const Options& options, const fs::path&
         helper_version.getAsObject()->getInteger("clang_major") != std::stoi(version[1]))
         throw std::runtime_error(
             "Header AST helper and project compiler must have the same Clang major version");
+    std::smatch c_version;
+    const auto c_compiler_version = report.getString("c_compiler_version")->str();
+    if (!std::regex_search(c_compiler_version, c_version,
+                           std::regex(R"(clang version ([0-9]+)\.)")) ||
+        c_version[1] != version[1])
+        throw std::runtime_error(
+            "Header analysis requires matching Clang C and C++ major versions");
     checked({options.compiler, "-print-resource-dir"}, source, logs / "header-resource-dir.log");
     auto resources = read_file(logs / "header-resource-dir.log");
     while (!resources.empty() && (resources.back() == '\n' || resources.back() == '\r'))
