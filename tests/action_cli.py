@@ -110,6 +110,7 @@ add_test(NAME works COMMAND sample)
     unity_outputs = root / "unity-outputs"
     execute([sys.executable, script], env={**environment, "BUILDRAY_COMMAND": "unity",
             "BUILDRAY_UNITY_TARGET": "sample", "BUILDRAY_UNITY_BATCH_SIZE": "2",
+            "BUILDRAY_CMAKE_ARGS": '["-DCMAKE_CXX_SCAN_FOR_MODULES=OFF"]',
             "BUILDRAY_RUNS": "1", "GITHUB_OUTPUT": str(unity_outputs)})
     unity = dict(line.split("=", 1) for line in unity_outputs.read_text().splitlines())
     assert "baseline-sha" not in unity and all(Path(unity[key]).is_file() for key in ["unity", "patch", "report"])

@@ -144,6 +144,9 @@ endif()
         assert message in failed["error"], failed
     top.write_text(saved_top)
     cmake.write_text(saved_cmake)
+    _, scanned = invoke("scanned-modules", "--unity-exclude", "lib/a.c", "--unity-exclude", "lib/b.c",
+                        "--", "-DCMAKE_CXX_STANDARD=26", "-DCMAKE_CXX_SCAN_FOR_MODULES=ON", expected=1)
+    assert "did not combine" in scanned["error"], scanned
     assert digest(source) == original
 
     for extra in [("--batch-size", "0"), ("--batch-size", "1"), ("--batch-size", "33"),
