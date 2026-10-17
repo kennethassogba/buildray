@@ -1,0 +1,45 @@
+{
+  "upstream_revision": "d6b191ec50dc4302b262688f0250b9b677bb15d2",
+  "findings": [
+    {
+      "file": "src/filesystem.h",
+      "removed_directive": "#include <stdio.h>",
+      "already_absent_on_upstream": true
+    },
+    {
+      "file": "src/filesystem.h",
+      "removed_directive": "#include <fstream>",
+      "already_absent_on_upstream": true
+    },
+    {
+      "file": "src/filesystem.h",
+      "removed_directive": "#include \"common.h\"",
+      "already_absent_on_upstream": true
+    },
+    {
+      "file": "src/filesystem.h",
+      "removed_directive": "#include \"sentencepiece_processor.h\"",
+      "already_absent_on_upstream": true
+    },
+    {
+      "file": "src/unigram_model.h",
+      "removed_directive": "#include \"common.h\"",
+      "already_absent_on_upstream": true
+    },
+    {
+      "file": "src/init.h",
+      "removed_directive": "#include \"common.h\"",
+      "already_absent_on_upstream": true
+    },
+    {
+      "file": "src/builder.h",
+      "removed_directive": "#include \"sentencepiece_model.pb.h\"",
+      "already_absent_on_upstream": true
+    },
+    {
+      "file": "src/builder.h",
+      "removed_directive": "#include \"sentencepiece_processor.h\"",
+      "already_absent_on_upstream": true
+    }
+  ]
+}

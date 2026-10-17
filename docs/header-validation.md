@@ -26,8 +26,10 @@ for this generated-patch experiment.
 The opt-in `header_corpus` workflow restricts edits to internal headers in the
 existing pinned corpus. Each run enables forward declarations, limits accepted
 changes to four headers, and uses three alternating clean-build pairs with two
-jobs. Public API headers and vendored code are outside the selected edit paths;
-the configured default build and CTest remain covered.
+jobs. XGrammar and MuJoCo public include trees are outside the selected edit paths;
+vendored code is excluded from edits. SentencePiece’s `src` also contains
+installed API headers, so its selected findings need individual API review.
+The configured default build and CTest remain covered.
 
 | Project | Revision | Edit paths | Configuration |
 | --- | --- | --- | --- |
@@ -63,3 +65,32 @@ default-build object, and indexes only commands whose outputs are reachable.
 The regression fixture includes an optional target that cannot compile, verifies
 that it is counted outside the experiment, and rejects a C launcher bypass.
 Per-compiler header experiment totals cover both languages.
+
+After the driver and default-target coverage corrections, the header suite passes
+again in Release (176.06 s) and Debug with ASan/UBSan (192.45 s), including the
+optional failing target and C launcher bypass. The action and dependency suites
+also pass in both builds after the driver correction. Both native CI jobs at
+`779822e` pass the original eight suites; the final branch checks cover the added
+mixed-language regression cases.
+
+## SentencePiece initial result
+
+[Run 39032931360](https://github.com/kennethassogba/buildray/actions/runs/39032931360),
+CLI `779822e`, validates eight unused-include removals in four internal headers
+on the pinned v0.2.2 configuration. All 236 compile commands are indexed;
+97 user/standalone preflight compilations and 45 standalone checks are recorded.
+Baseline and candidate build, link and pass the configured CTest suite.
+Four cleanup proposals and two forward-declaration proposals fail preflight and
+stay unchanged. No forward declaration is accepted on this selected scope.
+
+Three alternating clean-build pairs give medians of 100.336 s before and
+102.147 s after (+1.806%); MAD is 0.332 s and 2.607 s. The result is
+`inconclusive`, with no recommended patch or established speedup.
+The [report](evidence/sentencepiece-headers-initial-report.json),
+[findings](evidence/sentencepiece-headers-initial-findings.json) and
+[patch](evidence/sentencepiece-headers-initial.patch) are retained.
+
+Before contributing, the eight directives were checked against current upstream
+`d6b191ec50dc4302b262688f0250b9b677bb15d2`: all are already absent from their
+respective headers. The [check](evidence/sentencepiece-headers-upstream-check.json)
+records each one. No duplicate upstream PR is opened for this older-tag result.

@@ -317,7 +317,9 @@ std::vector<Replacement> analyze_headers(const Options& options, const fs::path&
                 const std::vector<Replacement> proposed(consensus->begin(), consensus->end());
                 if (attempt(proposed, "unused_includes")) accepted = proposed;
             }
-            if (options.forward_declarations)
+            // Clang-tidy handles suppression ranges for deletions. For AST rewrites,
+            // conservatively retain every provider in a header carrying any NOLINT.
+            if (options.forward_declarations && original.find("NOLINT") == std::string::npos)
                 for (const auto& [range, declarations] : headers.at(file).forwards) {
                     if (std::ranges::any_of(
                             accepted, [&](const auto& item) { return item.offset == range.first; }))

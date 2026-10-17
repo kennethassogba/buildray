@@ -1,0 +1,296 @@
+{
+  "added_forward_declarations": 0,
+  "baseline": {
+    "mad_seconds": 0.33230250700000852,
+    "max_seconds": 102.7344952,
+    "median_seconds": 100.33559630400001,
+    "min_seconds": 100.003293797,
+    "samples": [
+      {
+        "compiler_cpu_seconds": 188.87627000000003,
+        "compiler_wall_sum_seconds": 188.96951284800002,
+        "max_compiler_rss_kib": 346456,
+        "wall_seconds": 100.33559630400001
+      },
+      {
+        "compiler_cpu_seconds": 193.29684300000008,
+        "compiler_wall_sum_seconds": 193.3932247070002,
+        "max_compiler_rss_kib": 344972,
+        "wall_seconds": 102.7344952
+      },
+      {
+        "compiler_cpu_seconds": 188.15517999999997,
+        "compiler_wall_sum_seconds": 188.26943821399999,
+        "max_compiler_rss_kib": 344808,
+        "wall_seconds": 100.003293797
+      }
+    ]
+  },
+  "baseline_tests_passed": 1,
+  "buildray_version": "0.7.0",
+  "candidate": {
+    "mad_seconds": 2.6067665879999993,
+    "max_seconds": 105.811835081,
+    "median_seconds": 102.147226445,
+    "min_seconds": 99.540459857000002,
+    "samples": [
+      {
+        "compiler_cpu_seconds": 187.2381389999999,
+        "compiler_wall_sum_seconds": 187.32299095999994,
+        "max_compiler_rss_kib": 344764,
+        "wall_seconds": 99.540459857000002
+      },
+      {
+        "compiler_cpu_seconds": 192.37859500000005,
+        "compiler_wall_sum_seconds": 192.47677894100002,
+        "max_compiler_rss_kib": 344364,
+        "wall_seconds": 102.147226445
+      },
+      {
+        "compiler_cpu_seconds": 199.46124000000017,
+        "compiler_wall_sum_seconds": 199.60143004400024,
+        "max_compiler_rss_kib": 345832,
+        "wall_seconds": 105.811835081
+      }
+    ]
+  },
+  "candidate_tests_passed": 1,
+  "clang_tidy_version": "Ubuntu LLVM version 21.1.8\n  Optimized build.\n",
+  "cmake_args": [
+    "-DSPM_BUILD_TEST=ON",
+    "-DSPM_ENABLE_SHARED=OFF",
+    "-DSPM_ENABLE_TCMALLOC=OFF"
+  ],
+  "cmake_version": "cmake version 4.2.3\n\nCMake suite maintained and supported by Kitware (kitware.com/cmake).\n",
+  "command": "headers",
+  "compiler_version": "Ubuntu clang version 21.1.8 (++20251221032922+2078da43e25a-1~exp1~20251221153059.70)\nTarget: x86_64-pc-linux-gnu\nThread model: posix\nInstalledDir: /usr/lib/llvm-21/bin\n",
+  "excluded_paths": [
+    "third_party",
+    "src/builtin_pb"
+  ],
+  "forwarded_includes": 0,
+  "header_changes": 8,
+  "header_cleanup": {
+    "added_forward_declarations": 0,
+    "ast_commands": 236,
+    "budget_reached": true,
+    "findings": [
+      {
+        "directive": "#include <stdio.h>\n",
+        "file": "src/filesystem.h",
+        "kind": "unused_include",
+        "observed_users": 28,
+        "offset": 635,
+        "replacement": "",
+        "standalone_contexts": 3
+      },
+      {
+        "directive": "#include <fstream>\n",
+        "file": "src/filesystem.h",
+        "kind": "unused_include",
+        "observed_users": 28,
+        "offset": 655,
+        "replacement": "",
+        "standalone_contexts": 3
+      },
+      {
+        "directive": "#include \"common.h\"\n",
+        "file": "src/filesystem.h",
+        "kind": "unused_include",
+        "observed_users": 28,
+        "offset": 711,
+        "replacement": "",
+        "standalone_contexts": 3
+      },
+      {
+        "directive": "#include \"sentencepiece_processor.h\"\n",
+        "file": "src/filesystem.h",
+        "kind": "unused_include",
+        "observed_users": 28,
+        "offset": 731,
+        "replacement": "",
+        "standalone_contexts": 3
+      },
+      {
+        "directive": "#include \"common.h\"\n",
+        "file": "src/unigram_model.h",
+        "kind": "unused_include",
+        "observed_users": 8,
+        "offset": 715,
+        "replacement": "",
+        "standalone_contexts": 2
+      },
+      {
+        "directive": "#include \"common.h\"\n",
+        "file": "src/init.h",
+        "kind": "unused_include",
+        "observed_users": 7,
+        "offset": 623,
+        "replacement": "",
+        "standalone_contexts": 3
+      },
+      {
+        "directive": "#include \"sentencepiece_model.pb.h\"\n",
+        "file": "src/builder.h",
+        "kind": "unused_include",
+        "observed_users": 6,
+        "offset": 701,
+        "replacement": "",
+        "standalone_contexts": 3
+      },
+      {
+        "directive": "#include \"sentencepiece_processor.h\"\n",
+        "file": "src/builder.h",
+        "kind": "unused_include",
+        "observed_users": 6,
+        "offset": 737,
+        "replacement": "",
+        "standalone_contexts": 3
+      }
+    ],
+    "forward_declarations_enabled": true,
+    "forwarded_includes": 0,
+    "header_paths": [
+      "src"
+    ],
+    "max_header_edits": 4,
+    "modified_headers": 4,
+    "observed_headers": 27,
+    "preflight_commands": 97,
+    "rejected": [
+      {
+        "file": "src/common.h",
+        "kind": "unused_includes",
+        "log": "logs/header-preflight-3.log",
+        "reason": "standalone header or observed user failed compilation"
+      },
+      {
+        "file": "src/util.h",
+        "kind": "unused_includes",
+        "log": "logs/header-preflight-16.log",
+        "reason": "standalone header or observed user failed compilation"
+      },
+      {
+        "file": "src/testharness.h",
+        "kind": "unused_includes",
+        "log": "logs/header-preflight-48.log",
+        "reason": "standalone header or observed user failed compilation"
+      },
+      {
+        "file": "src/model_interface.h",
+        "kind": "unused_includes",
+        "log": "logs/header-preflight-63.log",
+        "reason": "standalone header or observed user failed compilation"
+      },
+      {
+        "file": "src/model_interface.h",
+        "kind": "forward_declarations",
+        "log": "logs/header-preflight-66.log",
+        "reason": "standalone header or observed user failed compilation"
+      },
+      {
+        "file": "src/trainer_interface.h",
+        "kind": "forward_declarations",
+        "log": "logs/header-preflight-67.log",
+        "reason": "standalone header or observed user failed compilation"
+      }
+    ],
+    "scope": "observed original project headers; standalone checks use observed C++ flags; all observed C/C++ users are preflighted; one accepted forward include per header; full build and CTest still required",
+    "selection_order": "descending observed user count, then path",
+    "skipped": [],
+    "standalone_checks": 45,
+    "tidy_commands": 34,
+    "unused_includes": 8
+  },
+  "header_unused_includes": 8,
+  "jobs": 2,
+  "measurement": "clean builds; warm filesystem cache; compiler caches disabled; alternating order",
+  "measurement_context": {
+    "architecture": "x86_64",
+    "buildray_version": "0.7.0",
+    "cache_flags": {
+      "CMAKE_BUILD_TYPE": "Release",
+      "CMAKE_CXX_FLAGS": "",
+      "CMAKE_CXX_FLAGS-ADVANCED": "1",
+      "CMAKE_CXX_FLAGS_DEBUG": "-g",
+      "CMAKE_CXX_FLAGS_DEBUG-ADVANCED": "1",
+      "CMAKE_CXX_FLAGS_MINSIZEREL": "-Os -DNDEBUG",
+      "CMAKE_CXX_FLAGS_MINSIZEREL-ADVANCED": "1",
+      "CMAKE_CXX_FLAGS_RELEASE": "-O3 -DNDEBUG",
+      "CMAKE_CXX_FLAGS_RELEASE-ADVANCED": "1",
+      "CMAKE_CXX_FLAGS_RELWITHDEBINFO": "-O2 -g -DNDEBUG",
+      "CMAKE_CXX_FLAGS_RELWITHDEBINFO-ADVANCED": "1",
+      "CMAKE_C_FLAGS": "",
+      "CMAKE_C_FLAGS-ADVANCED": "1",
+      "CMAKE_C_FLAGS_DEBUG": "-g",
+      "CMAKE_C_FLAGS_DEBUG-ADVANCED": "1",
+      "CMAKE_C_FLAGS_MINSIZEREL": "-Os -DNDEBUG",
+      "CMAKE_C_FLAGS_MINSIZEREL-ADVANCED": "1",
+      "CMAKE_C_FLAGS_RELEASE": "-O3 -DNDEBUG",
+      "CMAKE_C_FLAGS_RELEASE-ADVANCED": "1",
+      "CMAKE_C_FLAGS_RELWITHDEBINFO": "-O2 -g -DNDEBUG",
+      "CMAKE_C_FLAGS_RELWITHDEBINFO-ADVANCED": "1",
+      "CMAKE_EXE_LINKER_FLAGS": "",
+      "CMAKE_EXE_LINKER_FLAGS-ADVANCED": "1",
+      "CMAKE_EXE_LINKER_FLAGS_DEBUG": "",
+      "CMAKE_EXE_LINKER_FLAGS_DEBUG-ADVANCED": "1",
+      "CMAKE_EXE_LINKER_FLAGS_MINSIZEREL": "",
+      "CMAKE_EXE_LINKER_FLAGS_MINSIZEREL-ADVANCED": "1",
+      "CMAKE_EXE_LINKER_FLAGS_RELEASE": "",
+      "CMAKE_EXE_LINKER_FLAGS_RELEASE-ADVANCED": "1",
+      "CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO": "",
+      "CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO-ADVANCED": "1",
+      "CMAKE_PROJECT_NAME": "sentencepiece",
+      "CMAKE_SHARED_LINKER_FLAGS": "",
+      "CMAKE_SHARED_LINKER_FLAGS-ADVANCED": "1",
+      "CMAKE_SHARED_LINKER_FLAGS_DEBUG": "",
+      "CMAKE_SHARED_LINKER_FLAGS_DEBUG-ADVANCED": "1",
+      "CMAKE_SHARED_LINKER_FLAGS_MINSIZEREL": "",
+      "CMAKE_SHARED_LINKER_FLAGS_MINSIZEREL-ADVANCED": "1",
+      "CMAKE_SHARED_LINKER_FLAGS_RELEASE": "",
+      "CMAKE_SHARED_LINKER_FLAGS_RELEASE-ADVANCED": "1",
+      "CMAKE_SHARED_LINKER_FLAGS_RELWITHDEBINFO": "",
+      "CMAKE_SHARED_LINKER_FLAGS_RELWITHDEBINFO-ADVANCED": "1"
+    },
+    "cmake_args": [
+      "-DSPM_BUILD_TEST=ON",
+      "-DSPM_ENABLE_SHARED=OFF",
+      "-DSPM_ENABLE_TCMALLOC=OFF"
+    ],
+    "cpu_affinity_count": 4,
+    "cpu_model": "AMD EPYC 9V45 96-Core Processor",
+    "cpu_quota": "unavailable",
+    "environment_flags": {
+      "CFLAGS": "",
+      "CXXFLAGS": "",
+      "LDFLAGS": ""
+    },
+    "jobs": 2,
+    "kernel": "6.17.0-1022-azure",
+    "method": "clean-build-warm-filesystem-v1",
+    "precompiled_headers": false,
+    "sampling": "paired_alternating",
+    "session": "c60867ba-2c91-4267-8184-1aa12a2215dd",
+    "tests_required": true,
+    "unity_build": false
+  },
+  "modified_headers": 4,
+  "ninja_version": "1.13.0.git.kitware.jobserver-pipe-1\n",
+  "noise_threshold_seconds": 7.8202997639999978,
+  "patch_recommended": false,
+  "patch_validated": true,
+  "performance_result": "inconclusive",
+  "performance_rule": "heuristic: difference exceeds max(2% baseline, 3x max MAD); not a significance test",
+  "phase": "complete",
+  "precompiled_headers": false,
+  "runs": 3,
+  "schema_version": 1,
+  "source": "/home/runner/work/buildray/buildray/fixtures/sentencepiece",
+  "status": "passed",
+  "tests_required": true,
+  "unity_build": false,
+  "validation": "build_and_tests_passed",
+  "validation_scope": "one configured CMake build; observed original project headers; standalone and observed-user preflights; complete build and CTest",
+  "wall_change_percent": 1.8055707124229967,
+  "work_dir": "/home/runner/work/_temp/buildray-action-s26y4n07/run"
+}

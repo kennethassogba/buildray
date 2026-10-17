@@ -1,0 +1,48 @@
+--- a/src/builder.h
++++ b/src/builder.h
+@@ -20,8 +20,6 @@
+ #include <vector>
+ 
+ #include "common.h"
+-#include "sentencepiece_model.pb.h"
+-#include "sentencepiece_processor.h"
+ #include "third_party/absl/status/status.h"
+ #include "third_party/absl/strings/string_view.h"
+ 
+--- a/src/filesystem.h
++++ b/src/filesystem.h
+@@ -15,14 +15,10 @@
+ #ifndef FILESYSTEM_H_
+ #define FILESYSTEM_H_
+ 
+-#include <stdio.h>
+ 
+-#include <fstream>
+ #include <memory>
+ #include <string>
+ 
+-#include "common.h"
+-#include "sentencepiece_processor.h"
+ #include "third_party/absl/status/status.h"
+ #include "third_party/absl/strings/string_view.h"
+ 
+--- a/src/init.h
++++ b/src/init.h
+@@ -15,7 +15,6 @@
+ #ifndef INIT_H_
+ #define INIT_H_
+ 
+-#include "common.h"
+ 
+ namespace sentencepiece {
+ 
+--- a/src/unigram_model.h
++++ b/src/unigram_model.h
+@@ -20,7 +20,6 @@
+ #include <utility>
+ #include <vector>
+ 
+-#include "common.h"
+ #include "freelist.h"
+ #include "model_interface.h"
+ #include "sentencepiece_model.pb.h"

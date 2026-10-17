@@ -85,6 +85,8 @@ void opaque(demo::Box<int>*, demo::Attributed*, demo::Outer::Inner*, demo::Versi
 #include "detail.hpp"  // IWYU pragma: keep
 void keep(demo::Detail*);
 ''')
+    (source / "kept_next.hpp").write_text('#pragma once\n// NOLINTNEXTLINE(misc-include-cleaner)\n#include "detail.hpp"\nvoid keep_next(demo::Detail*);\n')
+    (source / "kept_block.hpp").write_text('#pragma once\n// NOLINTBEGIN(misc-include-cleaner)\n#include "detail.hpp"\n// NOLINTEND(misc-include-cleaner)\nvoid keep_block(demo::Detail*);\n')
     (source / "context_only.hpp").write_text('void context_only(demo::Detail*);\n')
     (source / "c_required.h").write_text('#pragma once\nstruct CThing { int value; };\n')
     (source / "shared.h").write_text('#pragma once\n#include "c_required.h"\n')
@@ -94,6 +96,8 @@ void keep(demo::Detail*);
 #include "guarded.hpp"
 #include "meta_api.hpp"
 #include "kept.hpp"
+#include "kept_next.hpp"
+#include "kept_block.hpp"
 #include "context_only.hpp"
 #include "shared.h"
 extern "C" int helper(void);
@@ -131,7 +135,8 @@ int main() { demo::Detail value; return demo::inspect(value) + helper(); }
     _, plain = invoke("cleanup", "--header-path", "api.hpp")
     assert plain["patch_validated"] and all(row["kind"] == "unused_include" for row in plain["header_cleanup"]["findings"])
     for label, header in [("contexts", "guarded.hpp"), ("metadata", "meta_api.hpp"),
-                          ("kept", "kept.hpp"), ("c-users", "shared.h"),
+                          ("kept", "kept.hpp"), ("kept-next", "kept_next.hpp"),
+                          ("kept-block", "kept_block.hpp"), ("c-users", "shared.h"),
                           ("not-standalone", "context_only.hpp")]:
         _, report = invoke(label, "--forward-declarations", "--header-path", header)
         assert report["performance_result"] == "no_changes", (label, report)
