@@ -1,0 +1,131 @@
+{
+  "source_revision": "7e269d56c74c89de52bc8c31e42191155416371f",
+  "workflow_run": "https://github.com/kennethassogba/buildray/actions/runs/39004319353",
+  "scope": "excerpt; complete graphs retained in xgrammar-cmake-link artifact",
+  "before": {
+    "targets": 8,
+    "typed_edges": 37,
+    "link_fragments": 0,
+    "selected_target_relationships": [
+      {
+        "file": "<SOURCE>/CMakeLists.txt",
+        "from": "xgrammar_test",
+        "kind": "linkLibraries",
+        "line": 126,
+        "to": "xgrammar"
+      },
+      {
+        "file": "<SOURCE>/CMakeLists.txt",
+        "from": "xgrammar_test",
+        "kind": "linkLibraries",
+        "line": 126,
+        "to": "gtest"
+      },
+      {
+        "file": "<SOURCE>/CMakeLists.txt",
+        "from": "xgrammar_test",
+        "kind": "linkLibraries",
+        "line": 126,
+        "to": "gmock"
+      },
+      {
+        "file": "<SOURCE>/CMakeLists.txt",
+        "from": "xgrammar_test",
+        "kind": "linkLibraries",
+        "line": 126,
+        "to": "gtest_main"
+      },
+      {
+        "file": "<SOURCE>/CMakeLists.txt",
+        "from": "xgrammar_test",
+        "kind": "compileDependencies",
+        "line": 126,
+        "to": "xgrammar"
+      },
+      {
+        "file": "<SOURCE>/CMakeLists.txt",
+        "from": "xgrammar_test",
+        "kind": "compileDependencies",
+        "line": 126,
+        "to": "gtest"
+      },
+      {
+        "file": "<SOURCE>/CMakeLists.txt",
+        "from": "xgrammar_test",
+        "kind": "compileDependencies",
+        "line": 126,
+        "to": "gmock"
+      },
+      {
+        "file": "<SOURCE>/CMakeLists.txt",
+        "from": "xgrammar_test",
+        "kind": "compileDependencies",
+        "line": 126,
+        "to": "gtest_main"
+      },
+      {
+        "file": "/home/runner/work/_temp/buildray-python-tBpe6L/lib/python3.12/site-packages/cmake/data/share/cmake-4.2/Modules/GoogleTest.cmake",
+        "from": "xgrammar_test",
+        "kind": "orderDependencies",
+        "line": 687,
+        "to": "xgrammar_test"
+      }
+    ]
+  },
+  "after": {
+    "targets": 8,
+    "typed_edges": 35,
+    "link_fragments": 0,
+    "selected_target_relationships": [
+      {
+        "file": "<SOURCE>/CMakeLists.txt",
+        "from": "xgrammar_test",
+        "kind": "linkLibraries",
+        "line": 126,
+        "to": "xgrammar"
+      },
+      {
+        "file": "<SOURCE>/CMakeLists.txt",
+        "from": "xgrammar_test",
+        "kind": "linkLibraries",
+        "line": 126,
+        "to": "gmock"
+      },
+      {
+        "file": "<SOURCE>/CMakeLists.txt",
+        "from": "xgrammar_test",
+        "kind": "linkLibraries",
+        "line": 126,
+        "to": "gtest_main"
+      },
+      {
+        "file": "<SOURCE>/CMakeLists.txt",
+        "from": "xgrammar_test",
+        "kind": "compileDependencies",
+        "line": 126,
+        "to": "xgrammar"
+      },
+      {
+        "file": "<SOURCE>/CMakeLists.txt",
+        "from": "xgrammar_test",
+        "kind": "compileDependencies",
+        "line": 126,
+        "to": "gmock"
+      },
+      {
+        "file": "<SOURCE>/CMakeLists.txt",
+        "from": "xgrammar_test",
+        "kind": "compileDependencies",
+        "line": 126,
+        "to": "gtest_main"
+      },
+      {
+        "file": "/home/runner/work/_temp/buildray-python-tBpe6L/lib/python3.12/site-packages/cmake/data/share/cmake-4.2/Modules/GoogleTest.cmake",
+        "from": "xgrammar_test",
+        "kind": "orderDependencies",
+        "line": 687,
+        "to": "xgrammar_test"
+      }
+    ]
+  }
+}

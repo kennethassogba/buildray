@@ -215,6 +215,7 @@ json::Object link_candidates(const json::Object& graph, const fs::path& source,
     }
     std::map<std::pair<std::string, std::string>, json::Object> candidates;
     for (const auto& value : array(graph, "edges")) {
+        if (interrupted()) throw std::runtime_error("Interrupted during CMake selection");
         const auto& row = *value.getAsObject();
         const auto from = string(row, "from"), to = string(row, "to");
         if (row.getString("kind") != "linkLibraries" || !name(from) || !name(to) || from == to ||

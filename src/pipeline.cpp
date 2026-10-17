@@ -930,6 +930,7 @@ int pipeline(const Options& options, const fs::path& executable) {
                     report["patch_recommended"] = false;
                     report["validation"] = baseline_tests ? "build_and_tests_passed" : "build_only";
                     report["measurement"] = "no eligible link; baseline validation only; no performance benchmark";
+                    if (interrupted()) throw std::runtime_error("Interrupted");
                     write_json(work / "report.json", json::Object(report));
                     std::cout << "No eligible redundant CMake link.\n";
                     print_summary(report, work);

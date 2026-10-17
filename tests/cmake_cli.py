@@ -145,6 +145,18 @@ endif()
     _, unexpected = invoke("graph-change", expected=1)
     assert not unexpected["patch_validated"] and "changed targets" in unexpected["error"]
 
+    cmake.write_text(original + 'target_link_libraries(sample PRIVATE api)\n')
+    _, repeated_call = invoke("retained-link", expected=1)
+    assert not repeated_call["patch_validated"] and "retained the direct link" in repeated_call["error"]
+
+    cmake.write_text(original + '''get_target_property(sample_links sample LINK_LIBRARIES)
+if(NOT "api" IN_LIST sample_links)
+  target_link_libraries(sample PRIVATE m)
+endif()
+''')
+    _, raw_argument = invoke("raw-argument-change", expected=1)
+    assert not raw_argument["patch_validated"] and "raw linker arguments" in raw_argument["error"]
+
     # Swapping a test for another with the same count cannot count as validation.
     cmake.write_text(original)
     root_cmake = source / "CMakeLists.txt"

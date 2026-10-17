@@ -261,3 +261,5 @@ including candidates with no measured benefit.
 [Dependency graph evidence](docs/dependency-validation.md) covers MuJoCo and XGrammar.
 [Automatic PCH and cleanup evidence](docs/automatic-validation.md) covers the
 selection workflow and per-file validation on XGrammar.
+[CMake link evidence](docs/cmake-validation.md) covers redundant declarations,
+exported requirements and failed experiments.

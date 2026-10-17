@@ -1,0 +1,34 @@
+{
+  "candidates": [
+    {
+      "alternate_path": [
+        "xgrammar_test",
+        "gmock",
+        "gtest"
+      ],
+      "dependency": "gtest",
+      "file": "CMakeLists.txt",
+      "interface_path": [],
+      "length": 5,
+      "line": 126,
+      "offset": 4807,
+      "target": "xgrammar_test"
+    }
+  ],
+  "rule": "one literal direct link with an alternate transitive path preserving both link and compilation usage requirements; exported links require an alternate interface path too",
+  "scope": "configured graph only; no unused-symbol inference; first candidate by target and dependency name; full build and tests still required",
+  "selection": {
+    "alternate_path": [
+      "xgrammar_test",
+      "gmock",
+      "gtest"
+    ],
+    "dependency": "gtest",
+    "file": "CMakeLists.txt",
+    "interface_path": [],
+    "length": 5,
+    "line": 126,
+    "offset": 4807,
+    "target": "xgrammar_test"
+  }
+}

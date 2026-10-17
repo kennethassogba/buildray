@@ -21,11 +21,15 @@ dependency name. `--target` restricts the search; `--dependency` requests one
 eligible link and fails when none matches. There is one experiment, without
 fallback or repeated removal of other candidates.
 
+An explicit link can document a target's direct requirements. Removing it makes
+that target depend on another target continuing to export the dependency. Graph
+redundancy alone does not establish that this is a better project structure.
+
 Only an unquoted literal dependency in a literal `target_link_libraries` call is
 edited. CMake backtraces locate the declaration. The lexer preserves comments and
 consumes quoted/bracket arguments as whole tokens. Variables, generator
-expressions, aliases spelled differently from their resolved target, duplicate
-tokens, `debug`/`optimized` selections, legacy `LINK_*` signatures and ambiguous
+expressions, aliases spelled differently from their resolved target, repeated
+dependency tokens within one call, `debug`/`optimized` selections, legacy `LINK_*` signatures and ambiguous
 declarations are skipped. Raw libraries such as `m`, linker flags, object-library
 dependencies and interface-only declarations are not removed. Files generated or
 downloaded during configuration are excluded. Repeatable `--exclude` paths are
@@ -38,6 +42,8 @@ order relationship may remain or disappear. The command then performs a complete
 clean build, linking and CTest. Baseline and candidate must have the same test
 names and count. Arbitrary CMake scripts can respond to changed target properties,
 so graph reachability alone never validates a patch.
+If another declaration retains the selected direct link, the graph check rejects
+the experiment.
 
 At least three alternating clean-build pairs follow validation, without include
 or time-trace instrumentation. The same existing rule decides whether to recommend
