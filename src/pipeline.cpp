@@ -28,6 +28,7 @@ struct Variant {
     std::vector<std::string> pch_headers;
     bool dependencies = false;
     bool cmake_model = false;
+    bool active_coverage = false;
 };
 
 void checked(const std::vector<std::string>& args, const fs::path& cwd, const fs::path& log) {
@@ -111,13 +112,13 @@ void configure(const Options& options, const Variant& variant, const fs::path& e
     args.insert(args.end(), controlled.begin(), controlled.end());
     if (variant.dependencies || options.command == "headers")
         args.push_back("-DCMAKE_C_COMPILER=" + options.c_compiler);
-    if (variant.dependencies) {
-        args.push_back("-DCMAKE_C_COMPILER_LAUNCHER=" + launcher(executable, variant.records, false, true));
+    if (variant.dependencies || variant.active_coverage) {
+        args.push_back("-DCMAKE_C_COMPILER_LAUNCHER=" + launcher(executable, variant.records, false, variant.dependencies));
     }
     checked(args, variant.source, log);
     if (!fs::exists(variant.build / "compile_commands.json"))
         throw std::runtime_error("Project did not generate compile_commands.json");
-    if (variant.dependencies)
+    if (variant.dependencies || variant.active_coverage)
         checked({"ninja", "-C", variant.build.string(), "-t", "compdb-targets", "all"},
                 variant.source, variant.build / "active-commands.json");
 }
@@ -207,7 +208,7 @@ void verify_coverage(const Variant& variant) {
     std::size_t pch_uses = 0;
     std::map<fs::path, std::size_t> expected;
     std::set<fs::path> active;
-    if (variant.dependencies) {
+    if ((variant.dependencies || variant.active_coverage)) {
         const auto document = read_json(variant.build / "active-commands.json");
         const auto* commands = document.getAsArray();
         if (!commands) throw std::runtime_error("Invalid Ninja default-target compilation database");
@@ -228,8 +229,8 @@ void verify_coverage(const Variant& variant) {
         if (!object || !object->getString("file") || !object->getString("directory"))
             throw std::runtime_error("Invalid compilation database entry");
         fs::path file = object->getString("file")->str();
-        if (!cpp_source(file) && !(variant.dependencies && file.extension() == ".c")) continue;
-        if (variant.dependencies) {
+        if (!cpp_source(file) && !((variant.dependencies || variant.active_coverage) && file.extension() == ".c")) continue;
+        if ((variant.dependencies || variant.active_coverage)) {
             if (!object->getString("output")) throw std::runtime_error("Missing compilation output");
             fs::path output = object->getString("output")->str();
             if (output.is_relative()) output = fs::path(object->getString("directory")->str()) / output;
@@ -287,13 +288,13 @@ void verify_coverage(const Variant& variant) {
             }
             if (use) ++pch_uses;
         }
-        if (!cpp_source(file) && !(variant.dependencies && file.extension() == ".c")) continue;
+        if (!cpp_source(file) && !((variant.dependencies || variant.active_coverage) && file.extension() == ".c")) continue;
         if (file.is_relative()) file = fs::path(object->getString("directory")->str()) / file;
         ++measured[absolute_path(file)];
     }
     if (expected.empty() || measured != expected)
         throw std::runtime_error(
-            variant.dependencies ?
+            (variant.dependencies || variant.active_coverage) ?
             "Compiler coverage does not match Ninja's default all target. "
             "Every C/C++ compilation in that target must use Buildray's launcher; "
             "do not override the C or C++ compiler launcher." :
@@ -791,6 +792,7 @@ int pipeline(const Options& options, const fs::path& executable) {
                           work / "candidate-records", false,
                           options.command == "pch" ? options.target : "", options.headers};
         baseline.cmake_model = candidate.cmake_model = options.command == "prune-links";
+        baseline.active_coverage = candidate.active_coverage = options.command == "headers";
         report["phase"] = "baseline_validation";
         std::cout << "Configuring baseline, warming build, running tests...\n" << std::flush;
         snapshot(base_source, baseline.source, work);
@@ -995,7 +997,7 @@ int pipeline(const Options& options, const fs::path& executable) {
                 if (options.command == "headers") {
                     for (auto item : analyze_headers(options, candidate.source, candidate.build, work, executable, originals, report))
                         changes[fs::path(item.file)].push_back(std::move(item));
-                    report["validation_scope"] = "one configured CMake build; observed original project headers; standalone and observed-user preflights; complete build and CTest";
+                    report["validation_scope"] = "one configured Ninja default all target; observed original project headers; standalone and observed C/C++ user preflights; complete default build and CTest";
                     patch(changes, baseline, candidate, work, "headers.patch");
                 } else {
                     std::cout << "Analyzing unused includes with clang-tidy...\n" << std::flush;

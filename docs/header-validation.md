@@ -54,3 +54,12 @@ versions and checks that both major versions match the AST helper. An explicit
 Clang for C and enables IPO when supported, with a C function called by C++.
 This fixes the experiment setup; it is not a MuJoCo source change or a finding
 eligible for an upstream cleanup PR.
+
+Header experiments also reuse the Ninja default-target coverage policy from
+`deps`. MuJoCo configures 493 compilation commands but its validated default
+build reaches 326; optional dependency targets must not be claimed as executed.
+`headers` now instruments C and C++ without dependency-trace flags, checks every
+default-build object, and indexes only commands whose outputs are reachable.
+The regression fixture includes an optional target that cannot compile, verifies
+that it is counted outside the experiment, and rejects a C launcher bypass.
+Per-compiler header experiment totals cover both languages.

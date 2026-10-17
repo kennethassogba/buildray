@@ -17,7 +17,10 @@ declarations in one run. Selection and the budget are recorded in the report.
 
 Buildray snapshots the project and builds/tests the baseline and candidate before
 analysis. A separate native helper uses Clang's AST and preprocessor callbacks to
-index original project headers and their C/C++ compilation users. It runs one
+index original project headers and their C/C++ compilation users in Ninja’s
+default `all` target. Ninja 1.13+ is required. Launcher records must cover every
+C/C++ object in that target; optional excluded targets are counted separately
+and are outside the experiment. It runs one
 translation unit per subprocess to bound the AST lifetime. The helper and project
 C and C++ compilers must use the same Clang major version. `headers` derives the
 C driver from the C++ driver name (`clang++-21` → `clang-21`); `--c-compiler`
@@ -40,7 +43,9 @@ standard-library types, inline/anonymous namespaces and includes inside lexical
 scopes. It changes only original project files outside excluded paths.
 
 Every proposal must compile as a standalone header and with every observed user,
-including C users and users in excluded directories. Failed proposals are restored
+including C users and users in excluded directories. User preflights reuse the
+original flags with `-fsyntax-only`; code generation and linking are checked by
+the subsequent clean build. Failed proposals are restored
 while independent changes continue. Accepted changes remain staged during later
 checks, so those checks cover the combined changes. A final standalone pass checks
 all changed headers again. Buildray then emits the patch, performs a clean build,
@@ -55,7 +60,7 @@ more pairs are needed for a performance recommendation.
 
 - `headers.patch`: unified patch; never applied to the supplied source tree.
 - `header-cleanup.json`: selection scope, findings, rejected/skipped headers and
-  AST, tidy, standalone and preflight counts.
+  AST, tidy, standalone and preflight counts, plus inactive compilation commands.
 - `report.json`: build/test validation and raw samples, medians, noise threshold,
   performance verdict and recommendation.
 - `header-analysis/` and `logs/`: local AST facts, compilation databases, tidy fixes

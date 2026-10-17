@@ -39,9 +39,14 @@ endif()
 add_executable(sample main.cpp api.cpp helper.c)
 add_library(configured OBJECT variant.cpp)
 target_compile_definitions(configured PRIVATE DETAIL_REQUIRED=1)
+add_library(unbuilt OBJECT EXCLUDE_FROM_ALL unbuilt.cpp)
+if(BYPASS_C_LAUNCHER)
+  set_property(TARGET sample PROPERTY C_COMPILER_LAUNCHER "${CMAKE_COMMAND};-E;env")
+endif()
 enable_testing()
 add_test(NAME works COMMAND sample)
 ''')
+    (source / "unbuilt.cpp").write_text("#error Optional target must stay outside this experiment\n")
     api = source / "api.hpp"
     api.write_text('''#pragma once
 #include <set>
@@ -113,6 +118,7 @@ int main() { demo::Detail value; return demo::inspect(value) + helper(); }
     summary = json.loads((work / "header-cleanup.json").read_text())
     assert {row["kind"] for row in summary["findings"]} == {"unused_include", "forward_declaration"}
     assert summary["ast_commands"] == 4 and summary["modified_headers"] == 1
+    assert summary["inactive_compile_commands"] == 1
     assert not (work / "includes.patch").exists()
     run("git", "apply", "--check", work / "headers.patch", cwd=source)
     original = api.read_text()
@@ -135,6 +141,10 @@ int main() { demo::Detail value; return demo::inspect(value) + helper(); }
             assert report["header_cleanup"]["skipped"]
     _, excluded = invoke("excluded", "--header-path", "api.hpp", "--exclude", "api.hpp", "--forward-declarations")
     assert excluded["performance_result"] == "no_changes"
+
+    _, bypass = invoke("c-launcher-bypass", "--header-path", "api.hpp",
+                       "--", "-DBYPASS_C_LAUNCHER=ON", expected=1)
+    assert "coverage" in bypass["error"] and not bypass["patch_validated"]
 
     # A forced declaration can compile yet remove a required initialization effect.
     (source / "provider.hpp").write_text('''#pragma once

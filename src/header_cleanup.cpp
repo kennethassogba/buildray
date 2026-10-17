@@ -99,6 +99,22 @@ std::vector<Replacement> analyze_headers(const Options& options, const fs::path&
     const auto document = read_json(build / "compile_commands.json");
     const auto* entries = document.getAsArray();
     if (!entries || entries->empty()) throw std::runtime_error("Empty compilation database");
+    const auto active_document = read_json(build / "active-commands.json");
+    const auto* active_commands = active_document.getAsArray();
+    if (!active_commands) throw std::runtime_error("Invalid Ninja default-target command list");
+    std::set<fs::path> active;
+    const auto output_path = [](const json::Object& entry) {
+        const auto output = entry.getString("output"), directory = entry.getString("directory");
+        if (!output || !directory) throw std::runtime_error("Missing compilation output");
+        const auto path = fs::path(output->str());
+        return absolute_path(path.is_absolute() ? path : fs::path(directory->str()) / path);
+    };
+    for (const auto& item : *active_commands) {
+        const auto* entry = item.getAsObject();
+        if (!entry) throw std::runtime_error("Invalid Ninja command");
+        active.insert(output_path(*entry));
+    }
+    unsigned inactive_commands = 0;
     std::map<fs::path, Header> headers;
     json::Array skipped, rejected, findings;
     unsigned scan_count = 0, standalone = 0, preflight = 0, tidy_count = 0;
@@ -118,6 +134,10 @@ std::vector<Replacement> analyze_headers(const Options& options, const fs::path&
             throw std::runtime_error("Invalid compilation command");
         const auto input = command_file(*entry);
         if (!cpp(input) && input.extension() != ".c") continue;
+        if (!active.contains(output_path(*entry))) {
+            ++inactive_commands;
+            continue;
+        }
         const auto directory = work / "header-analysis/index" / std::to_string(index);
         fs::create_directories(directory);
         write_json(directory / "compile_commands.json", json::Array{(*entries)[index]});
@@ -125,6 +145,8 @@ std::vector<Replacement> analyze_headers(const Options& options, const fs::path&
                  source.string(), (directory / "facts.json").string(), resources},
                 source, logs / ("header-scan-" + std::to_string(index) + ".log"));
         ++scan_count;
+        if (scan_count % 25 == 0)
+            std::cout << "Indexed " << scan_count << " compilation commands...\n" << std::flush;
         const auto facts_doc = read_json(directory / "facts.json");
         const auto* facts = facts_doc.getAsObject();
         if (!facts || !facts->getArray("headers") || !facts->getArray("forwards"))
@@ -265,9 +287,10 @@ std::vector<Replacement> analyze_headers(const Options& options, const fs::path&
                             const auto& context = *(*entries)[index].getAsObject();
                             const auto log =
                                 logs / ("header-preflight-" + std::to_string(preflight++) + ".log");
-                            if (run(compile_arguments(context),
-                                    context.getString("directory")->str(), log)
-                                    .code != 0) {
+                            auto arguments = compile_arguments(context);
+                            arguments.push_back("-fsyntax-only");
+                            if (run(arguments, context.getString("directory")->str(), log).code !=
+                                0) {
                                 failure = log;
                                 break;
                             }
@@ -352,6 +375,7 @@ std::vector<Replacement> analyze_headers(const Options& options, const fs::path&
     for (const auto& path : options.header_paths) selected_paths.push_back(path.generic_string());
     json::Object summary{{"observed_headers", static_cast<std::int64_t>(headers.size())},
                          {"ast_commands", scan_count},
+                         {"inactive_compile_commands", inactive_commands},
                          {"standalone_checks", standalone},
                          {"preflight_commands", preflight},
                          {"tidy_commands", tidy_count},
@@ -368,7 +392,8 @@ std::vector<Replacement> analyze_headers(const Options& options, const fs::path&
                          {"skipped", std::move(skipped)},
                          {"rejected", std::move(rejected)},
                          {"scope",
-                          "observed original project headers; standalone checks use observed C++ "
+                          "Ninja default all target; observed original project headers; standalone "
+                          "checks use observed C++ "
                           "flags; all observed C/C++ users are preflighted; one accepted forward "
                           "include per header; full build and CTest still required"}};
     report["modified_headers"] = static_cast<std::int64_t>(saved.size());

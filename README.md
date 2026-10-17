@@ -225,7 +225,7 @@ compiler caches disabled. Unity builds are disabled. PCH is disabled for include
 cleanup and revision comparisons; only `pch` enables it in the candidate. Cleaning, configuration, analysis and
 tests are outside the measured interval. Build wall time includes dependency
 scans, compilation, code generation, linking and launcher overhead. Per-compiler
-totals cover C++ compiler invocations; their sum is not the parallel build's wall
+totals cover C++ compiler invocations (C/C++ for `headers` and `deps`); their sum is not the parallel build's wall
 time. RSS is the maximum of individual compiler peaks, not aggregate build memory.
 
 ## Validation scope
@@ -237,9 +237,10 @@ time. RSS is the maximum of individual compiler peaks, not aggregate build memor
   Launcher overrides and `EXCLUDE_FROM_ALL` C++ targets cause a coverage error.
   Disable optional targets that are not part of the build you want to validate.
   Active unity compilation and unexpected PCH are refused, including target overrides.
-  `deps` instead checks every C/C++ object reachable from Ninja's default `all`
+  `deps` and `headers` instead check every C/C++ object reachable from Ninja's default `all`
   target, allowing optional excluded targets. Its CMake graph still lists configured
-  excluded targets; their includes are not claimed as observed.
+  excluded targets; their includes are not claimed as observed. `headers` also
+  requires Ninja 1.13+ and counts inactive compilation commands.
 - CTest tests are required. Missing tests fail unless `--allow-no-tests` is
   explicit; that report says `build_only`. Disabled, skipped and failing tests
   are refused. Each test has a 120-second timeout.
