@@ -56,6 +56,11 @@ on:
         type: choice
         options: ['all', 'sentencepiece', 'xgrammar', 'mujoco']
         default: 'all'
+      unity_jobs:
+        description: Fixed parallelism for both variants of the unity corpus benchmark.
+        type: choice
+        options: ['2', '4']
+        default: '2'
 
 permissions:
   contents: read
@@ -314,7 +319,7 @@ jobs:
     name: unity-corpus (${{ matrix.name }})
     if: github.event_name == 'workflow_dispatch' && inputs.unity_corpus
     runs-on: ubuntu-24.04
-    timeout-minutes: 90
+    timeout-minutes: 180
     strategy:
       fail-fast: false
       matrix:
@@ -382,5 +387,5 @@ jobs:
           unity-retries: '4'
           cmake-args: ${{ matrix.cmake_args }}
           runs: ${{ inputs.unity_runs }}
-          jobs: '2'
+          jobs: ${{ inputs.unity_jobs }}
           artifact-name: ${{ matrix.name }}-unity

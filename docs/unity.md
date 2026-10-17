@@ -104,6 +104,9 @@ references are ignored; this compares the supplied project with its generated
 patch. The opt-in `unity_corpus` workflow tests the existing pinned SentencePiece,
 XGrammar and MuJoCo projects. Each candidate can fail validation independently;
 a failure is not evidence of an improvement.
+`unity_project` selects a project; MuJoCo runs both precisions. `unity_jobs`
+selects fixed parallelism of two or four for both measured variants. The default
+remains two; larger corpus builds have a 180-minute job limit.
 
 CMake's [unity documentation](https://cmake.org/cmake/help/v4.2/prop_tgt/UNITY_BUILD.html)
 describes grouping and source exclusions. Its

@@ -167,6 +167,7 @@ std::size_t test(const Options& options, const Variant& variant, const fs::path&
             }
         }
     }
+    std::cout << "Running " << tests->size() << " CTest tests (" << label << ")...\n" << std::flush;
     const auto junit = logs / (label + "-tests.xml");
     checked({"ctest", "--test-dir", variant.build.string(), "--output-on-failure", "--timeout",
              "120", "--no-tests=error", "--output-junit", junit.string()},
