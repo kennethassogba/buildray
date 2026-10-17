@@ -29,6 +29,9 @@ is not automatically recommended. Each incremental scenario has its own verdict.
 
 Each variant starts from a complete validated build. Before every sample, an
 untimed build must report no work and produce no compiler records. Buildray
+allows up to two untimed settling builds first, for one-off work such as a
+relink after dependency discovery. If the build still does not become idle,
+the experiment stops and retains Ninja's dependency explanation. Buildray
 then appends a numbered comment to the selected file in its isolated snapshot
 and times the complete default build. The same probe bytes are used in both
 variants; pairs alternate baseline-first and candidate-first order. Each probe

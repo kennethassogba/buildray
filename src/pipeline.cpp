@@ -466,11 +466,24 @@ void incremental_samples(const Options& options, const Variant& baseline, const 
         try {
             const auto collect = [&](const Variant& variant, bool before, unsigned pair) {
                 const auto name = label + (before ? "-baseline-" : "-candidate-") + std::to_string(pair);
-                clear_records(variant.records);
-                const auto noop = build(options, variant, logs / (name + "-noop.log"));
-                if (!compiler_records(variant.records).empty() ||
-                    read_file(logs / (name + "-noop.log")).find("ninja: no work to do.") == std::string::npos)
-                    throw std::runtime_error("Incremental build was not up to date before editing; see " + name + "-noop.log");
+                ProcessResult noop;
+                unsigned settling_builds = 0;
+                for (;; ++settling_builds) {
+                    clear_records(variant.records);
+                    run({"ninja", "-C", variant.build.string(), "-d", "explain", "-n"},
+                        variant.source, logs / (name + "-settle-" + std::to_string(settling_builds) + "-explanation.log"));
+                    const auto log = logs / (name + "-settle-" + std::to_string(settling_builds) + ".log");
+                    noop = build(options, variant, log);
+                    const auto pending = compiler_records(variant.records);
+                    write_json(logs / (name + "-settle-" + std::to_string(settling_builds) + "-compilers.json"), json::Array(pending));
+                    fs::copy_file(log, logs / (name + "-noop.log"), fs::copy_options::overwrite_existing);
+                    if (pending.empty() && read_file(log).find("ninja: no work to do.") != std::string::npos) break;
+                    if (settling_builds == 2) {
+                        run({"ninja", "-C", variant.build.string(), "-d", "explain", "-n"},
+                            variant.source, logs / (name + "-dirty-explanation.log"));
+                        throw std::runtime_error("Incremental build was not up to date before editing after two settling builds; see " + name + "-dirty-explanation.log");
+                    }
+                }
                 const auto file = variant.source / relative;
                 // Match the bytes of each probe in both variants. Each pair changes the
                 // previous probe, without a second expensive restoration build per sample.
@@ -528,6 +541,7 @@ void incremental_samples(const Options& options, const Variant& baseline, const 
                     throw std::runtime_error("Incremental CTest inventory changed");
                 summary["tests_passed"] = static_cast<std::int64_t>(count);
                 summary["noop_seconds"] = noop.seconds;
+                summary["settling_builds"] = settling_builds;
                 summary["log_prefix"] = "logs/" + name;
                 scenario.getArray(before ? "baseline_samples" : "candidate_samples")->push_back(std::move(summary));
                 persist();

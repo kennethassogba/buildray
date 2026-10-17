@@ -2,6 +2,13 @@ name: Incremental rebuild corpus
 
 on:
   workflow_call:
+    inputs:
+      project:
+        type: string
+        default: all
+      mode:
+        type: string
+        default: all
 
 permissions:
   contents: read
@@ -11,6 +18,8 @@ jobs:
     name: ${{ matrix.project }} / ${{ matrix.mode }}
     runs-on: ubuntu-24.04
     timeout-minutes: 240
+    env:
+      CORPUS_SELECTED: ${{ (inputs.project == 'all' || inputs.project == matrix.project) && (inputs.mode == 'all' || inputs.mode == matrix.mode) }}
     strategy:
       fail-fast: false
       matrix:
@@ -18,6 +27,7 @@ jobs:
         mode: [unity, pch]
         include:
           - project: xgrammar
+            jobs: 2
             repository: mlc-ai/xgrammar
             revision: 7e269d56c74c89de52bc8c31e42191155416371f
             target: xgrammar
@@ -26,6 +36,7 @@ jobs:
             exclusions: '[]'
             cmake_args: '[]'
           - project: sentencepiece
+            jobs: 2
             repository: google/sentencepiece
             revision: e0cce7d37b065b5140349dbe12c6bcf6192fdd78
             target: sentencepiece-static
@@ -34,6 +45,7 @@ jobs:
             exclusions: '["third_party", "src/builtin_pb"]'
             cmake_args: '["-DSPM_BUILD_TEST=ON", "-DSPM_ENABLE_SHARED=OFF", "-DSPM_ENABLE_TCMALLOC=OFF"]'
           - project: mujoco
+            jobs: 4
             repository: google-deepmind/mujoco
             revision: 651bae11c3c38efe483f033b4b7e869e7ce3f4ec
             target: mujoco
@@ -43,25 +55,29 @@ jobs:
             cmake_args: '["-DMUJOCO_BUILD_EXAMPLES=OFF", "-DMUJOCO_BUILD_SIMULATE=OFF", "-DMUJOCO_BUILD_TESTS=ON", "-DMUJOCO_TEST_PYTHON_UTIL=OFF"]'
     steps:
       - uses: actions/checkout@v6
+        if: env.CORPUS_SELECTED == 'true'
       - uses: actions/setup-python@v7
+        if: env.CORPUS_SELECTED == 'true'
         with:
           python-version: '3.12'
       - uses: actions/checkout@v6
+        if: env.CORPUS_SELECTED == 'true'
         with:
           repository: ${{ matrix.repository }}
           ref: ${{ matrix.revision }}
           path: fixtures/${{ matrix.project }}
           persist-credentials: false
       - name: Prepare native XGrammar tests
-        if: matrix.project == 'xgrammar'
+        if: matrix.project == 'xgrammar' && env.CORPUS_SELECTED == 'true'
         working-directory: fixtures/xgrammar
         run: |
           git submodule update --init --depth 1 3rdparty/dlpack 3rdparty/googletest
           printf '%s\n' 'set(XGRAMMAR_BUILD_PYTHON_BINDINGS OFF)' 'set(XGRAMMAR_BUILD_CXX_TESTS ON)' > config.cmake
       - name: Prepare MuJoCo test locale
-        if: matrix.project == 'mujoco'
+        if: matrix.project == 'mujoco' && env.CORPUS_SELECTED == 'true'
         run: sudo locale-gen de_DE.UTF-8
       - name: Validate and measure incremental rebuilds
+        if: env.CORPUS_SELECTED == 'true'
         uses: ./
         with:
           command: ${{ matrix.mode }}
@@ -74,6 +90,6 @@ jobs:
           rebuild-files: ${{ matrix.rebuild_files }}
           incremental-only: 'true'
           runs: '3'
-          jobs: '2'
+          jobs: ${{ matrix.jobs }}
           cmake-args: ${{ matrix.cmake_args }}
           artifact-name: incremental-${{ matrix.project }}-${{ matrix.mode }}

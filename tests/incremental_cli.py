@@ -111,6 +111,17 @@ add_test(NAME works COMMAND sample)
     top.write_text(saved)
     assert digest(source) == original
 
+    # A one-off post-build timestamp change may need an untimed relink before idle.
+    top.write_text(saved + f'''add_custom_command(TARGET sample POST_BUILD
+  COMMAND "{sys.executable}" -c "import pathlib; marker=pathlib.Path(r'${{CMAKE_BINARY_DIR}}/settled'); library=pathlib.Path(r'$<TARGET_FILE:core>'); library.touch() if not marker.exists() else None; marker.touch()" VERBATIM)
+''')
+    _, settled = invoke("one-off-relink", files=[paths[0]], runs=1)
+    scenario = settled["incremental"]["scenarios"][0]
+    assert scenario["baseline"]["samples"][0]["settling_builds"] == 1
+    assert scenario["candidate"]["samples"][0]["settling_builds"] == 1
+    top.write_text(saved)
+    assert digest(source) == original
+
     for files in [["../escape.cpp"], ["CMakeLists.txt"], ["lib/missing.hpp"], [paths[0], paths[0]]]:
         expected = 2 if files[0].startswith("..") else 1
         args = [binary, "unity", "--source", source, "--target", "core"]

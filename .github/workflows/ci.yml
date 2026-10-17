@@ -9,6 +9,16 @@ on:
         description: Measure Unity and PCH incremental rebuilds on XGrammar, SentencePiece and MuJoCo.
         type: boolean
         default: false
+      incremental_project:
+        description: Project to evaluate in the incremental corpus.
+        type: choice
+        options: ['all', 'xgrammar', 'sentencepiece', 'mujoco']
+        default: 'all'
+      incremental_mode:
+        description: Optimization to evaluate in the incremental corpus.
+        type: choice
+        options: ['all', 'unity', 'pch']
+        default: 'all'
       mujoco_compare:
         description: Validate the CompareModel refactor against MuJoCo in both precisions.
         type: boolean
@@ -77,6 +87,9 @@ jobs:
   incremental-corpus:
     if: github.event_name == 'workflow_dispatch' && inputs.incremental_corpus
     uses: ./.github/workflows/incremental.yml
+    with:
+      project: ${{ inputs.incremental_project }}
+      mode: ${{ inputs.incremental_mode }}
 
   mujoco-compare:
     if: github.event_name == 'workflow_dispatch' && inputs.mujoco_compare
