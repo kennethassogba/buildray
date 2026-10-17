@@ -1,0 +1,71 @@
+In file included from /home/runner/work/_temp/buildray-action-g1cloa60/run/candidate-build/CMakeFiles/mujoco.dir/Unity/unity_5_cxx.cxx:13:
+In file included from /home/runner/work/_temp/buildray-action-g1cloa60/run/candidate-source/src/xml/xml_native_writer.cc:48:
+/home/runner/work/_temp/buildray-action-g1cloa60/run/candidate-source/src/xml/generated/mjcf_read_table.inc:26:26: error: redefinition of 'kCompilerAttrs'
+   26 | inline constexpr mjXAttr kCompilerAttrs[] = {
+      |                          ^
+/home/runner/work/_temp/buildray-action-g1cloa60/run/candidate-source/src/xml/xml_native_reader.cc:176:10: note: '/home/runner/work/_temp/buildray-action-g1cloa60/run/candidate-source/src/xml/generated/mjcf_read_table.inc' included multiple times, additional include site here
+  176 | #include "xml/generated/mjcf_read_table.inc"
+      |          ^
+
+In file included from /home/runner/work/_temp/buildray-action-g1cloa60/run/candidate-build/CMakeFiles/mujoco.dir/Unity/unity_5_cxx.cxx:13:
+In file included from /home/runner/work/_temp/buildray-action-g1cloa60/run/candidate-source/src/xml/xml_native_writer.cc:48:
+/home/runner/work/_temp/buildray-action-g1cloa60/run/candidate-source/src/xml/generated/mjcf_read_table.inc:48:22: error: redefinition of 'kCompilerAttrsN'
+   48 | inline constexpr int kCompilerAttrsN = sizeof(kCompilerAttrs) / sizeof(kCompilerAttrs[0]);
+      |                      ^
+/home/runner/work/_temp/buildray-action-g1cloa60/run/candidate-source/src/xml/xml_native_reader.cc:176:10: note: '/home/runner/work/_temp/buildray-action-g1cloa60/run/candidate-source/src/xml/generated/mjcf_read_table.inc' included multiple times, additional include site here
+  176 | #include "xml/generated/mjcf_read_table.inc"
+      |          ^
+
+In file included from /home/runner/work/_temp/buildray-action-g1cloa60/run/candidate-build/CMakeFiles/mujoco.dir/Unity/unity_5_cxx.cxx:13:
+In file included from /home/runner/work/_temp/buildray-action-g1cloa60/run/candidate-source/src/xml/xml_native_writer.cc:48:
+/home/runner/work/_temp/buildray-action-g1cloa60/run/candidate-source/src/xml/generated/mjcf_read_table.inc:51:26: error: redefinition of 'kLengthrangeAttrs'
+   51 | inline constexpr mjXAttr kLengthrangeAttrs[] = {
+      |                          ^
+/home/runner/work/_temp/buildray-action-g1cloa60/run/candidate-source/src/xml/xml_native_reader.cc:176:10: note: '/home/runner/work/_temp/buildray-action-g1cloa60/run/candidate-source/src/xml/generated/mjcf_read_table.inc' included multiple times, additional include site here
+  176 | #include "xml/generated/mjcf_read_table.inc"
+      |          ^
+
+In file included from /home/runner/work/_temp/buildray-action-g1cloa60/run/candidate-build/CMakeFiles/mujoco.dir/Unity/unity_5_cxx.cxx:13:
+In file included from /home/runner/work/_temp/buildray-action-g1cloa60/run/candidate-source/src/xml/xml_native_writer.cc:48:
+/home/runner/work/_temp/buildray-action-g1cloa60/run/candidate-source/src/xml/generated/mjcf_read_table.inc:63:22: error: redefinition of 'kLengthrangeAttrsN'
+   63 | inline constexpr int kLengthrangeAttrsN = sizeof(kLengthrangeAttrs) / sizeof(kLengthrangeAttrs[0]);
+      |                      ^
+/home/runner/work/_temp/buildray-action-g1cloa60/run/candidate-source/src/xml/xml_native_reader.cc:176:10: note: '/home/runner/work/_temp/buildray-action-g1cloa60/run/candidate-source/src/xml/generated/mjcf_read_table.inc' included multiple times, additional include site here
+  176 | #include "xml/generated/mjcf_read_table.inc"
+      |          ^
+
+In file included from /home/runner/work/_temp/buildray-action-g1cloa60/run/candidate-build/CMakeFiles/mujoco.dir/Unity/unity_5_cxx.cxx:13:
+In file included from /home/runner/work/_temp/buildray-action-g1cloa60/run/candidate-source/src/xml/xml_native_writer.cc:48:
+/home/runner/work/_temp/buildray-action-g1cloa60/run/candidate-source/src/xml/generated/mjcf_read_table.inc:66:26: error: redefinition of 'kOptionAttrs'
+   66 | inline constexpr mjXAttr kOptionAttrs[] = {
+      |                          ^
+/home/runner/work/_temp/buildray-action-g1cloa60/run/candidate-source/src/xml/xml_native_reader.cc:176:10: note: '/home/runner/work/_temp/buildray-action-g1cloa60/run/candidate-source/src/xml/generated/mjcf_read_table.inc' included multiple times, additional include site here
+  176 | #include "xml/generated/mjcf_read_table.inc"
+      |          ^
+
+In file included from /home/runner/work/_temp/buildray-action-g1cloa60/run/candidate-build/CMakeFiles/mujoco.dir/Unity/unity_5_cxx.cxx:13:
+In file included from /home/runner/work/_temp/buildray-action-g1cloa60/run/candidate-source/src/xml/xml_native_writer.cc:48:
+/home/runner/work/_temp/buildray-action-g1cloa60/run/candidate-source/src/xml/generated/mjcf_read_table.inc:94:22: error: redefinition of 'kOptionAttrsN'
+   94 | inline constexpr int kOptionAttrsN = sizeof(kOptionAttrs) / sizeof(kOptionAttrs[0]);
+      |                      ^
+/home/runner/work/_temp/buildray-action-g1cloa60/run/candidate-source/src/xml/xml_native_reader.cc:176:10: note: '/home/runner/work/_temp/buildray-action-g1cloa60/run/candidate-source/src/xml/generated/mjcf_read_table.inc' included multiple times, additional include site here
+  176 | #include "xml/generated/mjcf_read_table.inc"
+      |          ^
+
+In file included from /home/runner/work/_temp/buildray-action-g1cloa60/run/candidate-build/CMakeFiles/mujoco.dir/Unity/unity_5_cxx.cxx:13:
+In file included from /home/runner/work/_temp/buildray-action-g1cloa60/run/candidate-source/src/xml/xml_native_writer.cc:48:
+/home/runner/work/_temp/buildray-action-g1cloa60/run/candidate-source/src/xml/generated/mjcf_read_table.inc:97:26: error: redefinition of 'kSizeAttrs'
+   97 | inline constexpr mjXAttr kSizeAttrs[] = {
+      |                          ^
+/home/runner/work/_temp/buildray-action-g1cloa60/run/candidate-source/src/xml/xml_native_reader.cc:176:10: note: '/home/runner/work/_temp/buildray-action-g1cloa60/run/candidate-source/src/xml/generated/mjcf_read_table.inc' included multiple times, additional include site here
+  176 | #include "xml/generated/mjcf_read_table.inc"
+      |          ^
+
+In file included from /home/runner/work/_temp/buildray-action-g1cloa60/run/candidate-build/CMakeFiles/mujoco.dir/Unity/unity_5_cxx.cxx:13:
+In file included from /home/runner/work/_temp/buildray-action-g1cloa60/run/candidate-source/src/xml/xml_native_writer.cc:48:
+/home/runner/work/_temp/buildray-action-g1cloa60/run/candidate-source/src/xml/generated/mjcf_read_table.inc:109:22: error: redefinition of 'kSizeAttrsN'
+  109 | inline constexpr int kSizeAttrsN = sizeof(kSizeAttrs) / sizeof(kSizeAttrs[0]);
+      |                      ^
+/home/runner/work/_temp/buildray-action-g1cloa60/run/candidate-source/src/xml/xml_native_reader.cc:176:10: note: '/home/runner/work/_temp/buildray-action-g1cloa60/run/candidate-source/src/xml/generated/mjcf_read_table.inc' included multiple times, additional include site here
+  176 | #include "xml/generated/mjcf_read_table.inc"
+      |          ^

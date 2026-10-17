@@ -1,0 +1,38 @@
+{
+  "baseline_compiler_invocations": 236,
+  "batch_size": 4,
+  "candidate_compiler_invocations": 228,
+  "groups": [
+    {
+      "file": "<BUILD>/src/CMakeFiles/sentencepiece-static.dir/Unity/unity_2_cxx.cxx",
+      "sources": [
+        "<SOURCE>/src/unigram_model.cc",
+        "<SOURCE>/src/util.cc",
+        "<SOURCE>/src/word_model.cc"
+      ]
+    },
+    {
+      "file": "<BUILD>/src/CMakeFiles/sentencepiece-static.dir/Unity/unity_1_cxx.cxx",
+      "sources": [
+        "<SOURCE>/src/model_factory.cc",
+        "<SOURCE>/src/model_interface.cc",
+        "<SOURCE>/src/normalizer.cc",
+        "<SOURCE>/src/sentencepiece_processor.cc"
+      ]
+    },
+    {
+      "file": "<BUILD>/src/CMakeFiles/sentencepiece-static.dir/Unity/unity_0_cxx.cxx",
+      "sources": [
+        "<SOURCE>/src/bpe_model.cc",
+        "<SOURCE>/src/char_model.cc",
+        "<SOURCE>/src/filesystem.cc",
+        "<SOURCE>/src/init.cc"
+      ]
+    }
+  ],
+  "original_compilations": 236,
+  "scope": "one configured Ninja default all target; C/C++ commands; original source/target multiset preserved; generated unity groups only on the selected target",
+  "selected_target_sources": 39,
+  "source_target_coverage_verified": true,
+  "target": "sentencepiece-static"
+}

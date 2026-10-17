@@ -97,8 +97,40 @@ MuJoCo's baseline passes 3,496 CTest cases. Its initial candidate combines
 collide. The [rejected report](evidence/mujoco-unity-initial-report.json),
 [candidate patch](evidence/mujoco-unity-initial.patch) and
 [error excerpts](evidence/mujoco-unity-initial-errors.txt) are retained.
-A [follow-up run](https://github.com/kennethassogba/buildray/actions/runs/39046879895)
-keeps `src/user/user_flexcomp.cc` separately compiled. No source symbol is renamed.
+The [follow-up run](https://github.com/kennethassogba/buildray/actions/runs/39046879895)
+keeps `src/user/user_flexcomp.cc` separately compiled. That candidate is also
+rejected before measurement: `xml_native_reader.cc` and `xml_native_writer.cc`
+include the same generated `mjcf_read_table.inc` definitions in one translation
+unit. The [second report](evidence/mujoco-unity-isolated-report.json),
+[patch](evidence/mujoco-unity-isolated.patch) and
+[error excerpts](evidence/mujoco-unity-isolated-errors.txt) are retained. Its
+baseline passes all 3,496 tests, but the candidate does not reach CTest. Neither
+MuJoCo layout establishes a speedup; no upstream patch is published. No source
+symbol is renamed.
 MuJoCo uses double precision, tests on, examples/simulator/Python utility tests
 off. Upstream contributions need current-source validation in both precision
 modes, in addition to this pinned experiment.
+
+
+## SentencePiece: validated, no established speedup
+
+The dedicated [follow-up run](https://github.com/kennethassogba/buildray/actions/runs/39047169786)
+at `d2bbf7a` completes with the two directory exclusions. Both variants build,
+link and pass the configured CTest suite. Of the selected target’s 39 sources,
+11 first-party sources form three groups; the others stay separate. Complete
+default-build compiler invocations drop from 236 to 228, with the same original
+source/target multiset. Native static libraries and tests are enabled; shared
+libraries and TCMalloc are disabled. Python bindings are outside this experiment.
+
+| Three alternating clean-build pairs | Baseline | Unity candidate |
+| --- | ---: | ---: |
+| Median complete build | 125.084 s | 120.148 s |
+| MAD | 0.281 s | 2.915 s |
+
+The median change is −3.946%, but the 4.936 s difference is below the 8.744 s
+noise threshold. The result is `inconclusive`, with `patch_validated: true`
+and `patch_recommended: false`. No speedup or new upstream PR is claimed for
+this older-tag experiment. The [report](evidence/sentencepiece-unity-isolated-report.json),
+[verified groups](evidence/sentencepiece-unity-isolated-plan.json) and
+[patch](evidence/sentencepiece-unity-isolated.patch) retain the complete samples
+and selection.
