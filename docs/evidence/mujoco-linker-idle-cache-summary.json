@@ -1,0 +1,28 @@
+{
+  "default": {
+    "CMAKE_CXX_COMPILER": "/usr/bin/clang++-21",
+    "CMAKE_C_COMPILER": "/usr/bin/clang-21",
+    "CMAKE_BUILD_TYPE": "Release",
+    "CMAKE_LINKER": "/usr/bin/ld",
+    "CMAKE_LINK_DEPENDS_USE_LINKER": "unset",
+    "CMAKE_CXX_FLAGS": "",
+    "CMAKE_CXX_FLAGS_RELEASE": "-O3 -DNDEBUG",
+    "CMAKE_C_FLAGS": "",
+    "CMAKE_C_FLAGS_RELEASE": "-O3 -DNDEBUG",
+    "SUPPORTS_LLD": "",
+    "SUPPORTS_GOLD": "1"
+  },
+  "without-linker-depfiles": {
+    "CMAKE_CXX_COMPILER": "clang++-21",
+    "CMAKE_C_COMPILER": "clang-21",
+    "CMAKE_BUILD_TYPE": "Release",
+    "CMAKE_LINKER": "/usr/bin/ld",
+    "CMAKE_LINK_DEPENDS_USE_LINKER": "OFF",
+    "CMAKE_CXX_FLAGS": "",
+    "CMAKE_CXX_FLAGS_RELEASE": "-O3 -DNDEBUG",
+    "CMAKE_C_FLAGS": "",
+    "CMAKE_C_FLAGS_RELEASE": "-O3 -DNDEBUG",
+    "SUPPORTS_LLD": "",
+    "SUPPORTS_GOLD": "1"
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "scope": "library linkage diagnosis; no timing or runtime validation",
+  "revision": "651bae11c3c38efe483f033b4b7e869e7ce3f4ec",
+  "status": "complete",
+  "variants": [
+    {
+      "configuration": "default",
+      "controls": [
+        {
+          "index": 0,
+          "idle": false
+        },
+        {
+          "index": 1,
+          "idle": false
+        },
+        {
+          "index": 2,
+          "idle": false
+        }
+      ]
+    },
+    {
+      "configuration": "without-linker-depfiles",
+      "controls": [
+        {
+          "index": 0,
+          "idle": true
+        },
+        {
+          "index": 1,
+          "idle": true
+        },
+        {
+          "index": 2,
+          "idle": true
+        }
+      ]
+    }
+  ]
+}

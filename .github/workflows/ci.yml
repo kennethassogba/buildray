@@ -24,6 +24,10 @@ on:
         type: choice
         options: ['default', 'off']
         default: 'default'
+      incremental_split_cases:
+        description: Run each edited file in its own paired benchmark job.
+        type: boolean
+        default: false
       mujoco_linker_probe:
         description: Diagnose MuJoCo library relinks without building or running the test binaries.
         type: boolean
@@ -104,6 +108,7 @@ jobs:
       project: ${{ inputs.incremental_project }}
       mode: ${{ inputs.incremental_mode }}
       linker_deps: ${{ inputs.incremental_linker_deps }}
+      split_cases: ${{ inputs.incremental_split_cases }}
 
   mujoco-compare:
     if: github.event_name == 'workflow_dispatch' && inputs.mujoco_compare

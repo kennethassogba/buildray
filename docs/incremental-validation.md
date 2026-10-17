@@ -37,7 +37,9 @@ the listed target; all default-build targets remain inside the measured command.
 
 The completed XGrammar and SentencePiece jobs use two compiler jobs, Clang 21,
 CMake 4.2.3 and Ninja 1.13 on Ubuntu 24.04. The MuJoCo rerun uses four compiler
-jobs for both variants on a runner with four CPUs; its results are pending.
+jobs for both variants on a runner with four CPUs. Its final configuration also
+sets `CMAKE_LINK_DEPENDS_USE_LINKER=OFF` in both variants, for the readiness issue
+described below. Those incremental results are pending.
 
 ## Completed measurements
 
@@ -88,8 +90,30 @@ no-op build before every measured edit. Persistent work remains an error. Each
 attempt retains compiler records and a Ninja dependency explanation. A regression
 fixture exercises a one-off library timestamp change that needs one untimed
 relink; the existing always-running-target fixture still rejects the experiment.
-The [targeted rerun](https://github.com/kennethassogba/buildray/actions/runs/39066408970)
-evaluates both strategies with these diagnostics. Its measurements are pending.
+The [bounded-readiness rerun](https://github.com/kennethassogba/buildray/actions/runs/39066408970)
+still rejects Unity after three builds keep relinking the same untouched baseline.
+Settling cannot make a persistently dirty dependency graph valid for timing.
+
+The [library-only probe](https://github.com/kennethassogba/buildray/actions/runs/39069068276)
+isolates the cause without compiling or running test binaries. The actual link
+command selects `-fuse-ld=gold`, while the cache records `/usr/bin/ld` as the
+default linker. Its generated dependency file includes temporary
+`/tmp/lto-llvm-*.o` objects, and Ninja marks them dirty on every control build.
+This matches the [documented gold/LTO dependency-file issue](https://cmake.org/cmake/help/v4.2/variable/CMAKE_LINK_DEPENDS_USE_LINKER.html).
+
+With `CMAKE_LINK_DEPENDS_USE_LINKER=OFF`, all three subsequent controls report no
+work. Compiler optimization flags and the selected gold linker remain unchanged.
+The [probe report](evidence/mujoco-linker-idle-probe-report.json),
+[cache summary](evidence/mujoco-linker-idle-cache-summary.json),
+[generated dependencies](evidence/mujoco-linker-idle-generated-deps.txt), and
+the `mujoco-linker-idle-*-*.log` files retain the evidence. This is a readiness
+diagnosis, not a runtime validation or a Unity/PCH speed result.
+
+The [controlled rerun](https://github.com/kennethassogba/buildray/actions/runs/39069068276)
+uses that common flag for both baseline and candidate. Compiler header
+dependencies, complete source coverage and all 3,519 CTest entries remain
+required. Its incremental measurements are pending; no timing from a refused
+readiness check is used.
 
 ## Evidence and reproduction
 
@@ -113,3 +137,5 @@ Trigger the opt-in corpus with `incremental_corpus=true`. Optional
 `incremental_project` and `incremental_mode` inputs restrict a rerun. The
 [workflow](../.github/workflows/incremental.yml) fixes the revisions, targets,
 headers, file choices, parallelism and CMake arguments.
+For MuJoCo in this toolchain, also set `incremental_linker_deps=off`.
+`mujoco_linker_probe=true` runs the separate library-only diagnostic.

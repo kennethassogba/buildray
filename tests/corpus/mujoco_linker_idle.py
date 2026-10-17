@@ -8,11 +8,14 @@ from pathlib import Path
 
 def main():
     original, work = (Path(arg).resolve() for arg in sys.argv[1:])
+    revision = subprocess.check_output(["git", "-C", str(original), "rev-parse", "HEAD"], text=True).strip()
+    if revision != "651bae11c3c38efe483f033b4b7e869e7ce3f4ec":
+        raise ValueError("The linker probe requires the pinned MuJoCo revision")
     source, build, evidence = work / "source", work / "build", work / "evidence"
     evidence.mkdir(parents=True)
     shutil.copytree(original, source, ignore=shutil.ignore_patterns(".git", ".buildray"))
     report = {"scope": "library linkage diagnosis; no timing or runtime validation",
-              "revision": "651bae11c3c38efe483f033b4b7e869e7ce3f4ec", "status": "running", "variants": []}
+              "revision": revision, "status": "running", "variants": []}
 
     def execute(args, name):
         print(name, flush=True)
