@@ -1,0 +1,158 @@
+--- a/cpp/converter_ext/cohere.cc
++++ b/cpp/converter_ext/cohere.cc
+@@ -8,7 +8,6 @@
+ #include <algorithm>
+ #include <array>
+ #include <type_traits>
+-#include <unordered_set>
+ #include <utility>
+ #include <vector>
+ 
+--- a/cpp/earley_parser.cc
++++ b/cpp/earley_parser.cc
+@@ -6,7 +6,6 @@
+ #include "earley_parser.h"
+ 
+ #include <algorithm>
+-#include <cctype>
+ #include <cstdint>
+ #include <utility>
+ #include <vector>
+--- a/cpp/fsm_builder.cc
++++ b/cpp/fsm_builder.cc
+@@ -4,7 +4,6 @@
+  */
+ #include "fsm_builder.h"
+ 
+-#include <sys/types.h>
+ 
+ #include <algorithm>
+ #include <array>
+@@ -13,7 +12,6 @@
+ #include <cstdint>
+ #include <cstring>
+ #include <optional>
+-#include <set>
+ #include <unordered_set>
+ #include <utility>
+ #include <variant>
+--- a/cpp/grammar_compiler.cc
++++ b/cpp/grammar_compiler.cc
+@@ -7,7 +7,6 @@
+ 
+ #include <algorithm>
+ #include <bitset>
+-#include <cctype>
+ #include <cstddef>
+ #include <cstdint>
+ #include <optional>
+--- a/cpp/grammar_functor.cc
++++ b/cpp/grammar_functor.cc
+@@ -5,7 +5,6 @@
+ 
+ #include "grammar_functor.h"
+ 
+-#include <xgrammar/xgrammar.h>
+ 
+ #include <array>
+ #include <bitset>
+--- a/cpp/grammar_parser.cc
++++ b/cpp/grammar_parser.cc
+@@ -5,12 +5,10 @@
+ 
+ #include "grammar_parser.h"
+ 
+-#include <picojson.h>
+ 
+ #include <algorithm>
+ #include <cmath>
+ #include <cstdint>
+-#include <cstring>
+ #include <limits>
+ #include <string>
+ #include <variant>
+--- a/cpp/grammar_printer.cc
++++ b/cpp/grammar_printer.cc
+@@ -5,7 +5,6 @@
+ 
+ #include "grammar_printer.h"
+ 
+-#include <picojson.h>
+ 
+ #include <iomanip>
+ #include <limits>
+--- a/cpp/json_schema_converter.cc
++++ b/cpp/json_schema_converter.cc
+@@ -10,14 +10,12 @@
+ #include <algorithm>
+ #include <cctype>
+ #include <charconv>
+-#include <climits>
+ #include <cmath>
+ #include <cstdint>
+ #include <functional>
+ #include <iomanip>
+ #include <limits>
+ #include <map>
+-#include <memory>
+ #include <sstream>
+ #include <string>
+ #include <tuple>
+--- a/cpp/lark_converter.cc
++++ b/cpp/lark_converter.cc
+@@ -15,7 +15,6 @@
+ #include <limits>
+ #include <memory>
+ #include <optional>
+-#include <set>
+ #include <sstream>
+ #include <stdexcept>
+ #include <string>
+--- a/cpp/structural_tag.cc
++++ b/cpp/structural_tag.cc
+@@ -24,7 +24,6 @@
+ #include "support/logging.h"
+ #include "support/recursion_guard.h"
+ #include "support/utils.h"
+-#include "tokenizer_info_impl.h"
+ #include "xgrammar/grammar.h"
+ 
+ namespace xgrammar {
+--- a/cpp/testing.cc
++++ b/cpp/testing.cc
+@@ -4,7 +4,6 @@
+  */
+ #include "testing.h"
+ 
+-#include <xgrammar/xgrammar.h>
+ 
+ #include <algorithm>
+ #include <cstdint>
+--- a/tests/cpp/test_parser.cc
++++ b/tests/cpp/test_parser.cc
+@@ -1,5 +1,4 @@
+ #include <gtest/gtest.h>
+-#include <xgrammar/xgrammar.h>
+ 
+ #include "grammar_parser.h"
+ #include "support/encoding.h"
+--- a/tests/cpp/test_regular_grammar_fsm.cc
++++ b/tests/cpp/test_regular_grammar_fsm.cc
+@@ -4,7 +4,6 @@
+  */
+ 
+ #include <gtest/gtest.h>
+-#include <xgrammar/xgrammar.h>
+ 
+ #include "grammar_functor.h"
+ 
+--- a/tests/cpp/test_repetition_range.cc
++++ b/tests/cpp/test_repetition_range.cc
+@@ -6,7 +6,6 @@
+  */
+ 
+ #include <gtest/gtest.h>
+-#include <xgrammar/xgrammar.h>
+ 
+ #include "grammar_functor.h"
+ 

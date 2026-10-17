@@ -242,3 +242,5 @@ The real-project check uses unmodified tinyxml2 11.0.0. See
 [Profiling and PCH evidence](docs/profiling-validation.md) covers the new commands,
 including candidates with no measured benefit.
 [Dependency graph evidence](docs/dependency-validation.md) covers MuJoCo and XGrammar.
+[Automatic PCH and cleanup evidence](docs/automatic-validation.md) covers the
+selection workflow and per-file validation on XGrammar.

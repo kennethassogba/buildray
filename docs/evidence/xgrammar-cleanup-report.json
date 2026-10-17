@@ -1,0 +1,320 @@
+{
+  "baseline": {
+    "mad_seconds": 0.73146115399998735,
+    "max_seconds": 148.49417251,
+    "median_seconds": 147.76271135600001,
+    "min_seconds": 146.413551842,
+    "samples": [
+      {
+        "compiler_cpu_seconds": 202.92582399999998,
+        "compiler_wall_sum_seconds": 203.75847865899991,
+        "max_compiler_rss_kib": 369048,
+        "wall_seconds": 146.413551842
+      },
+      {
+        "compiler_cpu_seconds": 204.17688500000003,
+        "compiler_wall_sum_seconds": 204.57365090500002,
+        "max_compiler_rss_kib": 369108,
+        "wall_seconds": 148.49417251
+      },
+      {
+        "compiler_cpu_seconds": 205.513285,
+        "compiler_wall_sum_seconds": 205.91524147499999,
+        "max_compiler_rss_kib": 368556,
+        "wall_seconds": 147.76271135600001
+      }
+    ]
+  },
+  "baseline_tests_passed": 83,
+  "buildray_version": "0.5.0",
+  "candidate": {
+    "mad_seconds": 1.513787184000023,
+    "max_seconds": 148.833426024,
+    "median_seconds": 146.90770151800001,
+    "min_seconds": 145.39391433399999,
+    "samples": [
+      {
+        "compiler_cpu_seconds": 201.73513000000003,
+        "compiler_wall_sum_seconds": 202.15430112000001,
+        "max_compiler_rss_kib": 354860,
+        "wall_seconds": 145.39391433399999
+      },
+      {
+        "compiler_cpu_seconds": 200.54923599999998,
+        "compiler_wall_sum_seconds": 200.95830847899995,
+        "max_compiler_rss_kib": 354836,
+        "wall_seconds": 148.833426024
+      },
+      {
+        "compiler_cpu_seconds": 203.35105400000006,
+        "compiler_wall_sum_seconds": 203.69704432800003,
+        "max_compiler_rss_kib": 354912,
+        "wall_seconds": 146.90770151800001
+      }
+    ]
+  },
+  "candidate_tests_passed": 83,
+  "clang_tidy_version": "Ubuntu LLVM version 21.1.8\n  Optimized build.\n",
+  "cmake_args": [],
+  "cmake_version": "cmake version 4.2.3\n\nCMake suite maintained and supported by Kitware (kitware.com/cmake).\n",
+  "command": "optimize",
+  "compile_commands_analyzed": 40,
+  "compiler_version": "Ubuntu clang version 21.1.8 (6ubuntu1)\nTarget: x86_64-pc-linux-gnu\nThread model: posix\nInstalledDir: /usr/lib/llvm-21/bin\n",
+  "excluded_compile_commands_skipped": 4,
+  "excluded_paths": [
+    "3rdparty"
+  ],
+  "findings": [
+    {
+      "compile_configurations": 1,
+      "directive": "#include <unordered_set>\n",
+      "file": "cpp/converter_ext/cohere.cc",
+      "length": 25,
+      "line": 11,
+      "offset": 240
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <cctype>\n",
+      "file": "cpp/earley_parser.cc",
+      "length": 18,
+      "line": 9,
+      "offset": 132
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <sys/types.h>\n",
+      "file": "cpp/fsm_builder.cc",
+      "length": 23,
+      "line": 7,
+      "offset": 106
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <set>\n",
+      "file": "cpp/fsm_builder.cc",
+      "length": 15,
+      "line": 16,
+      "offset": 263
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <cctype>\n",
+      "file": "cpp/grammar_compiler.cc",
+      "length": 18,
+      "line": 10,
+      "offset": 149
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <xgrammar/xgrammar.h>\n",
+      "file": "cpp/grammar_functor.cc",
+      "length": 31,
+      "line": 8,
+      "offset": 115
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <picojson.h>\n",
+      "file": "cpp/grammar_parser.cc",
+      "length": 22,
+      "line": 8,
+      "offset": 113
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <cstring>\n",
+      "file": "cpp/grammar_parser.cc",
+      "length": 19,
+      "line": 13,
+      "offset": 193
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <picojson.h>\n",
+      "file": "cpp/grammar_printer.cc",
+      "length": 22,
+      "line": 8,
+      "offset": 115
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <climits>\n",
+      "file": "cpp/json_schema_converter.cc",
+      "length": 19,
+      "line": 13,
+      "offset": 279
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <memory>\n",
+      "file": "cpp/json_schema_converter.cc",
+      "length": 18,
+      "line": 20,
+      "offset": 408
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <set>\n",
+      "file": "cpp/lark_converter.cc",
+      "length": 15,
+      "line": 18,
+      "offset": 299
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include \"tokenizer_info_impl.h\"\n",
+      "file": "cpp/structural_tag.cc",
+      "length": 33,
+      "line": 27,
+      "offset": 567
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <xgrammar/xgrammar.h>\n",
+      "file": "cpp/testing.cc",
+      "length": 31,
+      "line": 7,
+      "offset": 98
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <xgrammar/xgrammar.h>\n",
+      "file": "tests/cpp/test_parser.cc",
+      "length": 31,
+      "line": 2,
+      "offset": 25
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <xgrammar/xgrammar.h>\n",
+      "file": "tests/cpp/test_regular_grammar_fsm.cc",
+      "length": 31,
+      "line": 7,
+      "offset": 167
+    },
+    {
+      "compile_configurations": 1,
+      "directive": "#include <xgrammar/xgrammar.h>\n",
+      "file": "tests/cpp/test_repetition_range.cc",
+      "length": 31,
+      "line": 9,
+      "offset": 257
+    }
+  ],
+  "generated_compile_commands_skipped": 0,
+  "jobs": 2,
+  "measurement": "clean builds; warm filesystem cache; compiler caches disabled; alternating order",
+  "measurement_context": {
+    "architecture": "x86_64",
+    "buildray_version": "0.5.0",
+    "cache_flags": {
+      "CMAKE_BUILD_TYPE": "Release",
+      "CMAKE_CXX_FLAGS": "--gcc-install-dir=/usr/lib/gcc/x86_64-linux-gnu/15",
+      "CMAKE_CXX_FLAGS-ADVANCED": "1",
+      "CMAKE_CXX_FLAGS_DEBUG": "-g",
+      "CMAKE_CXX_FLAGS_DEBUG-ADVANCED": "1",
+      "CMAKE_CXX_FLAGS_MINSIZEREL": "-Os -DNDEBUG",
+      "CMAKE_CXX_FLAGS_MINSIZEREL-ADVANCED": "1",
+      "CMAKE_CXX_FLAGS_RELEASE": "-O3 -DNDEBUG",
+      "CMAKE_CXX_FLAGS_RELEASE-ADVANCED": "1",
+      "CMAKE_CXX_FLAGS_RELWITHDEBINFO": "-O2 -g -DNDEBUG",
+      "CMAKE_CXX_FLAGS_RELWITHDEBINFO-ADVANCED": "1",
+      "CMAKE_C_FLAGS": "",
+      "CMAKE_C_FLAGS-ADVANCED": "1",
+      "CMAKE_C_FLAGS_DEBUG": "-g",
+      "CMAKE_C_FLAGS_DEBUG-ADVANCED": "1",
+      "CMAKE_C_FLAGS_MINSIZEREL": "-Os -DNDEBUG",
+      "CMAKE_C_FLAGS_MINSIZEREL-ADVANCED": "1",
+      "CMAKE_C_FLAGS_RELEASE": "-O3 -DNDEBUG",
+      "CMAKE_C_FLAGS_RELEASE-ADVANCED": "1",
+      "CMAKE_C_FLAGS_RELWITHDEBINFO": "-O2 -g -DNDEBUG",
+      "CMAKE_C_FLAGS_RELWITHDEBINFO-ADVANCED": "1",
+      "CMAKE_EXE_LINKER_FLAGS": "",
+      "CMAKE_EXE_LINKER_FLAGS-ADVANCED": "1",
+      "CMAKE_EXE_LINKER_FLAGS_DEBUG": "",
+      "CMAKE_EXE_LINKER_FLAGS_DEBUG-ADVANCED": "1",
+      "CMAKE_EXE_LINKER_FLAGS_MINSIZEREL": "",
+      "CMAKE_EXE_LINKER_FLAGS_MINSIZEREL-ADVANCED": "1",
+      "CMAKE_EXE_LINKER_FLAGS_RELEASE": "",
+      "CMAKE_EXE_LINKER_FLAGS_RELEASE-ADVANCED": "1",
+      "CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO": "",
+      "CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO-ADVANCED": "1",
+      "CMAKE_PROJECT_NAME": "xgrammar",
+      "CMAKE_SHARED_LINKER_FLAGS": "",
+      "CMAKE_SHARED_LINKER_FLAGS-ADVANCED": "1",
+      "CMAKE_SHARED_LINKER_FLAGS_DEBUG": "",
+      "CMAKE_SHARED_LINKER_FLAGS_DEBUG-ADVANCED": "1",
+      "CMAKE_SHARED_LINKER_FLAGS_MINSIZEREL": "",
+      "CMAKE_SHARED_LINKER_FLAGS_MINSIZEREL-ADVANCED": "1",
+      "CMAKE_SHARED_LINKER_FLAGS_RELEASE": "",
+      "CMAKE_SHARED_LINKER_FLAGS_RELEASE-ADVANCED": "1",
+      "CMAKE_SHARED_LINKER_FLAGS_RELWITHDEBINFO": "",
+      "CMAKE_SHARED_LINKER_FLAGS_RELWITHDEBINFO-ADVANCED": "1"
+    },
+    "cmake_args": [],
+    "cpu_affinity_count": 8,
+    "cpu_model": "Intel(R) Core(TM) i7-8650U CPU @ 1.90GHz",
+    "cpu_quota": "unavailable",
+    "environment_flags": {
+      "CFLAGS": "",
+      "CXXFLAGS": "--gcc-install-dir=/usr/lib/gcc/x86_64-linux-gnu/15",
+      "LDFLAGS": ""
+    },
+    "jobs": 2,
+    "kernel": "7.0.0-38-generic",
+    "method": "clean-build-warm-filesystem-v1",
+    "precompiled_headers": false,
+    "sampling": "paired_alternating",
+    "session": "",
+    "tests_required": true,
+    "unity_build": false
+  },
+  "ninja_version": "1.13.2\n",
+  "noise_threshold_seconds": 4.541361552000069,
+  "patch_recommended": false,
+  "patch_validated": true,
+  "performance_result": "inconclusive",
+  "performance_rule": "heuristic: difference exceeds max(2% baseline, 3x max MAD); not a significance test",
+  "phase": "complete",
+  "precompiled_headers": false,
+  "preflight_compile_commands": 18,
+  "preflight_rejected_files": [
+    {
+      "compiler_exit_code": 1,
+      "file": "tests/cpp/test_json.cc",
+      "log": "analysis/preflight-11.log",
+      "reason": "deletion-only proposal failed compilation"
+    },
+    {
+      "compiler_exit_code": 1,
+      "file": "tests/cpp/test_jump_forward_tokens.cc",
+      "log": "analysis/preflight-12.log",
+      "reason": "deletion-only proposal failed compilation"
+    },
+    {
+      "compiler_exit_code": 1,
+      "file": "tests/cpp/test_lark_converter.cc",
+      "log": "analysis/preflight-13.log",
+      "reason": "deletion-only proposal failed compilation"
+    },
+    {
+      "compiler_exit_code": 1,
+      "file": "tests/cpp/test_thread_safe_cache.cc",
+      "log": "analysis/preflight-17.log",
+      "reason": "deletion-only proposal failed compilation"
+    }
+  ],
+  "removed_includes": 17,
+  "runs": 3,
+  "schema_version": 1,
+  "source": "/home/kenn/Documents/ChatGPT/career/buildray-fixtures/xgrammar",
+  "status": "passed",
+  "tests_required": true,
+  "translation_units_analyzed": 40,
+  "unity_build": false,
+  "validation": "build_and_tests_passed",
+  "validation_scope": "one configured CMake build; project C++ source files only",
+  "wall_change_percent": -0.57863707978398748,
+  "work_dir": "/home/kenn/Documents/ChatGPT/career/buildray/.buildray/xgrammar-optimize-safe"
+}

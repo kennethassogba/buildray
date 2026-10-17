@@ -1,0 +1,24 @@
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -242,3 +242,21 @@
+ set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Taku Kudo")
+ set(CPACK_SOURCE_IGNORE_FILES "/build/;/.git/;/dist/;/sdist/;~$;${CPACK_SOURCE_IGNORE_FILES}")
+ include(CPack)
++
++# Buildray: private PCH experiment, validated for the measured configuration.
++if(NOT TARGET spm_test)
++  message(FATAL_ERROR "Buildray PCH target does not exist")
++endif()
++get_target_property(_buildray_pch_type spm_test TYPE)
++get_target_property(_buildray_pch_imported spm_test IMPORTED)
++get_target_property(_buildray_pch_alias spm_test ALIASED_TARGET)
++get_property(_buildray_pch_existing TARGET spm_test PROPERTY PRECOMPILE_HEADERS SET)
++get_property(_buildray_pch_reuse TARGET spm_test PROPERTY PRECOMPILE_HEADERS_REUSE_FROM SET)
++if(_buildray_pch_imported OR _buildray_pch_alias OR _buildray_pch_existing OR _buildray_pch_reuse
++   OR NOT _buildray_pch_type MATCHES "^(EXECUTABLE|STATIC_LIBRARY|SHARED_LIBRARY|MODULE_LIBRARY|OBJECT_LIBRARY)$")
++  message(FATAL_ERROR "Buildray requires a local compiled target without an existing PCH")
++endif()
++set_property(TARGET spm_test PROPERTY DISABLE_PRECOMPILE_HEADERS OFF)
++target_precompile_headers(spm_test PRIVATE
++  "$<$<COMPILE_LANGUAGE:CXX>:${CMAKE_CURRENT_SOURCE_DIR}/src/common.h>"
++)

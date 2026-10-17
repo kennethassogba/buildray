@@ -1,0 +1,9 @@
+{
+  "compilations": 24,
+  "header": "src/common.h",
+  "inclusive_seconds": 22.615745,
+  "profile_header": "<SOURCE>/src/common.h",
+  "rule": "highest per-target inclusive parse cost among original project headers used in at least two compilations; ties by target and path",
+  "scope": "one candidate; inclusive parse cost is not predicted build-time savings",
+  "target": "spm_test"
+}
