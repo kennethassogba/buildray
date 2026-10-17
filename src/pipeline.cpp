@@ -112,7 +112,8 @@ void configure(const Options& options, const Variant& variant, const fs::path& e
         "-DCMAKE_UNITY_BUILD=OFF", "-DCMAKE_DISABLE_PRECOMPILE_HEADERS=ON",
         "-DCMAKE_CXX_COMPILER_LAUNCHER=" + launcher(executable, variant.records, variant.trace, variant.dependencies)};
     args.insert(args.end(), controlled.begin(), controlled.end());
-    if (variant.dependencies || options.command == "headers" || options.command == "unity")
+    if (variant.dependencies || options.command == "headers" || options.command == "unity" ||
+        (options.command == "pch" && !options.rebuild_files.empty()))
         args.push_back("-DCMAKE_C_COMPILER=" + options.c_compiler);
     if (options.command == "unity")
         args.push_back("-DBUILDRAY_UNITY=" + std::string(variant.unity_target.empty() ? "OFF" : "ON"));
@@ -131,10 +132,12 @@ void clean(const Variant& variant, const fs::path& log) {
     checked({"cmake", "--build", variant.build.string(), "--target", "clean"}, variant.source, log);
 }
 
-ProcessResult build(const Options& options, const Variant& variant, const fs::path& log) {
-    const auto result = run(
-        {"cmake", "--build", variant.build.string(), "--parallel", std::to_string(options.jobs)},
-        variant.source, log);
+ProcessResult build(const Options& options, const Variant& variant, const fs::path& log,
+                    bool explain = false) {
+    std::vector<std::string> args{"cmake", "--build", variant.build.string(), "--parallel",
+                                  std::to_string(options.jobs)};
+    if (explain) args.insert(args.end(), {"--", "-d", "explain"});
+    const auto result = run(args, variant.source, log);
     if (result.code != 0)
         throw std::runtime_error("Build failed (exit " + std::to_string(result.code) + "); see " +
                                  log.string());
@@ -334,18 +337,13 @@ void clear_records(const fs::path& records) {
     for (const auto& entry : fs::directory_iterator(records)) fs::remove(entry.path());
 }
 
-json::Object sample(const Options& options, const Variant& variant, const fs::path& logs,
-                    const std::string& label) {
-    clean(variant, logs / (label + "-clean.log"));
-    clear_records(variant.records);
-    const auto result = build(options, variant, logs / (label + "-build.log"));
-    verify_coverage(variant);
-    auto records = compiler_records(variant.records);
+json::Object compiler_sample(const ProcessResult& result, const json::Array& records) {
     if (records.empty())
         throw std::runtime_error("No compiler measurements captured; launcher overridden?");
     double compiler_wall = 0;
     double compiler_cpu = 0;
     std::int64_t max_rss = 0;
+    std::int64_t pch_creations = 0;
     for (const auto& value : records) {
         const auto* record = value.getAsObject();
         if (!record || record->getInteger("exit_code") != 0)
@@ -354,12 +352,28 @@ json::Object sample(const Options& options, const Variant& variant, const fs::pa
         compiler_cpu += record->getNumber("user_seconds").value_or(0) +
                         record->getNumber("system_seconds").value_or(0);
         max_rss = std::max(max_rss, record->getInteger("peak_rss_kib").value_or(0));
+        if (const auto* command = record->getArray("command"))
+            for (const auto& arg : *command)
+                if (arg.getAsString() == "-emit-pch") ++pch_creations;
     }
-    write_json(logs / (label + "-compilers.json"), std::move(records));
     return json::Object{{"wall_seconds", result.seconds},
                         {"compiler_wall_sum_seconds", compiler_wall},
                         {"compiler_cpu_seconds", compiler_cpu},
+                        {"compiler_invocations", static_cast<std::int64_t>(records.size())},
+                        {"pch_creations", pch_creations},
                         {"max_compiler_rss_kib", max_rss}};
+}
+
+json::Object sample(const Options& options, const Variant& variant, const fs::path& logs,
+                    const std::string& label) {
+    clean(variant, logs / (label + "-clean.log"));
+    clear_records(variant.records);
+    const auto result = build(options, variant, logs / (label + "-build.log"));
+    verify_coverage(variant);
+    auto records = compiler_records(variant.records);
+    auto summary = compiler_sample(result, records);
+    write_json(logs / (label + "-compilers.json"), std::move(records));
+    return summary;
 }
 
 json::Object summarize(const json::Array& samples) {
@@ -393,6 +407,200 @@ std::pair<json::Array, json::Array> paired_samples(const Options& options, const
                               candidate.build, options);
     }
     return {std::move(before), std::move(after)};
+}
+
+std::map<std::string, unsigned> command_inventory(const json::Array& records) {
+    std::map<std::string, unsigned> result;
+    for (const auto& value : records) {
+        const auto* record = value.getAsObject();
+        const auto* command = record ? record->getArray("command") : nullptr;
+        if (!command || record->getInteger("exit_code") != 0)
+            throw std::runtime_error("Invalid incremental compiler record");
+        std::string identity;
+        for (const auto& arg : *command) {
+            const auto text = arg.getAsString();
+            if (!text) throw std::runtime_error("Invalid compiler argument");
+            identity += std::to_string(text->size()) + ":" + text->str();
+        }
+        ++result[identity];
+    }
+    return result;
+}
+
+void incremental_samples(const Options& options, const Variant& baseline, const Variant& candidate,
+                         const fs::path& work, json::Object& report) {
+    const auto logs = work / "logs";
+    const auto before_commands = command_inventory(compiler_records(baseline.records));
+    const auto after_commands = command_inventory(compiler_records(candidate.records));
+    if (before_commands.empty() || after_commands.empty())
+        throw std::runtime_error("Incremental measurements require verified full builds");
+    report["phase"] = "incremental_measurement";
+    report["incremental"] = json::Object{
+        {"status", "running"}, {"runs", options.runs},
+        {"method", "single-file comment edit; existing build trees; alternating pairs; warm filesystem cache; compiler caches disabled"},
+        {"timed_scope", "default build including compilation and linking; editing, no-op checks, restoration and CTest excluded"},
+        {"memory_scope", "maximum RSS of an individual compiler invocation, not total build memory"},
+        {"limitation", "dependency invalidation after a comment-only edit; not representative of arbitrary semantic changes"},
+        {"scenarios", json::Array{}}};
+    const auto persist = [&] {
+        write_json(work / "incremental.json", json::Object(*report.getObject("incremental")));
+        write_json(work / "report.json", json::Object(report));
+    };
+    persist();
+    bool regressed = false;
+    for (std::size_t index = 0; index < options.rebuild_files.size(); ++index) {
+        if (interrupted()) throw std::runtime_error("Interrupted");
+        const auto& relative = options.rebuild_files[index];
+        const auto original = read_file(baseline.source / relative);
+        if (original != read_file(candidate.source / relative) || original != read_file(options.source / relative))
+            throw std::runtime_error("Incremental input differs between variants: " + relative.string());
+        const auto label = "incremental-" + std::to_string(index);
+        auto* scenarios = report.getObject("incremental")->getArray("scenarios");
+        scenarios->push_back(json::Object{{"file", relative.generic_string()},
+            {"status", "running"}, {"baseline_samples", json::Array{}},
+            {"candidate_samples", json::Array{}}});
+        auto& scenario = *scenarios->back().getAsObject();
+        persist();
+        const auto restore = [&] {
+            write_file(baseline.source / relative, original);
+            write_file(candidate.source / relative, original);
+        };
+        try {
+            const auto collect = [&](const Variant& variant, bool before, unsigned pair) {
+                const auto name = label + (before ? "-baseline-" : "-candidate-") + std::to_string(pair);
+                ProcessResult noop;
+                unsigned settling_builds = 0;
+                for (;; ++settling_builds) {
+                    clear_records(variant.records);
+                    const auto log = logs / (name + "-settle-" + std::to_string(settling_builds) + ".log");
+                    noop = build(options, variant, log, true);
+                    const auto pending = compiler_records(variant.records);
+                    write_json(logs / (name + "-settle-" + std::to_string(settling_builds) + "-compilers.json"), json::Array(pending));
+                    fs::copy_file(log, logs / (name + "-noop.log"), fs::copy_options::overwrite_existing);
+                    if (pending.empty() && read_file(log).find("ninja: no work to do.") != std::string::npos) break;
+                    if (settling_builds == 2) {
+                        fs::copy_file(log, logs / (name + "-dirty-explanation.log"), fs::copy_options::overwrite_existing);
+                        throw std::runtime_error("Incremental build was not up to date before editing after two settling builds; see " + name + "-dirty-explanation.log");
+                    }
+                }
+                const auto file = variant.source / relative;
+                // Match the bytes of each probe in both variants. Each pair changes the
+                // previous probe, without a second expensive restoration build per sample.
+                const auto probe = original + "\n// Buildray incremental probe " + std::to_string(pair) + "\n";
+                write_file(file, probe);
+                clear_records(variant.records);
+                const auto result = build(options, variant, logs / (name + "-build.log"));
+                auto records = compiler_records(variant.records);
+                write_json(logs / (name + "-compilers.json"), json::Array(records));
+                const auto measured = command_inventory(records);
+                const auto& expected = before ? before_commands : after_commands;
+                for (const auto& [command, count] : measured) {
+                    const auto found = expected.find(command);
+                    if (found == expected.end() || count > found->second)
+                        throw std::runtime_error("Incremental build changed the verified compiler commands");
+                }
+                auto summary = compiler_sample(result, records);  // Also rejects no-op probes.
+                json::Array sources;
+                std::set<std::string> original_sources;
+                for (const auto& record : records) {
+                    const auto* object = record.getAsObject();
+                    fs::path path = object->getString("source")->str();
+                    if (path.is_relative()) path = fs::path(object->getString("directory")->str()) / path;
+                    path = absolute_path(path);
+                    const auto display = within(path, variant.source) ? "<SOURCE>/" + path.lexically_relative(variant.source).generic_string() :
+                        within(path, variant.build) ? "<BUILD>/" + path.lexically_relative(variant.build).generic_string() : path.generic_string();
+                    sources.push_back(display);
+                    if (within(path, variant.source) &&
+                        fs::is_regular_file(options.source / path.lexically_relative(variant.source)))
+                        original_sources.insert(display);
+                    if (!before && !variant.unity_target.empty()) {
+                        for (const auto& item : *report.getObject("unity_plan")->getArray("groups")) {
+                            const auto& group = *item.getAsObject();
+                            if (group.getString("file") != display) continue;
+                            for (const auto& member : *group.getArray("sources")) {
+                                const auto member_path = member.getAsString()->str();
+                                if (member_path.starts_with("<SOURCE>/") &&
+                                    fs::is_regular_file(options.source / member_path.substr(9)))
+                                    original_sources.insert(member_path);
+                            }
+                        }
+                    }
+                }
+                summary["compiled_sources"] = std::move(sources);
+                json::Array originals;
+                for (const auto& original_path : original_sources) originals.push_back(original_path);
+                summary["original_source_files"] = std::move(originals);
+                summary["original_source_count"] = static_cast<std::int64_t>(original_sources.size());
+                if (read_file(file) != probe)
+                    throw std::runtime_error("Build rewrote the incremental probe");
+                const auto count = test(options, variant, logs, name);
+                unsigned opaque = 0, reference_opaque = 0;
+                if (test_names(logs / (name + "-tests.json"), opaque) !=
+                    test_names(logs / "baseline-tests.json", reference_opaque))
+                    throw std::runtime_error("Incremental CTest inventory changed");
+                summary["tests_passed"] = static_cast<std::int64_t>(count);
+                summary["noop_seconds"] = noop.seconds;
+                summary["settling_builds"] = settling_builds;
+                summary["log_prefix"] = "logs/" + name;
+                scenario.getArray(before ? "baseline_samples" : "candidate_samples")->push_back(std::move(summary));
+                persist();
+            };
+            for (unsigned pair = 0; pair < options.runs; ++pair) {
+                std::cout << "Incremental " << relative << ": pair " << pair + 1 << '/' << options.runs
+                          << (pair % 2 ? " (candidate first)...\n" : " (baseline first)...\n") << std::flush;
+                if (pair % 2) { collect(candidate, false, pair); collect(baseline, true, pair); }
+                else { collect(baseline, true, pair); collect(candidate, false, pair); }
+            }
+            restore();
+            // Restore the exact input bytes and rebuild outside all sample timers.
+            // PCH validation embeds header metadata, so rewinding mtimes is unsafe.
+            for (const auto* variant : {&baseline, &candidate}) {
+                clear_records(variant->records);
+                build(options, *variant, logs / (label + (variant == &baseline ? "-baseline-restore.log" : "-candidate-restore.log")));
+            }
+        } catch (...) {
+            restore();
+            throw;
+        }
+        auto before = summarize(*scenario.getArray("baseline_samples"));
+        auto after = summarize(*scenario.getArray("candidate_samples"));
+        const auto b = *before.getNumber("median_seconds"), a = *after.getNumber("median_seconds");
+        const auto threshold = std::max(0.02 * b, 3 * std::max(*before.getNumber("mad_seconds"), *after.getNumber("mad_seconds")));
+        const std::string verdict = options.runs < 3 ? "insufficient_samples" :
+            std::abs(a - b) <= threshold ? "inconclusive" : a < b ? "improved" : "regressed";
+        scenario["baseline"] = std::move(before);
+        scenario["candidate"] = std::move(after);
+        scenario["wall_change_percent"] = 100 * (a - b) / b;
+        scenario["noise_threshold_seconds"] = threshold;
+        scenario["performance_result"] = verdict;
+        scenario["status"] = "passed";
+        scenario["input_restored"] = true;
+        regressed = regressed || verdict == "regressed";
+        std::cout << "  " << b << " -> " << a << " s (" << verdict << ")\n" << std::flush;
+        persist();
+    }
+    auto* incremental = report.getObject("incremental");
+    (*incremental)["status"] = "passed";
+    (*incremental)["regression_detected"] = regressed;
+    (*incremental)["performance_rule"] = "heuristic: difference exceeds max(2% baseline, 3x max MAD); at least three pairs; not a significance test";
+    if (regressed) report["patch_recommended"] = false;
+    std::ostringstream markdown;
+    markdown << "# Incremental rebuild measurements\n\nSingle-file comment edits; compilation and linking timed. Tests, no-op checks and restoration are outside timing.\n\n"
+             << "| File | Before (s) | After (s) | Change | Result |\n| --- | ---: | ---: | ---: | --- |\n";
+    for (const auto& value : *incremental->getArray("scenarios")) {
+        const auto& scenario = *value.getAsObject();
+        auto file = scenario.getString("file")->str();
+        for (std::size_t i = 0; i < file.size(); ++i)
+            if (file[i] == '|' || file[i] == '`' || file[i] == '\n' || file[i] == '\r') file[i] = ' ';
+        markdown << "| " << file << " | " << std::fixed << std::setprecision(3)
+                 << *scenario.getObject("baseline")->getNumber("median_seconds") << " | "
+                 << *scenario.getObject("candidate")->getNumber("median_seconds") << " | "
+                 << std::showpos << *scenario.getNumber("wall_change_percent") << std::noshowpos << "% | "
+                 << scenario.getString("performance_result")->str() << " |\n";
+    }
+    markdown << "\nThese probes measure dependency invalidation, not arbitrary semantic changes. Raw compiler counts, CPU times and maximum per-compiler RSS are in incremental.json. RSS is not total build memory.\n";
+    write_file(work / "incremental.md", markdown.str());
+    persist();
 }
 
 using Changes = std::map<fs::path, std::vector<Replacement>>;
@@ -617,6 +825,9 @@ void print_summary(const json::Object& report, const fs::path& work) {
         std::cout << "Patch: " << (work / "unity.patch") << '\n';
     if (fs::exists(work / "headers.json"))
         std::cout << "Header profile: " << (work / "headers.json") << '\n';
+    if (fs::exists(work / "incremental.json"))
+        std::cout << "Incremental report: " << (work / "incremental.json")
+                  << "\nIncremental summary: " << (work / "incremental.md") << '\n';
 }
 
 int automatic_pch(const Options& options, const fs::path& executable) {
@@ -643,8 +854,11 @@ int automatic_pch(const Options& options, const fs::path& executable) {
         const auto directory = work / phase / "logs";
         if (!fs::exists(directory)) return;
         for (const auto& entry : fs::directory_iterator(directory)) {
-            if (!entry.is_regular_file() || entry.is_symlink() || entry.path().extension() != ".log") continue;
-            const auto destination = work / "logs" / (phase + "-" + entry.path().filename().string());
+            const auto name = entry.path().filename().string();
+            const bool incremental = name.starts_with("incremental-");
+            if (!entry.is_regular_file() || entry.is_symlink() ||
+                (entry.path().extension() != ".log" && !incremental)) continue;
+            const auto destination = work / "logs" / (incremental ? name : phase + "-" + name);
             fs::copy_file(entry.path(), destination, fs::copy_options::overwrite_existing);
             fs::last_write_time(destination, fs::last_write_time(entry.path()));
         }
@@ -666,6 +880,8 @@ int automatic_pch(const Options& options, const fs::path& executable) {
         profile_options.work = work / "profile";
         profile_options.target.clear();
         profile_options.headers.clear();
+        profile_options.rebuild_files.clear();
+        profile_options.incremental_only = false;
         const int profile_status = pipeline(profile_options, executable);
         retain_logs("profile");
         if (profile_status != 0)
@@ -692,6 +908,8 @@ int automatic_pch(const Options& options, const fs::path& executable) {
         const int experiment_status = pipeline(experiment_options, executable);
         retain_logs("experiment");
         retain("experiment", "pch.patch");
+        retain("experiment", "incremental.json");
+        retain("experiment", "incremental.md");
         const auto experiment_document = read_json(work / "experiment/report.json");
         const auto* experiment = experiment_document.getAsObject();
         if (!experiment) throw std::runtime_error("Invalid automatic PCH experiment report");
@@ -739,6 +957,15 @@ int pipeline(const Options& options, const fs::path& executable) {
         throw std::runtime_error("--source must contain CMakeLists.txt: " + source.string());
     if (!fs::is_regular_file(base_source / "CMakeLists.txt"))
         throw std::runtime_error("--baseline-source must contain CMakeLists.txt");
+    std::set<fs::path> rebuild_paths;
+    for (const auto& file : options.rebuild_files) {
+        const auto ext = file.extension();
+        if ((!cpp_source(file) && ext != ".c" && ext != ".h" && ext != ".hh" &&
+             ext != ".hpp" && ext != ".hxx" && ext != ".inc" && ext != ".inl") ||
+            !within(absolute_path(source / file), source) || !fs::is_regular_file(source / file) ||
+            fs::is_symlink(source / file) || !rebuild_paths.insert(file).second)
+            throw std::runtime_error("--rebuild-file requires a unique original C/C++ source or header: " + file.string());
+    }
     // Validate generated CMake inputs before creating an output directory or running project code.
     const auto pch_script = options.command == "pch" ? pch_cmake(options, source) : "";
     const auto unity_script = options.command == "unity" ? unity_cmake(options, source) : "";
@@ -792,7 +1019,8 @@ int pipeline(const Options& options, const fs::path& executable) {
         checked({"ninja", "--version"}, source, logs / "ninja-version.log");
         report["cmake_version"] = read_file(logs / "cmake-version.log");
         report["ninja_version"] = read_file(logs / "ninja-version.log");
-        if (options.command == "deps" || options.command == "headers" || options.command == "unity") {
+        if (options.command == "deps" || options.command == "headers" || options.command == "unity" ||
+            (options.command == "pch" && !options.rebuild_files.empty())) {
             checked({options.c_compiler, "--version"}, source, logs / "c-compiler-version.log");
             report["c_compiler_version"] = read_file(logs / "c-compiler-version.log");
             if (report.getString("c_compiler_version")->find("clang") == llvm::StringRef::npos)
@@ -823,7 +1051,7 @@ int pipeline(const Options& options, const fs::path& executable) {
                           work / "candidate-records", false,
                           options.command == "pch" ? options.target : "", options.headers};
         baseline.cmake_model = candidate.cmake_model = options.command == "prune-links";
-        baseline.active_coverage = candidate.active_coverage = options.command == "headers" || options.command == "unity";
+        baseline.active_coverage = candidate.active_coverage = options.command == "headers" || options.command == "unity" || !options.rebuild_files.empty();
         if (options.command == "unity") candidate.unity_target = options.target;
         report["phase"] = "baseline_validation";
         std::cout << "Configuring baseline, warming build, running tests...\n" << std::flush;
@@ -1149,6 +1377,10 @@ int pipeline(const Options& options, const fs::path& executable) {
                 report["performance_result"] = "no_changes";
                 report["patch_recommended"] = false;
                 report["measurement"] = "no eligible header changes; build and tests validated; benchmark skipped";
+            } else if (options.incremental_only) {
+                report["performance_result"] = "not_measured";
+                report["patch_recommended"] = false;
+                report["measurement"] = "incremental timings only; full baseline and candidate builds and tests validated outside timing";
             } else {
                 report["phase"] = "measurement";
                 const auto [before, after] = paired_samples(options, baseline, candidate, logs);
@@ -1177,6 +1409,8 @@ int pipeline(const Options& options, const fs::path& executable) {
                     "test";
                 report["patch_recommended"] = changed && verdict == "improved";
             }
+            if (!options.rebuild_files.empty())
+                incremental_samples(options, baseline, candidate, work, report);
         }
         if (interrupted()) throw std::runtime_error("Interrupted");
         report["phase"] = "complete";
@@ -1188,6 +1422,11 @@ int pipeline(const Options& options, const fs::path& executable) {
         report["status"] = interrupted() ? "interrupted" : "failed";
         report["error"] = error.what();
         report["patch_recommended"] = false;
+        if (auto* incremental = report.getObject("incremental")) {
+            (*incremental)["status"] = interrupted() ? "interrupted" : "failed";
+            (*incremental)["error"] = error.what();
+            write_json(work / "incremental.json", json::Object(*incremental));
+        }
         write_json(work / "report.json", json::Object(report));
         std::cerr << "buildray: " << error.what() << "\nReport: " << (work / "report.json") << '\n';
         return interrupted() ? 130 : 1;

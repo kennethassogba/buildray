@@ -33,10 +33,12 @@ Options:
   --source DIR          CMake source tree (default: current directory)
   --work-dir DIR        New output directory (default: SOURCE/.buildray/unique-id)
   --compiler PATH       Clang C++ compiler (default: clang++)
-  --c-compiler PATH     Clang C compiler for deps/headers/unity (headers/unity derive the C++ driver version)
+  --c-compiler PATH     Clang C compiler for deps/headers/unity or incremental pch
   --fail-on-cycles      deps: return 5 if include or target-link cycles exist
   --clang-tidy PATH     clang-tidy with misc-include-cleaner (default: clang-tidy)
-  --runs N              Clean build samples per variant, 1..100 (default: 3)
+  --runs N              Samples per variant and rebuild scenario, 1..100 (default: 3)
+  --rebuild-file PATH   pch/unity: also measure a single-file incremental rebuild; repeatable
+  --incremental-only    Skip repeated clean timings; requires --rebuild-file (full validation still runs)
   --jobs N              Fixed build parallelism, 1..1024 (default: 2)
   --allow-no-tests      Permit build-only validation when no CTest tests exist
   --baseline-source DIR  Base revision source for paired comparison
@@ -95,6 +97,11 @@ It verifies original C/C++ source/target coverage, builds, tests and measures th
 complete default build. --unity-retries can isolate failed compiler groups before
 validation. Link, runtime and coverage failures always reject the patch.
 Outputs: unity.patch and unity.json. Enable an applied patch with -DBUILDRAY_UNITY=ON.
+Add --rebuild-file for incremental timings after single-file comment edits. Each
+sample requires an up-to-date build first, then compiles, links and passes CTest.
+--incremental-only skips clean timings but keeps full baseline/candidate validation.
+Outputs: incremental.json and incremental.md. Per-scenario regressions prevent a
+clean-build patch recommendation; compiler RSS is not aggregate build memory.
 
 Exit codes: 0 completed, 1 pipeline/validation failure, 2 invalid arguments,
 3 regression over budget and noise, 4 incomparable reports, 5 cycles, 130 interrupted.
@@ -173,11 +180,15 @@ buildray::Options parse(const std::vector<std::string>& args) {
             options.forward_declarations = true;
             continue;
         }
+        if (arg == "--incremental-only") {
+            options.incremental_only = true;
+            continue;
+        }
         if (arg != "--source" && arg != "--work-dir" && arg != "--compiler" &&
             arg != "--clang-tidy" && arg != "--runs" && arg != "--jobs" &&
             arg != "--baseline-source" && arg != "--max-regression-percent" && arg != "--session" &&
             arg != "--target" && arg != "--header" && arg != "--c-compiler" && arg != "--exclude" && arg != "--dependency" &&
-            arg != "--header-path" && arg != "--max-header-edits" && arg != "--batch-size" && arg != "--unity-exclude" && arg != "--unity-retries")
+            arg != "--header-path" && arg != "--max-header-edits" && arg != "--batch-size" && arg != "--unity-exclude" && arg != "--unity-retries" && arg != "--rebuild-file")
             throw std::runtime_error("Unknown option: " + arg);
         if (++i == args.size() || args[i].starts_with("--"))
             throw std::runtime_error("Missing value for " + arg);
@@ -221,13 +232,14 @@ buildray::Options parse(const std::vector<std::string>& args) {
             options.dependency = value;
         else if (arg == "--header")
             options.headers.push_back(value);
-        else if (arg == "--exclude" || arg == "--header-path" || arg == "--unity-exclude") {
+        else if (arg == "--exclude" || arg == "--header-path" || arg == "--unity-exclude" || arg == "--rebuild-file") {
             auto path = buildray::fs::path(value).lexically_normal();
             if (path.filename().empty()) path = path.parent_path();
             if (path.empty() || path.is_absolute() || path == "." || *path.begin() == "..")
                 throw std::runtime_error(arg + " requires a relative file/directory inside the source tree");
             if (arg == "--exclude") options.exclusions.push_back(std::move(path));
             else if (arg == "--unity-exclude") options.unity_exclusions.push_back(std::move(path));
+            else if (arg == "--rebuild-file") options.rebuild_files.push_back(std::move(path));
             else options.header_paths.push_back(std::move(path));
         }
         else if (arg == "--max-regression-percent")
@@ -253,9 +265,14 @@ buildray::Options parse(const std::vector<std::string>& args) {
         throw std::runtime_error("prune-links requires at least three runs");
     if (options.command != "deps" && options.fail_on_cycles)
         throw std::runtime_error("--fail-on-cycles requires deps");
-    if (options.command != "deps" && options.command != "headers" && options.command != "unity" && explicit_c_compiler)
-        throw std::runtime_error("--c-compiler requires deps, headers or unity");
-    if ((options.command == "headers" || options.command == "unity") && !explicit_c_compiler) {
+    if ((!options.rebuild_files.empty() || options.incremental_only) && options.command != "pch" && options.command != "unity")
+        throw std::runtime_error("Incremental measurements require pch or unity");
+    if (options.incremental_only && options.rebuild_files.empty())
+        throw std::runtime_error("--incremental-only requires at least one --rebuild-file");
+    if (options.command != "deps" && options.command != "headers" && options.command != "unity" &&
+        !(options.command == "pch" && !options.rebuild_files.empty()) && explicit_c_compiler)
+        throw std::runtime_error("--c-compiler requires deps, headers, unity or incremental pch");
+    if ((options.command == "headers" || options.command == "unity" || options.command == "pch") && !explicit_c_compiler) {
         auto driver = buildray::fs::path(options.compiler);
         auto name = driver.filename().string();
         if (name.starts_with("clang++")) {

@@ -1,0 +1,24 @@
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -147,3 +147,21 @@
+ else()
+   target_compile_definitions(xgrammar PUBLIC XGRAMMAR_ENABLE_INTERNAL_CHECK=0)
+ endif()
++
++# Buildray: private PCH experiment, validated for the measured configuration.
++if(NOT TARGET xgrammar)
++  message(FATAL_ERROR "Buildray PCH target does not exist")
++endif()
++get_target_property(_buildray_pch_type xgrammar TYPE)
++get_target_property(_buildray_pch_imported xgrammar IMPORTED)
++get_target_property(_buildray_pch_alias xgrammar ALIASED_TARGET)
++get_property(_buildray_pch_existing TARGET xgrammar PROPERTY PRECOMPILE_HEADERS SET)
++get_property(_buildray_pch_reuse TARGET xgrammar PROPERTY PRECOMPILE_HEADERS_REUSE_FROM SET)
++if(_buildray_pch_imported OR _buildray_pch_alias OR _buildray_pch_existing OR _buildray_pch_reuse
++   OR NOT _buildray_pch_type MATCHES "^(EXECUTABLE|STATIC_LIBRARY|SHARED_LIBRARY|MODULE_LIBRARY|OBJECT_LIBRARY)$")
++  message(FATAL_ERROR "Buildray requires a local compiled target without an existing PCH")
++endif()
++set_property(TARGET xgrammar PROPERTY DISABLE_PRECOMPILE_HEADERS OFF)
++target_precompile_headers(xgrammar PRIVATE
++  "$<$<COMPILE_LANGUAGE:CXX>:${CMAKE_CURRENT_SOURCE_DIR}/cpp/grammar_impl.h>"
++)

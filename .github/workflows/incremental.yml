@@ -1,0 +1,104 @@
+name: Incremental rebuild corpus
+
+on:
+  workflow_call:
+    inputs:
+      project:
+        type: string
+        default: all
+      mode:
+        type: string
+        default: all
+      linker_deps:
+        type: string
+        default: default
+      split_cases:
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark:
+    name: ${{ matrix.project }} / ${{ matrix.mode }}${{ matrix.probe_index >= 0 && format(' / case-{0}', matrix.probe_index) || '' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 240
+    env:
+      CORPUS_SELECTED: ${{ (inputs.project == 'all' || inputs.project == matrix.project) && (inputs.mode == 'all' || inputs.mode == matrix.mode) }}
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [xgrammar, sentencepiece, mujoco]
+        mode: [unity, pch]
+        probe_index: ${{ inputs.split_cases && fromJSON('[0, 1, 2]') || fromJSON('[-1]') }}
+        include:
+          - project: xgrammar
+            jobs: 2
+            repository: mlc-ai/xgrammar
+            revision: 7e269d56c74c89de52bc8c31e42191155416371f
+            target: xgrammar
+            header: cpp/grammar_impl.h
+            rebuild_files: '["cpp/earley_parser.cc", "cpp/grammar_impl.h", "include/xgrammar/grammar.h"]'
+            exclusions: '[]'
+            cmake_args: '[]'
+          - project: sentencepiece
+            jobs: 2
+            repository: google/sentencepiece
+            revision: e0cce7d37b065b5140349dbe12c6bcf6192fdd78
+            target: sentencepiece-static
+            header: src/common.h
+            rebuild_files: '["src/sentencepiece_processor.cc", "src/common.h", "src/sentencepiece_processor.h"]'
+            exclusions: '["third_party", "src/builtin_pb"]'
+            cmake_args: '["-DSPM_BUILD_TEST=ON", "-DSPM_ENABLE_SHARED=OFF", "-DSPM_ENABLE_TCMALLOC=OFF"]'
+          - project: mujoco
+            jobs: 4
+            repository: google-deepmind/mujoco
+            revision: 651bae11c3c38efe483f033b4b7e869e7ce3f4ec
+            target: mujoco
+            header: include/mujoco/mujoco.h
+            rebuild_files: '["src/user/user_model.cc", "src/user/user_model.h", "include/mujoco/mujoco.h"]'
+            exclusions: '[]'
+            measured_exclusions: '["plugin/gmsh_decoder/gmsh_decoder.cc", "plugin/obj_decoder/obj_decoder.cc", "plugin/stl_decoder/stl_decoder.cc", "src/engine/engine_crossplatform.cc", "src/user/user_composite.cc", "src/user/user_flexcomp.cc", "src/user/user_mesh.cc", "src/user/user_model.cc", "src/engine/engine_collision_driver.c", "src/engine/engine_collision_flex.c", "src/engine/engine_collision_gjk.c", "src/engine/engine_collision_primitive.c"]'
+            cmake_args: '["-DMUJOCO_BUILD_EXAMPLES=OFF", "-DMUJOCO_BUILD_SIMULATE=OFF", "-DMUJOCO_BUILD_TESTS=ON", "-DMUJOCO_TEST_PYTHON_UTIL=OFF"]'
+            cmake_args_no_linker_deps: '["-DMUJOCO_BUILD_EXAMPLES=OFF", "-DMUJOCO_BUILD_SIMULATE=OFF", "-DMUJOCO_BUILD_TESTS=ON", "-DMUJOCO_TEST_PYTHON_UTIL=OFF", "-DCMAKE_LINK_DEPENDS_USE_LINKER=OFF"]'
+    steps:
+      - uses: actions/checkout@v6
+        if: env.CORPUS_SELECTED == 'true'
+      - uses: actions/setup-python@v7
+        if: env.CORPUS_SELECTED == 'true'
+        with:
+          python-version: '3.12'
+      - uses: actions/checkout@v6
+        if: env.CORPUS_SELECTED == 'true'
+        with:
+          repository: ${{ matrix.repository }}
+          ref: ${{ matrix.revision }}
+          path: fixtures/${{ matrix.project }}
+          persist-credentials: false
+      - name: Prepare native XGrammar tests
+        if: matrix.project == 'xgrammar' && env.CORPUS_SELECTED == 'true'
+        working-directory: fixtures/xgrammar
+        run: |
+          git submodule update --init --depth 1 3rdparty/dlpack 3rdparty/googletest
+          printf '%s\n' 'set(XGRAMMAR_BUILD_PYTHON_BINDINGS OFF)' 'set(XGRAMMAR_BUILD_CXX_TESTS ON)' > config.cmake
+      - name: Prepare MuJoCo test locale
+        if: matrix.project == 'mujoco' && env.CORPUS_SELECTED == 'true'
+        run: sudo locale-gen de_DE.UTF-8
+      - name: Validate and measure incremental rebuilds
+        if: env.CORPUS_SELECTED == 'true'
+        uses: ./
+        with:
+          command: ${{ matrix.mode }}
+          source: fixtures/${{ matrix.project }}
+          pch-target: ${{ matrix.mode == 'pch' && matrix.target || '' }}
+          pch-headers: ${{ matrix.mode == 'pch' && format('["{0}"]', matrix.header) || '[]' }}
+          unity-target: ${{ matrix.mode == 'unity' && matrix.target || '' }}
+          unity-retries: ${{ matrix.mode == 'unity' && '4' || '0' }}
+          unity-exclude: ${{ matrix.mode == 'unity' && inputs.split_cases && matrix.project == 'mujoco' && matrix.measured_exclusions || matrix.mode == 'unity' && matrix.exclusions || '[]' }}
+          rebuild-files: ${{ matrix.probe_index >= 0 && format('["{0}"]', fromJSON(matrix.rebuild_files)[matrix.probe_index]) || matrix.rebuild_files }}
+          incremental-only: 'true'
+          runs: '3'
+          jobs: ${{ matrix.jobs }}
+          cmake-args: ${{ matrix.project == 'mujoco' && inputs.linker_deps == 'off' && matrix.cmake_args_no_linker_deps || matrix.cmake_args }}
+          artifact-name: incremental-${{ matrix.project }}-${{ matrix.mode }}${{ matrix.probe_index >= 0 && format('-case-{0}', matrix.probe_index) || '' }}

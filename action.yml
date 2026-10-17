@@ -21,7 +21,7 @@ inputs:
     description: JSON array of relative files/directories that optimize, headers or prune-links must not edit. Build and test coverage is unchanged.
     default: '[]'
   runs:
-    description: Clean build samples per revision. At least 3 for comparisons.
+    description: Samples per variant for clean builds and each incremental scenario. At least 3 for recommendations.
     default: '3'
   jobs:
     description: Fixed build parallelism.
@@ -62,6 +62,12 @@ inputs:
   unity-retries:
     description: Retry failed unity compiler groups with their original sources separate (0-8). Tests and link failures remain blocking.
     default: '0'
+  rebuild-files:
+    description: For pch/unity, JSON array of original relative C/C++ source/header files to edit separately and measure incremental rebuilds.
+    default: '[]'
+  incremental-only:
+    description: Skip repeated clean timings. Requires rebuild-files; full baseline/candidate build and test validation still runs.
+    default: 'false'
   link-target:
     description: Optional CMake target restriction for command prune-links.
     default: ''
@@ -126,6 +132,9 @@ outputs:
   unity:
     description: Verified unity groups and original C/C++ source/target coverage.
     value: ${{ steps.run.outputs.unity }}
+  incremental:
+    description: Incremental scenarios, paired samples, compiler counts, CPU and per-compiler peak RSS.
+    value: ${{ steps.run.outputs.incremental }}
   dependencies:
     description: Observed include and configured CMake dependency graph JSON.
     value: ${{ steps.run.outputs.dependencies }}
@@ -165,6 +174,8 @@ runs:
         BUILDRAY_UNITY_BATCH_SIZE: ${{ inputs.unity-batch-size }}
         BUILDRAY_UNITY_EXCLUDE: ${{ inputs.unity-exclude }}
         BUILDRAY_UNITY_RETRIES: ${{ inputs.unity-retries }}
+        BUILDRAY_REBUILD_FILES: ${{ inputs.rebuild-files }}
+        BUILDRAY_INCREMENTAL_ONLY: ${{ inputs.incremental-only }}
         BUILDRAY_LINK_TARGET: ${{ inputs.link-target }}
         BUILDRAY_LINK_DEPENDENCY: ${{ inputs.link-dependency }}
         BUILDRAY_FORWARD_DECLARATIONS: ${{ inputs.forward-declarations }}

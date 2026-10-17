@@ -1,0 +1,454 @@
+{
+  "baseline_tests_passed": 3519,
+  "buildray_version": "0.10.0",
+  "c_compiler_version": "Ubuntu clang version 21.1.8 (++20251221032922+2078da43e25a-1~exp1~20251221153059.70)\nTarget: x86_64-pc-linux-gnu\nThread model: posix\nInstalledDir: /usr/lib/llvm-21/bin\n",
+  "candidate_measurement_context": {
+    "architecture": "x86_64",
+    "buildray_version": "0.10.0",
+    "cache_flags": {
+      "CMAKE_BUILD_TYPE": "Release",
+      "CMAKE_CXX_FLAGS": "",
+      "CMAKE_CXX_FLAGS-ADVANCED": "1",
+      "CMAKE_CXX_FLAGS_DEBUG": "-g",
+      "CMAKE_CXX_FLAGS_DEBUG-ADVANCED": "1",
+      "CMAKE_CXX_FLAGS_MINSIZEREL": "-Os -DNDEBUG",
+      "CMAKE_CXX_FLAGS_MINSIZEREL-ADVANCED": "1",
+      "CMAKE_CXX_FLAGS_RELEASE": "-O3 -DNDEBUG",
+      "CMAKE_CXX_FLAGS_RELEASE-ADVANCED": "1",
+      "CMAKE_CXX_FLAGS_RELWITHDEBINFO": "-O2 -g -DNDEBUG",
+      "CMAKE_CXX_FLAGS_RELWITHDEBINFO-ADVANCED": "1",
+      "CMAKE_C_FLAGS": "",
+      "CMAKE_C_FLAGS-ADVANCED": "1",
+      "CMAKE_C_FLAGS_DEBUG": "-g",
+      "CMAKE_C_FLAGS_DEBUG-ADVANCED": "1",
+      "CMAKE_C_FLAGS_MINSIZEREL": "-Os -DNDEBUG",
+      "CMAKE_C_FLAGS_MINSIZEREL-ADVANCED": "1",
+      "CMAKE_C_FLAGS_RELEASE": "-O3 -DNDEBUG",
+      "CMAKE_C_FLAGS_RELEASE-ADVANCED": "1",
+      "CMAKE_C_FLAGS_RELWITHDEBINFO": "-O2 -g -DNDEBUG",
+      "CMAKE_C_FLAGS_RELWITHDEBINFO-ADVANCED": "1",
+      "CMAKE_EXE_LINKER_FLAGS": "",
+      "CMAKE_EXE_LINKER_FLAGS-ADVANCED": "1",
+      "CMAKE_EXE_LINKER_FLAGS_DEBUG": "",
+      "CMAKE_EXE_LINKER_FLAGS_DEBUG-ADVANCED": "1",
+      "CMAKE_EXE_LINKER_FLAGS_MINSIZEREL": "",
+      "CMAKE_EXE_LINKER_FLAGS_MINSIZEREL-ADVANCED": "1",
+      "CMAKE_EXE_LINKER_FLAGS_RELEASE": "",
+      "CMAKE_EXE_LINKER_FLAGS_RELEASE-ADVANCED": "1",
+      "CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO": "",
+      "CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO-ADVANCED": "1",
+      "CMAKE_PROJECT_NAME": "mujoco",
+      "CMAKE_SHARED_LINKER_FLAGS": "",
+      "CMAKE_SHARED_LINKER_FLAGS-ADVANCED": "1",
+      "CMAKE_SHARED_LINKER_FLAGS_DEBUG": "",
+      "CMAKE_SHARED_LINKER_FLAGS_DEBUG-ADVANCED": "1",
+      "CMAKE_SHARED_LINKER_FLAGS_MINSIZEREL": "",
+      "CMAKE_SHARED_LINKER_FLAGS_MINSIZEREL-ADVANCED": "1",
+      "CMAKE_SHARED_LINKER_FLAGS_RELEASE": "",
+      "CMAKE_SHARED_LINKER_FLAGS_RELEASE-ADVANCED": "1",
+      "CMAKE_SHARED_LINKER_FLAGS_RELWITHDEBINFO": "",
+      "CMAKE_SHARED_LINKER_FLAGS_RELWITHDEBINFO-ADVANCED": "1"
+    },
+    "cmake_args": [
+      "-DMUJOCO_BUILD_EXAMPLES=OFF",
+      "-DMUJOCO_BUILD_SIMULATE=OFF",
+      "-DMUJOCO_BUILD_TESTS=ON",
+      "-DMUJOCO_TEST_PYTHON_UTIL=OFF",
+      "-DCMAKE_LINK_DEPENDS_USE_LINKER=OFF"
+    ],
+    "cpu_affinity_count": 4,
+    "cpu_model": "AMD EPYC 9V45 96-Core Processor",
+    "cpu_quota": "unavailable",
+    "environment_flags": {
+      "CFLAGS": "",
+      "CXXFLAGS": "",
+      "LDFLAGS": ""
+    },
+    "jobs": 4,
+    "kernel": "6.17.0-1022-azure",
+    "method": "clean-build-warm-filesystem-v1",
+    "precompiled_headers": true,
+    "sampling": "paired_alternating",
+    "session": "c7de748e-109d-4c2e-a46a-73a5929326a7",
+    "tests_required": true,
+    "unity_build": false
+  },
+  "candidate_precompiled_headers": true,
+  "candidate_tests_passed": 3519,
+  "cmake_args": [
+    "-DMUJOCO_BUILD_EXAMPLES=OFF",
+    "-DMUJOCO_BUILD_SIMULATE=OFF",
+    "-DMUJOCO_BUILD_TESTS=ON",
+    "-DMUJOCO_TEST_PYTHON_UTIL=OFF",
+    "-DCMAKE_LINK_DEPENDS_USE_LINKER=OFF"
+  ],
+  "cmake_version": "cmake version 4.2.3\n\nCMake suite maintained and supported by Kitware (kitware.com/cmake).\n",
+  "command": "pch",
+  "compiler_version": "Ubuntu clang version 21.1.8 (++20251221032922+2078da43e25a-1~exp1~20251221153059.70)\nTarget: x86_64-pc-linux-gnu\nThread model: posix\nInstalledDir: /usr/lib/llvm-21/bin\n",
+  "excluded_paths": [],
+  "incremental": {
+    "limitation": "dependency invalidation after a comment-only edit; not representative of arbitrary semantic changes",
+    "memory_scope": "maximum RSS of an individual compiler invocation, not total build memory",
+    "method": "single-file comment edit; existing build trees; alternating pairs; warm filesystem cache; compiler caches disabled",
+    "performance_rule": "heuristic: difference exceeds max(2% baseline, 3x max MAD); at least three pairs; not a significance test",
+    "regression_detected": false,
+    "runs": 3,
+    "scenarios": [
+      {
+        "baseline": {
+          "mad_seconds": 0.67932749099998091,
+          "max_seconds": 228.47425926099999,
+          "median_seconds": 227.50194211199999,
+          "min_seconds": 226.82261462100001,
+          "samples": [
+            {
+              "compiled_sources": [
+                "<SOURCE>/src/user/user_model.cc"
+              ],
+              "compiler_cpu_seconds": 5.4515660000000006,
+              "compiler_invocations": 1,
+              "compiler_wall_sum_seconds": 5.4527432119999997,
+              "log_prefix": "logs/incremental-0-baseline-0",
+              "max_compiler_rss_kib": 364432,
+              "noop_seconds": 0.121561049,
+              "original_source_count": 1,
+              "original_source_files": [
+                "<SOURCE>/src/user/user_model.cc"
+              ],
+              "pch_creations": 0,
+              "settling_builds": 0,
+              "tests_passed": 3519,
+              "wall_seconds": 228.47425926099999
+            },
+            {
+              "compiled_sources": [
+                "<SOURCE>/src/user/user_model.cc"
+              ],
+              "compiler_cpu_seconds": 5.5054619999999996,
+              "compiler_invocations": 1,
+              "compiler_wall_sum_seconds": 5.5065660650000003,
+              "log_prefix": "logs/incremental-0-baseline-1",
+              "max_compiler_rss_kib": 364268,
+              "noop_seconds": 0.115760633,
+              "original_source_count": 1,
+              "original_source_files": [
+                "<SOURCE>/src/user/user_model.cc"
+              ],
+              "pch_creations": 0,
+              "settling_builds": 0,
+              "tests_passed": 3519,
+              "wall_seconds": 226.82261462100001
+            },
+            {
+              "compiled_sources": [
+                "<SOURCE>/src/user/user_model.cc"
+              ],
+              "compiler_cpu_seconds": 5.424868,
+              "compiler_invocations": 1,
+              "compiler_wall_sum_seconds": 5.4259166490000004,
+              "log_prefix": "logs/incremental-0-baseline-2",
+              "max_compiler_rss_kib": 364616,
+              "noop_seconds": 0.111576178,
+              "original_source_count": 1,
+              "original_source_files": [
+                "<SOURCE>/src/user/user_model.cc"
+              ],
+              "pch_creations": 0,
+              "settling_builds": 0,
+              "tests_passed": 3519,
+              "wall_seconds": 227.50194211199999
+            }
+          ]
+        },
+        "baseline_samples": [
+          {
+            "compiled_sources": [
+              "<SOURCE>/src/user/user_model.cc"
+            ],
+            "compiler_cpu_seconds": 5.4515660000000006,
+            "compiler_invocations": 1,
+            "compiler_wall_sum_seconds": 5.4527432119999997,
+            "log_prefix": "logs/incremental-0-baseline-0",
+            "max_compiler_rss_kib": 364432,
+            "noop_seconds": 0.121561049,
+            "original_source_count": 1,
+            "original_source_files": [
+              "<SOURCE>/src/user/user_model.cc"
+            ],
+            "pch_creations": 0,
+            "settling_builds": 0,
+            "tests_passed": 3519,
+            "wall_seconds": 228.47425926099999
+          },
+          {
+            "compiled_sources": [
+              "<SOURCE>/src/user/user_model.cc"
+            ],
+            "compiler_cpu_seconds": 5.5054619999999996,
+            "compiler_invocations": 1,
+            "compiler_wall_sum_seconds": 5.5065660650000003,
+            "log_prefix": "logs/incremental-0-baseline-1",
+            "max_compiler_rss_kib": 364268,
+            "noop_seconds": 0.115760633,
+            "original_source_count": 1,
+            "original_source_files": [
+              "<SOURCE>/src/user/user_model.cc"
+            ],
+            "pch_creations": 0,
+            "settling_builds": 0,
+            "tests_passed": 3519,
+            "wall_seconds": 226.82261462100001
+          },
+          {
+            "compiled_sources": [
+              "<SOURCE>/src/user/user_model.cc"
+            ],
+            "compiler_cpu_seconds": 5.424868,
+            "compiler_invocations": 1,
+            "compiler_wall_sum_seconds": 5.4259166490000004,
+            "log_prefix": "logs/incremental-0-baseline-2",
+            "max_compiler_rss_kib": 364616,
+            "noop_seconds": 0.111576178,
+            "original_source_count": 1,
+            "original_source_files": [
+              "<SOURCE>/src/user/user_model.cc"
+            ],
+            "pch_creations": 0,
+            "settling_builds": 0,
+            "tests_passed": 3519,
+            "wall_seconds": 227.50194211199999
+          }
+        ],
+        "candidate": {
+          "mad_seconds": 0.1752288369999917,
+          "max_seconds": 228.05089720199999,
+          "median_seconds": 227.54745191399999,
+          "min_seconds": 227.372223077,
+          "samples": [
+            {
+              "compiled_sources": [
+                "<SOURCE>/src/user/user_model.cc"
+              ],
+              "compiler_cpu_seconds": 5.2940630000000004,
+              "compiler_invocations": 1,
+              "compiler_wall_sum_seconds": 5.2949741450000003,
+              "log_prefix": "logs/incremental-0-candidate-0",
+              "max_compiler_rss_kib": 353320,
+              "noop_seconds": 0.110361814,
+              "original_source_count": 1,
+              "original_source_files": [
+                "<SOURCE>/src/user/user_model.cc"
+              ],
+              "pch_creations": 0,
+              "settling_builds": 0,
+              "tests_passed": 3519,
+              "wall_seconds": 227.54745191399999
+            },
+            {
+              "compiled_sources": [
+                "<SOURCE>/src/user/user_model.cc"
+              ],
+              "compiler_cpu_seconds": 5.342492,
+              "compiler_invocations": 1,
+              "compiler_wall_sum_seconds": 5.3435085290000002,
+              "log_prefix": "logs/incremental-0-candidate-1",
+              "max_compiler_rss_kib": 353360,
+              "noop_seconds": 0.118231563,
+              "original_source_count": 1,
+              "original_source_files": [
+                "<SOURCE>/src/user/user_model.cc"
+              ],
+              "pch_creations": 0,
+              "settling_builds": 0,
+              "tests_passed": 3519,
+              "wall_seconds": 227.372223077
+            },
+            {
+              "compiled_sources": [
+                "<SOURCE>/src/user/user_model.cc"
+              ],
+              "compiler_cpu_seconds": 5.2665630000000005,
+              "compiler_invocations": 1,
+              "compiler_wall_sum_seconds": 5.2674368080000002,
+              "log_prefix": "logs/incremental-0-candidate-2",
+              "max_compiler_rss_kib": 353336,
+              "noop_seconds": 0.11057098899999999,
+              "original_source_count": 1,
+              "original_source_files": [
+                "<SOURCE>/src/user/user_model.cc"
+              ],
+              "pch_creations": 0,
+              "settling_builds": 0,
+              "tests_passed": 3519,
+              "wall_seconds": 228.05089720199999
+            }
+          ]
+        },
+        "candidate_samples": [
+          {
+            "compiled_sources": [
+              "<SOURCE>/src/user/user_model.cc"
+            ],
+            "compiler_cpu_seconds": 5.2940630000000004,
+            "compiler_invocations": 1,
+            "compiler_wall_sum_seconds": 5.2949741450000003,
+            "log_prefix": "logs/incremental-0-candidate-0",
+            "max_compiler_rss_kib": 353320,
+            "noop_seconds": 0.110361814,
+            "original_source_count": 1,
+            "original_source_files": [
+              "<SOURCE>/src/user/user_model.cc"
+            ],
+            "pch_creations": 0,
+            "settling_builds": 0,
+            "tests_passed": 3519,
+            "wall_seconds": 227.54745191399999
+          },
+          {
+            "compiled_sources": [
+              "<SOURCE>/src/user/user_model.cc"
+            ],
+            "compiler_cpu_seconds": 5.342492,
+            "compiler_invocations": 1,
+            "compiler_wall_sum_seconds": 5.3435085290000002,
+            "log_prefix": "logs/incremental-0-candidate-1",
+            "max_compiler_rss_kib": 353360,
+            "noop_seconds": 0.118231563,
+            "original_source_count": 1,
+            "original_source_files": [
+              "<SOURCE>/src/user/user_model.cc"
+            ],
+            "pch_creations": 0,
+            "settling_builds": 0,
+            "tests_passed": 3519,
+            "wall_seconds": 227.372223077
+          },
+          {
+            "compiled_sources": [
+              "<SOURCE>/src/user/user_model.cc"
+            ],
+            "compiler_cpu_seconds": 5.2665630000000005,
+            "compiler_invocations": 1,
+            "compiler_wall_sum_seconds": 5.2674368080000002,
+            "log_prefix": "logs/incremental-0-candidate-2",
+            "max_compiler_rss_kib": 353336,
+            "noop_seconds": 0.11057098899999999,
+            "original_source_count": 1,
+            "original_source_files": [
+              "<SOURCE>/src/user/user_model.cc"
+            ],
+            "pch_creations": 0,
+            "settling_builds": 0,
+            "tests_passed": 3519,
+            "wall_seconds": 228.05089720199999
+          }
+        ],
+        "file": "src/user/user_model.cc",
+        "input_restored": true,
+        "noise_threshold_seconds": 4.5500388422400002,
+        "performance_result": "inconclusive",
+        "status": "passed",
+        "wall_change_percent": 0.020004137800983413
+      }
+    ],
+    "status": "passed",
+    "timed_scope": "default build including compilation and linking; editing, no-op checks, restoration and CTest excluded"
+  },
+  "jobs": 4,
+  "measurement": "incremental timings only; full baseline and candidate builds and tests validated outside timing",
+  "measurement_context": {
+    "architecture": "x86_64",
+    "buildray_version": "0.10.0",
+    "cache_flags": {
+      "CMAKE_BUILD_TYPE": "Release",
+      "CMAKE_CXX_FLAGS": "",
+      "CMAKE_CXX_FLAGS-ADVANCED": "1",
+      "CMAKE_CXX_FLAGS_DEBUG": "-g",
+      "CMAKE_CXX_FLAGS_DEBUG-ADVANCED": "1",
+      "CMAKE_CXX_FLAGS_MINSIZEREL": "-Os -DNDEBUG",
+      "CMAKE_CXX_FLAGS_MINSIZEREL-ADVANCED": "1",
+      "CMAKE_CXX_FLAGS_RELEASE": "-O3 -DNDEBUG",
+      "CMAKE_CXX_FLAGS_RELEASE-ADVANCED": "1",
+      "CMAKE_CXX_FLAGS_RELWITHDEBINFO": "-O2 -g -DNDEBUG",
+      "CMAKE_CXX_FLAGS_RELWITHDEBINFO-ADVANCED": "1",
+      "CMAKE_C_FLAGS": "",
+      "CMAKE_C_FLAGS-ADVANCED": "1",
+      "CMAKE_C_FLAGS_DEBUG": "-g",
+      "CMAKE_C_FLAGS_DEBUG-ADVANCED": "1",
+      "CMAKE_C_FLAGS_MINSIZEREL": "-Os -DNDEBUG",
+      "CMAKE_C_FLAGS_MINSIZEREL-ADVANCED": "1",
+      "CMAKE_C_FLAGS_RELEASE": "-O3 -DNDEBUG",
+      "CMAKE_C_FLAGS_RELEASE-ADVANCED": "1",
+      "CMAKE_C_FLAGS_RELWITHDEBINFO": "-O2 -g -DNDEBUG",
+      "CMAKE_C_FLAGS_RELWITHDEBINFO-ADVANCED": "1",
+      "CMAKE_EXE_LINKER_FLAGS": "",
+      "CMAKE_EXE_LINKER_FLAGS-ADVANCED": "1",
+      "CMAKE_EXE_LINKER_FLAGS_DEBUG": "",
+      "CMAKE_EXE_LINKER_FLAGS_DEBUG-ADVANCED": "1",
+      "CMAKE_EXE_LINKER_FLAGS_MINSIZEREL": "",
+      "CMAKE_EXE_LINKER_FLAGS_MINSIZEREL-ADVANCED": "1",
+      "CMAKE_EXE_LINKER_FLAGS_RELEASE": "",
+      "CMAKE_EXE_LINKER_FLAGS_RELEASE-ADVANCED": "1",
+      "CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO": "",
+      "CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO-ADVANCED": "1",
+      "CMAKE_PROJECT_NAME": "mujoco",
+      "CMAKE_SHARED_LINKER_FLAGS": "",
+      "CMAKE_SHARED_LINKER_FLAGS-ADVANCED": "1",
+      "CMAKE_SHARED_LINKER_FLAGS_DEBUG": "",
+      "CMAKE_SHARED_LINKER_FLAGS_DEBUG-ADVANCED": "1",
+      "CMAKE_SHARED_LINKER_FLAGS_MINSIZEREL": "",
+      "CMAKE_SHARED_LINKER_FLAGS_MINSIZEREL-ADVANCED": "1",
+      "CMAKE_SHARED_LINKER_FLAGS_RELEASE": "",
+      "CMAKE_SHARED_LINKER_FLAGS_RELEASE-ADVANCED": "1",
+      "CMAKE_SHARED_LINKER_FLAGS_RELWITHDEBINFO": "",
+      "CMAKE_SHARED_LINKER_FLAGS_RELWITHDEBINFO-ADVANCED": "1"
+    },
+    "cmake_args": [
+      "-DMUJOCO_BUILD_EXAMPLES=OFF",
+      "-DMUJOCO_BUILD_SIMULATE=OFF",
+      "-DMUJOCO_BUILD_TESTS=ON",
+      "-DMUJOCO_TEST_PYTHON_UTIL=OFF",
+      "-DCMAKE_LINK_DEPENDS_USE_LINKER=OFF"
+    ],
+    "cpu_affinity_count": 4,
+    "cpu_model": "AMD EPYC 9V45 96-Core Processor",
+    "cpu_quota": "unavailable",
+    "environment_flags": {
+      "CFLAGS": "",
+      "CXXFLAGS": "",
+      "LDFLAGS": ""
+    },
+    "jobs": 4,
+    "kernel": "6.17.0-1022-azure",
+    "method": "clean-build-warm-filesystem-v1",
+    "precompiled_headers": false,
+    "sampling": "paired_alternating",
+    "session": "c7de748e-109d-4c2e-a46a-73a5929326a7",
+    "tests_required": true,
+    "unity_build": false
+  },
+  "ninja_version": "1.13.0.git.kitware.jobserver-pipe-1\n",
+  "patch_recommended": false,
+  "patch_validated": true,
+  "pch_headers": [
+    "include/mujoco/mujoco.h"
+  ],
+  "pch_target": "mujoco",
+  "performance_result": "not_measured",
+  "phase": "complete",
+  "precompiled_headers": false,
+  "runs": 3,
+  "schema_version": 1,
+  "source": "/home/runner/work/buildray/buildray/fixtures/mujoco",
+  "status": "passed",
+  "test_inventory_identity": {
+    "baseline_opaque_values": 153,
+    "candidate_opaque_values": 153,
+    "policy": "CTest names with multiplicity; GTest opaque-byte values use stable filters"
+  },
+  "tests_required": true,
+  "unity_build": false,
+  "validation": "build_and_tests_passed",
+  "validation_scope": "one configured CMake build; private C++ PCH on one target",
+  "work_dir": "/home/runner/work/_temp/buildray-action-lvdhtz9r/run"
+}
