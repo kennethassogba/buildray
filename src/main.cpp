@@ -45,6 +45,7 @@ Options:
   --target NAME         PCH/unity target, or optional prune-links target restriction
   --batch-size N        unity: maximum sources per batch, 2..32 (default: 4)
   --unity-exclude PATH  unity: keep source files under this relative path separate; repeatable
+  --unity-retries N     unity: retry failed compiler groups with their sources separate, 0..8 (default: 0)
   --dependency NAME     prune-links: restrict selection to this direct dependency
   --header HEADER       PCH header: <system> or source-root-relative path; repeatable
   --auto                pch: profile, select one project header/target, validate and measure
@@ -91,7 +92,8 @@ aliases, nested classes, inline/anonymous namespaces and attributed records are 
 Outputs: headers.patch and header-cleanup.json. Original headers stay unchanged.
 unity tests an opt-in CMake unity build on one target, with PCH disabled.
 It verifies original C/C++ source/target coverage, builds, tests and measures the
-complete default build. Name collisions and runtime failures reject the patch.
+complete default build. --unity-retries can isolate failed compiler groups before
+validation. Link, runtime and coverage failures always reject the patch.
 Outputs: unity.patch and unity.json. Enable an applied patch with -DBUILDRAY_UNITY=ON.
 
 Exit codes: 0 completed, 1 pipeline/validation failure, 2 invalid arguments,
@@ -175,7 +177,7 @@ buildray::Options parse(const std::vector<std::string>& args) {
             arg != "--clang-tidy" && arg != "--runs" && arg != "--jobs" &&
             arg != "--baseline-source" && arg != "--max-regression-percent" && arg != "--session" &&
             arg != "--target" && arg != "--header" && arg != "--c-compiler" && arg != "--exclude" && arg != "--dependency" &&
-            arg != "--header-path" && arg != "--max-header-edits" && arg != "--batch-size" && arg != "--unity-exclude")
+            arg != "--header-path" && arg != "--max-header-edits" && arg != "--batch-size" && arg != "--unity-exclude" && arg != "--unity-retries")
             throw std::runtime_error("Unknown option: " + arg);
         if (++i == args.size() || args[i].starts_with("--"))
             throw std::runtime_error("Missing value for " + arg);
@@ -183,7 +185,7 @@ buildray::Options parse(const std::vector<std::string>& args) {
         if (value.empty()) throw std::runtime_error("Empty value for " + arg);
         if (arg == "--max-header-edits" && options.command != "headers")
             throw std::runtime_error("--max-header-edits requires headers");
-        if ((arg == "--batch-size" || arg == "--unity-exclude") && options.command != "unity")
+        if ((arg == "--batch-size" || arg == "--unity-exclude" || arg == "--unity-retries") && options.command != "unity")
             throw std::runtime_error(arg + " requires unity");
         if (arg == "--source")
             options.source = value;
@@ -203,6 +205,8 @@ buildray::Options parse(const std::vector<std::string>& args) {
             options.jobs = number(value, 1024);
         else if (arg == "--max-header-edits")
             options.max_header_edits = number(value, 1000);
+        else if (arg == "--unity-retries")
+            options.unity_retries = value == "0" ? 0 : number(value, 8);
         else if (arg == "--batch-size") {
             options.batch_size = number(value, 32);
             if (options.batch_size < 2) throw std::runtime_error("Unity batch size must be at least 2");

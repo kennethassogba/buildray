@@ -1002,6 +1002,9 @@ int pipeline(const Options& options, const fs::path& executable) {
             if (options.command == "unity") {
                 report["unity_target"] = options.target;
                 report["unity_batch_size"] = options.batch_size;
+                report["unity_retries"] = options.unity_retries;
+                report["unity_attempts"] = json::Array{};
+                report["unity_auto_exclusions"] = json::Array{};
                 json::Array unity_exclusions;
                 for (const auto& file : options.unity_exclusions) unity_exclusions.push_back(file.generic_string());
                 report["unity_exclusions"] = std::move(unity_exclusions);
@@ -1051,9 +1054,61 @@ int pipeline(const Options& options, const fs::path& executable) {
             write_json(work / "report.json", json::Object(report));
             report["phase"] = "candidate_validation";
             std::cout << "Validating candidate with a clean build and tests...\n" << std::flush;
-            clean(candidate, logs / "candidate-validation-clean.log");
-            clear_records(candidate.records);
-            build(options, candidate, logs / "candidate-validation-build.log");
+            auto unity_options = options;
+            for (unsigned attempt = 0;; ++attempt) {
+                const auto label = attempt == 0 ? std::string("candidate-validation") :
+                                   "candidate-retry-" + std::to_string(attempt);
+                clean(candidate, logs / (label + "-clean.log"));
+                clear_records(candidate.records);
+                try {
+                    build(options, candidate, logs / (label + "-build.log"));
+                    if (options.command == "unity")
+                        report.getArray("unity_attempts")->push_back(json::Object{
+                            {"attempt", attempt}, {"build_passed", true},
+                            {"build_log", "logs/" + label + "-build.log"}});
+                    break;
+                } catch (const std::exception&) {
+                    if (options.command != "unity" || interrupted()) throw;
+                    auto attempt_report = json::Object{
+                        {"attempt", attempt}, {"build_passed", false},
+                        {"build_log", "logs/" + label + "-build.log"}};
+                    const auto records = compiler_records(candidate.records);
+                    write_json(work / ("unity-attempt-" + std::to_string(attempt) + "-records.json"),
+                               json::Array(records));
+                    report.getArray("unity_attempts")->push_back(std::move(attempt_report));
+                    write_json(work / "report.json", json::Object(report));
+                    if (attempt >= options.unity_retries) throw;
+                    const auto current_plan = verify_unity_plan(baseline.source, baseline.build,
+                        candidate.source, candidate.build, options);
+                    write_json(work / ("unity-attempt-" + std::to_string(attempt) + "-plan.json"),
+                               json::Object(current_plan));
+                    const auto isolated = failed_unity_sources(records, current_plan,
+                                                               candidate.source, candidate.build);
+                    auto* history = report.getArray("unity_auto_exclusions");
+                    for (const auto& file : isolated) {
+                        if (std::ranges::find(unity_options.unity_exclusions, file) !=
+                            unity_options.unity_exclusions.end())
+                            throw std::runtime_error("Unity exclusion did not isolate a failed source");
+                        unity_options.unity_exclusions.push_back(file);
+                        history->push_back(file.generic_string());
+                    }
+                    const auto path = candidate.source / "CMakeLists.txt";
+                    write_file(path, read_file(baseline.source / "CMakeLists.txt") +
+                                     unity_cmake(unity_options, candidate.source));
+                    const auto diff = run({"diff", "-u", "--label", "a/CMakeLists.txt", "--label",
+                        "b/CMakeLists.txt", (baseline.source / "CMakeLists.txt").string(), path.string()},
+                        work, work / "unity.patch");
+                    if (diff.code != 1) throw std::runtime_error("Cannot generate isolated unity patch");
+                    std::cout << "Unity retry " << attempt + 1 << ": keeping " << isolated.size()
+                              << " failed-group sources separate...\n" << std::flush;
+                    write_json(work / "report.json", json::Object(report));
+                    configure(options, candidate, executable, logs / ("candidate-retry-" +
+                              std::to_string(attempt + 1) + "-configure.log"));
+                    if (json::Value(measurement_context(options, candidate.build)) !=
+                        *report.get("measurement_context"))
+                        throw std::runtime_error("Unity retry changed measurement context or CMake flags");
+                }
+            }
             verify_coverage(candidate);
             if (options.command == "unity") {
                 auto plan = verify_unity_plan(baseline.source, baseline.build, candidate.source,

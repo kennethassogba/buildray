@@ -112,6 +112,39 @@ int third() { return 0; }
     (lib / "second.cpp").write_text("namespace { int duplicate = 1; }\n" + saved_second)
     _, failed = invoke("collision", expected=1)
     assert "Build failed" in failed["error"] and not failed["patch_validated"]
+    auto_work, fixed = invoke("automatic-collision", "--batch-size", 2, "--unity-retries", 1)
+    assert fixed["patch_validated"] and not fixed["patch_recommended"]
+    assert fixed["unity_auto_exclusions"] == ["lib/main file.cpp", "lib/second.cpp"]
+    assert [a["build_passed"] for a in fixed["unity_attempts"]] == [False, True]
+    assert (auto_work / "unity-attempt-0-plan.json").is_file()
+    records = json.loads((auto_work / "unity-attempt-0-records.json").read_text())
+    assert any(r["exit_code"] == 1 for r in records)
+    # The final independently usable patch includes every learned exclusion.
+    learned_patch = auto_work / "unity.patch"
+    run("git", "apply", learned_patch, cwd=source)
+    applied = root / "applied-isolation"
+    run("cmake", "-S", source, "-B", applied, "-G", "Ninja",
+        f"-DCMAKE_CXX_COMPILER={compiler}", "-DBUILDRAY_UNITY=ON")
+    run("cmake", "--build", applied, "--parallel", 2)
+    run("ctest", "--test-dir", applied, "--output-on-failure")
+    run("git", "apply", "--reverse", learned_patch, cwd=source)
+    # Two independent failing batches require two retries; a hard budget must stop.
+    saved_cmake_collision = cmake.read_text()
+    cmake.write_text(saved_cmake_collision.replace("second.cpp third.cpp", "second.cpp fourth.cpp fifth.cpp third.cpp"))
+    (lib / "fourth.cpp").write_text("namespace { int another_duplicate = 0; }\n")
+    (lib / "fifth.cpp").write_text("namespace { int another_duplicate = 1; }\n")
+    _, exhausted = invoke("budget-exhausted", "--batch-size", 2, "--unity-retries", 1, "--jobs", 1, expected=1)
+    assert len(exhausted["unity_attempts"]) == 2 and not exhausted["patch_validated"]
+    assert not exhausted["patch_recommended"]
+    _, recovered = invoke("two-retries", "--batch-size", 2, "--unity-retries", 2, "--jobs", 1)
+    assert recovered["patch_validated"] and len(recovered["unity_attempts"]) == 3
+    assert len(recovered["unity_auto_exclusions"]) == 4
+    cmake.write_text(saved_cmake_collision)
+    (lib / "fourth.cpp").unlink()
+    (lib / "fifth.cpp").unlink()
+    _, ineffective = invoke("nothing-left-to-combine", "--unity-exclude", "lib/c",
+                            "--unity-retries", 1, expected=1)
+    assert "did not combine" in ineffective["error"] and not ineffective["patch_validated"]
     _, fixed = invoke("excluded-collision", "--unity-exclude", "lib/main file.cpp")
     assert fixed["patch_validated"]
     main.write_text(saved_main)
@@ -123,8 +156,19 @@ return 0;
 #endif
 }
 ''')
-    _, failed = invoke("runtime", expected=1)
+    _, failed = invoke("runtime", "--unity-retries", 2, expected=1)
     assert "ctest exited" in failed["error"] and not failed["patch_validated"]
+    assert not failed["unity_auto_exclusions"] and len(failed["unity_attempts"]) == 1
+    (lib / "second.cpp").write_text('''#if __INCLUDE_LEVEL__ > 0
+extern int missing_symbol();
+int second() { return missing_symbol(); }
+#else
+int second() { return 0; }
+#endif
+''')
+    _, failed = invoke("link-failure", "--unity-retries", 2, expected=1)
+    assert "No failed unity compiler group" in failed["error"] and not failed["patch_validated"]
+    assert not failed["unity_auto_exclusions"] and len(failed["unity_attempts"]) == 1
     (lib / "second.cpp").write_text(saved_second)
 
     # Removing a source only in the candidate must fail even if it still links.
@@ -153,16 +197,30 @@ endif()
         assert message in failed["error"], failed
     top.write_text(saved_top)
     cmake.write_text(saved_cmake)
+    cmake.write_text(saved_cmake + '''if(BUILDRAY_UNITY)
+set_source_files_properties(third.cpp PROPERTIES COMPILE_DEFINITIONS MUST_STAY_SEPARATE=0)
+endif()
+''')
+    third = lib / "third.cpp"
+    saved_third = third.read_text()
+    third.write_text(saved_third.replace("#ifndef MUST_STAY_SEPARATE", "#if !MUST_STAY_SEPARATE"))
+    _, failed = invoke("standalone-failure", "--unity-retries", 2, expected=1)
+    assert "failed standalone" in failed["error"] and not failed["patch_validated"]
+    assert not failed["unity_auto_exclusions"] and len(failed["unity_attempts"]) == 1
+    third.write_text(saved_third)
+    cmake.write_text(saved_cmake)
     _, scanned = invoke("scanned-modules", "--unity-exclude", "lib/c/a.c", "--unity-exclude", "lib/c/b.c",
                         "--", "-DCMAKE_CXX_STANDARD=26", "-DCMAKE_CXX_SCAN_FOR_MODULES=ON", expected=1)
     assert "did not combine" in scanned["error"], scanned
     assert digest(source) == original
 
     for extra in [("--batch-size", "0"), ("--batch-size", "1"), ("--batch-size", "33"),
-                  ("--unity-exclude", "../escape.cpp")]:
+                  ("--unity-exclude", "../escape.cpp"), ("--unity-retries", "9"),
+                  ("--unity-retries", "-1")]:
         run(binary, "unity", "--target", "sample", *extra, expected=2)
     run(binary, "unity", expected=2)
     run(binary, "measure", "--batch-size", 4, expected=2)
+    run(binary, "measure", "--unity-retries", 0, expected=2)
     run(binary, "unity", "--source", source, "--target", "bad;target", expected=1)
     run(binary, "unity", "--source", source, "--target", "sample", "--", "-DBUILDRAY_UNITY=ON", expected=1)
 

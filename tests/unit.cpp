@@ -64,6 +64,30 @@ int main() {
         require(median({8, 1, 3, 4}) == 3.5, "even median");
         require(mad({1, 2, 3}) == 1, "MAD");
         rejects([] { median({}); }, "empty median must fail");
+        const auto unity_source = temporary / "source";
+        const auto unity_build = temporary / "build";
+        write_file(unity_source / "a.cpp", "int a();\n");
+        write_file(unity_source / "b.cpp", "int b();\n");
+        const auto group_file = unity_build / "CMakeFiles/sample.dir/Unity/unity_0_cxx.cxx";
+        const json::Object unity_plan{{"groups", json::Array{json::Object{
+            {"file", "<BUILD>/CMakeFiles/sample.dir/Unity/unity_0_cxx.cxx"},
+            {"sources", json::Array{"<SOURCE>/a.cpp", "<SOURCE>/b.cpp"}}}}}};
+        auto failed_record = json::Object{{"source", group_file.string()},
+            {"directory", unity_build.string()}, {"exit_code", 1}};
+        require(failed_unity_sources(json::Array{json::Object(failed_record)}, unity_plan,
+                    unity_source, unity_build).size() == 2, "isolate original failed group sources");
+        for (const auto code : {2, 9, 137, 139}) {
+            failed_record["exit_code"] = code;
+            rejects([&] { failed_unity_sources(json::Array{json::Object(failed_record)}, unity_plan,
+                            unity_source, unity_build); }, "compiler crash cannot trigger exclusions");
+        }
+        failed_record["exit_code"] = 0;
+        rejects([&] { failed_unity_sources(json::Array{json::Object(failed_record)}, unity_plan,
+                        unity_source, unity_build); }, "no compiler failures cannot trigger exclusions");
+        failed_record["exit_code"] = 1;
+        failed_record["source"] = (unity_source / "a.cpp").string();
+        rejects([&] { failed_unity_sources(json::Array{json::Object(failed_record)}, unity_plan,
+                        unity_source, unity_build); }, "standalone failure cannot trigger exclusions");
         const auto before = measurement({10, 10.01, 9.99});
         const auto slow = measurement({12, 12.01, 11.99});
         const auto regression = compare_reports(before, slow, 5);

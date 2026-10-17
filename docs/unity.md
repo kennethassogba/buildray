@@ -45,9 +45,24 @@ target's directory when setting the source property, including targets declared
 in subdirectories.
 
 The candidate must pass a clean build, link, CTest execution and inventory
-comparison. A compile-time collision or runtime failure rejects it; the patch and
-failure logs remain available for review. No source renaming or collision repair
-is attempted. Testing cannot prove that merging translation units preserves all
+comparison. By default a compilation failure rejects it. With `--unity-retries 4`,
+Buildray can exclude all original sources in failed compiler groups and try again.
+The budget is 0–8 retries and defaults to zero. Each retry regenerates the patch,
+reconfigures, checks flags, and starts another clean build. Only failed compiler
+records for multi-source unity groups on the selected target can trigger this.
+Standalone failures, missing records, compiler crashes, generated build-tree
+inputs, coverage changes, link failures and test failures remain blocking.
+It stops if no useful grouping remains. Sources are never renamed or rewritten.
+This coarse isolation can exclude more files than necessary; it does not identify
+the smallest conflicting pair or diagnose every compiler error.
+
+`report.json` records every attempt, its build log, and `unity_auto_exclusions`.
+Failed attempt plans and compiler records are retained as `unity-attempt-N-*.json`;
+the final `unity.patch` contains both manual and learned exclusions. The Action
+also retains these JSON files and the last 64 KiB of each attempt's build log.
+Retries and discovery happen before timing; only the final fixed layout is timed.
+
+Testing cannot prove that merging translation units preserves all
 behavior: macros, lookup and initialization can change. Other feature flags,
 platforms, downstream users and incremental builds require separate validation.
 
@@ -78,6 +93,7 @@ disabled and the candidate enabled consistently.
     unity-target: my_library
     unity-batch-size: '4'
     unity-exclude: '["src/special.cpp"]'
+    unity-retries: '4'
     runs: '3'
     jobs: '2'
 ```

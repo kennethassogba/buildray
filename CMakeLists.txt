@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.30)
-project(buildray VERSION 0.8.0 LANGUAGES CXX)
+project(buildray VERSION 0.9.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 26)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

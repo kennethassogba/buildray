@@ -59,6 +59,9 @@ inputs:
   unity-exclude:
     description: JSON array of source-root-relative files/directories to keep outside unity batches.
     default: '[]'
+  unity-retries:
+    description: Retry failed unity compiler groups with their original sources separate (0-8). Tests and link failures remain blocking.
+    default: '0'
   link-target:
     description: Optional CMake target restriction for command prune-links.
     default: ''
@@ -161,6 +164,7 @@ runs:
         BUILDRAY_UNITY_TARGET: ${{ inputs.unity-target }}
         BUILDRAY_UNITY_BATCH_SIZE: ${{ inputs.unity-batch-size }}
         BUILDRAY_UNITY_EXCLUDE: ${{ inputs.unity-exclude }}
+        BUILDRAY_UNITY_RETRIES: ${{ inputs.unity-retries }}
         BUILDRAY_LINK_TARGET: ${{ inputs.link-target }}
         BUILDRAY_LINK_DEPENDENCY: ${{ inputs.link-dependency }}
         BUILDRAY_FORWARD_DECLARATIONS: ${{ inputs.forward-declarations }}

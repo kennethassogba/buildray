@@ -105,10 +105,52 @@ Plan plan(const fs::path& source, const fs::path& build, const Options& options,
 }
 }  // namespace
 
+std::vector<fs::path> failed_unity_sources(const json::Array& records,
+    const json::Object& unity_plan, const fs::path& source, const fs::path& build) {
+    const auto* groups = unity_plan.getArray("groups");
+    if (!groups) throw std::runtime_error("Missing unity groups for isolation");
+    std::set<fs::path> excluded;
+    for (const auto& value : records) {
+        const auto* record = value.getAsObject();
+        if (!record || !record->getInteger("exit_code"))
+            throw std::runtime_error("Invalid compiler record during unity isolation");
+        if (record->getInteger("exit_code") == 0) continue;
+        if (record->getInteger("exit_code") != 1 || !record->getString("source") ||
+            !record->getString("directory"))
+            throw std::runtime_error("Unity isolation refuses compiler crashes or incomplete records");
+        const auto file = absolute_path(fs::path(record->getString("directory")->str()) /
+                                        record->getString("source")->str());
+        const auto key = source_key(file, source, build);
+        const json::Array* originals = nullptr;
+        for (const auto& group : *groups) {
+            const auto* item = group.getAsObject();
+            if (item && item->getString("file") == key) originals = item->getArray("sources");
+        }
+        if (!originals || originals->size() < 2)
+            throw std::runtime_error("Unity isolation refuses failed standalone compilations");
+        for (const auto& original : *originals) {
+            const auto path = original.getAsString();
+            if (!path || !path->starts_with("<SOURCE>/"))
+                throw std::runtime_error("Unity isolation requires original source-tree files");
+            const fs::path relative = path->drop_front(9).str();
+            if (!safe(relative.generic_string(), true) || relative.is_absolute() ||
+                !within(absolute_path(source / relative), source) ||
+                !fs::is_regular_file(source / relative))
+                throw std::runtime_error("Unsupported source path during unity isolation");
+            excluded.insert(relative);
+        }
+    }
+    if (excluded.empty())
+        throw std::runtime_error("No failed unity compiler group to isolate; link and other build failures cannot be retried");
+    return {excluded.begin(), excluded.end()};
+}
+
 std::string unity_cmake(const Options& options, const fs::path& source) {
     if (!safe(options.target)) throw std::runtime_error("Unsupported unity target name");
     if (options.batch_size < 2 || options.batch_size > 32)
         throw std::runtime_error("Unity batch size must be between 2 and 32");
+    if (options.unity_retries > 8)
+        throw std::runtime_error("Unity retries must be between 0 and 8");
     std::string exclusions;
     std::set<fs::path> unique;
     std::set<fs::path> files;

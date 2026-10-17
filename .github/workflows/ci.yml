@@ -320,48 +320,58 @@ jobs:
       matrix:
         include:
           - name: sentencepiece
+            project: sentencepiece
             repository: google/sentencepiece
             revision: e0cce7d37b065b5140349dbe12c6bcf6192fdd78
             target: sentencepiece-static
             exclusions: '["third_party", "src/builtin_pb"]'
             cmake_args: '["-DSPM_BUILD_TEST=ON", "-DSPM_ENABLE_SHARED=OFF", "-DSPM_ENABLE_TCMALLOC=OFF"]'
           - name: xgrammar
+            project: xgrammar
             repository: mlc-ai/xgrammar
             revision: 7e269d56c74c89de52bc8c31e42191155416371f
             target: xgrammar
             exclusions: '[]'
             cmake_args: '[]'
           - name: mujoco
+            project: mujoco
             repository: google-deepmind/mujoco
-            revision: f640345f72b773e7ec52cd9426a57335cf9c6c28
+            revision: 651bae11c3c38efe483f033b4b7e869e7ce3f4ec
             target: mujoco
-            exclusions: '["src/user/user_flexcomp.cc"]'
+            exclusions: '[]'
             cmake_args: '["-DMUJOCO_BUILD_EXAMPLES=OFF", "-DMUJOCO_BUILD_SIMULATE=OFF", "-DMUJOCO_BUILD_TESTS=ON", "-DMUJOCO_TEST_PYTHON_UTIL=OFF"]'
+          - name: mujoco-single
+            project: mujoco
+            repository: google-deepmind/mujoco
+            revision: 651bae11c3c38efe483f033b4b7e869e7ce3f4ec
+            target: mujoco
+            exclusions: '[]'
+            cmake_args: '["-DMUJOCO_BUILD_EXAMPLES=OFF", "-DMUJOCO_BUILD_SIMULATE=OFF", "-DMUJOCO_BUILD_TESTS=ON", "-DMUJOCO_TEST_PYTHON_UTIL=OFF", "-DCMAKE_C_FLAGS=-DmjUSESINGLE", "-DCMAKE_CXX_FLAGS=-DmjUSESINGLE"]'
     steps:
       - uses: actions/checkout@v6
-        if: inputs.unity_project == 'all' || inputs.unity_project == matrix.name
+        if: inputs.unity_project == 'all' || inputs.unity_project == matrix.project
       - uses: actions/setup-python@v7
-        if: inputs.unity_project == 'all' || inputs.unity_project == matrix.name
+        if: inputs.unity_project == 'all' || inputs.unity_project == matrix.project
         with:
           python-version: '3.12'
       - uses: actions/checkout@v6
-        if: inputs.unity_project == 'all' || inputs.unity_project == matrix.name
+        if: inputs.unity_project == 'all' || inputs.unity_project == matrix.project
         with:
           repository: ${{ matrix.repository }}
           ref: ${{ matrix.revision }}
           path: fixtures/${{ matrix.name }}
           persist-credentials: false
       - name: Prepare XGrammar C++ configuration
-        if: matrix.name == 'xgrammar' && (inputs.unity_project == 'all' || inputs.unity_project == matrix.name)
+        if: matrix.name == 'xgrammar' && (inputs.unity_project == 'all' || inputs.unity_project == matrix.project)
         working-directory: fixtures/xgrammar
         run: |
           git submodule update --init --depth 1 3rdparty/dlpack 3rdparty/googletest
           printf '%s\n' 'set(XGRAMMAR_BUILD_PYTHON_BINDINGS OFF)' 'set(XGRAMMAR_BUILD_CXX_TESTS ON)' > config.cmake
       - name: Prepare MuJoCo test locale
-        if: matrix.name == 'mujoco' && (inputs.unity_project == 'all' || inputs.unity_project == matrix.name)
+        if: matrix.project == 'mujoco' && (inputs.unity_project == 'all' || inputs.unity_project == matrix.project)
         run: sudo locale-gen de_DE.UTF-8
       - name: Validate and measure a unity build
-        if: inputs.unity_project == 'all' || inputs.unity_project == matrix.name
+        if: inputs.unity_project == 'all' || inputs.unity_project == matrix.project
         uses: ./
         with:
           command: unity
@@ -369,6 +379,7 @@ jobs:
           unity-target: ${{ matrix.target }}
           unity-batch-size: '4'
           unity-exclude: ${{ matrix.exclusions }}
+          unity-retries: '4'
           cmake-args: ${{ matrix.cmake_args }}
           runs: ${{ inputs.unity_runs }}
           jobs: '2'

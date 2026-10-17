@@ -73,6 +73,8 @@ add_test(NAME works COMMAND sample)
         {"BUILDRAY_UNITY_TARGET": "sample"},
         {"BUILDRAY_COMMAND": "unity", "BUILDRAY_UNITY_TARGET": "sample", "BUILDRAY_UNITY_BATCH_SIZE": "1"},
         {"BUILDRAY_COMMAND": "unity", "BUILDRAY_UNITY_TARGET": "sample", "BUILDRAY_UNITY_EXCLUDE": '"main.cpp"'},
+        {"BUILDRAY_UNITY_RETRIES": "1"},
+        {"BUILDRAY_COMMAND": "unity", "BUILDRAY_UNITY_TARGET": "sample", "BUILDRAY_UNITY_RETRIES": "9"},
     ]:
         execute([sys.executable, script], env={**environment, **changes}, expected=1)
     assert not (source / "injected").exists()
@@ -107,20 +109,35 @@ add_test(NAME works COMMAND sample)
     assert auto_report["automatic_selection"]["header"] == "common.hpp"
     assert all(Path(automatic[key]).is_file() for key in ["headers", "selection", "patch"])
     assert "Automatic candidate:" in summary.read_text()
+    for name in ["main.cpp", "helper.cpp"]:
+        file = source / name
+        file.write_text("namespace { int duplicate = 0; }\n" + file.read_text())
+    (source / "extra1.cpp").write_text("int extra1() { return 0; }\n")
+    (source / "extra2.cpp").write_text("int extra2() { return 0; }\n")
+    cmake.write_text(cmake.read_text() + "target_sources(sample PRIVATE extra1.cpp extra2.cpp)\n")
     unity_outputs = root / "unity-outputs"
     execute([sys.executable, script], env={**environment, "BUILDRAY_COMMAND": "unity",
             "BUILDRAY_UNITY_TARGET": "sample", "BUILDRAY_UNITY_BATCH_SIZE": "2",
+            "BUILDRAY_UNITY_RETRIES": "1",
             "BUILDRAY_CMAKE_ARGS": '["-DCMAKE_CXX_SCAN_FOR_MODULES=OFF"]',
             "BUILDRAY_RUNS": "1", "GITHUB_OUTPUT": str(unity_outputs)})
     unity = dict(line.split("=", 1) for line in unity_outputs.read_text().splitlines())
     assert "baseline-sha" not in unity and all(Path(unity[key]).is_file() for key in ["unity", "patch", "report"])
     unity_report = json.loads(Path(unity["report"]).read_text())
     assert unity_report["patch_validated"] and unity_report["performance_result"] == "insufficient_samples"
+    assert unity_report["unity_retries"] == 1 and len(unity_report["unity_attempts"]) == 2
+    retained = Path(unity["report"]).parent
+    assert (retained / "unity-attempt-0-records.json").is_file()
+    assert (retained / "unity-attempt-0-plan.json").is_file()
+    assert (retained / "logs/candidate-validation-build.log").is_file()
+    assert (retained / "logs/candidate-retry-1-build.log").is_file()
     assert "Unity target:" in summary.read_text()
     cmake.write_text(original_cmake)
     (source / "main.cpp").write_text("int main() { return 0; }\n")
     (source / "common.hpp").unlink()
     (source / "helper.cpp").unlink()
+    (source / "extra1.cpp").unlink()
+    (source / "extra2.cpp").unlink()
     assert execute(["git", "status", "--porcelain"], cwd=source) == status
 
     # CMake experiments retain the plan, graphs and patch without using the PR baseline.

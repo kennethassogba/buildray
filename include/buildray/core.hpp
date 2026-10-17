@@ -75,6 +75,7 @@ struct Options {
     std::vector<fs::path> header_paths;
     unsigned batch_size = 4;
     std::vector<fs::path> unity_exclusions;
+    unsigned unity_retries = 0;
 };
 
 struct CheckOptions {
@@ -113,6 +114,8 @@ json::Object select_pch(const json::Object& profile, const fs::path& source,
                         const std::string& target = "");
 std::string pch_cmake(const Options& options, const fs::path& source);
 std::string unity_cmake(const Options& options, const fs::path& source);
+std::vector<fs::path> failed_unity_sources(const json::Array& records,
+    const json::Object& plan, const fs::path& source, const fs::path& build);
 json::Object verify_unity_plan(const fs::path& baseline_source, const fs::path& baseline_build,
                               const fs::path& candidate_source, const fs::path& candidate_build,
                               const Options& options);
