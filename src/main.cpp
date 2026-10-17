@@ -20,6 +20,8 @@ Usage:
   buildray pch --source DIR --target NAME --header HEADER [--header HEADER ...]
                [options] [-- -DNAME=VALUE ...]
   buildray pch --auto --source DIR [--target NAME] [options] [-- -DNAME=VALUE ...]
+  buildray prune-links --source DIR [--target NAME] [--dependency NAME] [options]
+                       [-- -DNAME=VALUE ...]
   buildray compare --baseline-source DIR --source DIR [options] [-- -DNAME=VALUE ...]
   buildray check --baseline REPORT --current REPORT [--output FILE]
                  [--max-regression-percent N]
@@ -37,10 +39,11 @@ Options:
   --baseline-source DIR  Base revision source for paired comparison
   --max-regression-percent N  Regression budget (default: 5)
   --session ID          Optional label shared by comparable measurements
-  --target NAME         CMake target for a PCH experiment
+  --target NAME         PCH target, or optional prune-links target restriction
+  --dependency NAME     prune-links: restrict selection to this direct dependency
   --header HEADER       PCH header: <system> or source-root-relative path; repeatable
   --auto                pch: profile, select one project header/target, validate and measure
-  --exclude PATH        optimize: skip edits to a source-root-relative file/directory; repeatable
+  --exclude PATH        optimize/prune-links: skip edits to a relative file/directory; repeatable
   --help                Show this help
   --version             Print version
 
@@ -66,6 +69,12 @@ deps captures C/C++ include edges (including guarded/skipped includes), reports
 cycles, header fan-out, and CMake target relationships. Requires CMake 4.2+ and
 Ninja 1.13+. Outputs: dependencies.json, dependencies.md, dependencies.dot.
 Cycles are structural findings; guarded includes and static link cycles can be valid.
+prune-links selects one literal CMake link with an alternate transitive path for
+both link and compilation usage requirements. It preserves exported reachability,
+reconfigures, checks graph changes, builds and tests, then measures three or more
+clean-build pairs. Outputs: cmake.patch, links.json, before/after CMake graphs.
+No eligible candidate completes without a patch or benchmark. This is configured
+graph redundancy, not proof that a library's symbols are unused.
 
 Exit codes: 0 completed, 1 pipeline/validation failure, 2 invalid arguments,
 3 regression over budget and noise, 4 incomparable reports, 5 cycles, 130 interrupted.
@@ -118,7 +127,7 @@ buildray::Options parse(const std::vector<std::string>& args) {
     options.command = args.front();
     if (options.command != "optimize" && options.command != "measure" &&
         options.command != "compare" && options.command != "profile" && options.command != "pch" &&
-        options.command != "deps")
+        options.command != "deps" && options.command != "prune-links")
         throw std::runtime_error("Unknown command: " + options.command);
     for (std::size_t i = 1; i < args.size(); ++i) {
         const auto& arg = args[i];
@@ -142,7 +151,7 @@ buildray::Options parse(const std::vector<std::string>& args) {
         if (arg != "--source" && arg != "--work-dir" && arg != "--compiler" &&
             arg != "--clang-tidy" && arg != "--runs" && arg != "--jobs" &&
             arg != "--baseline-source" && arg != "--max-regression-percent" && arg != "--session" &&
-            arg != "--target" && arg != "--header" && arg != "--c-compiler" && arg != "--exclude")
+            arg != "--target" && arg != "--header" && arg != "--c-compiler" && arg != "--exclude" && arg != "--dependency")
             throw std::runtime_error("Unknown option: " + arg);
         if (++i == args.size() || args[i].starts_with("--"))
             throw std::runtime_error("Missing value for " + arg);
@@ -168,6 +177,8 @@ buildray::Options parse(const std::vector<std::string>& args) {
             options.session = value;
         else if (arg == "--target")
             options.target = value;
+        else if (arg == "--dependency")
+            options.dependency = value;
         else if (arg == "--header")
             options.headers.push_back(value);
         else if (arg == "--exclude") {
@@ -188,12 +199,18 @@ buildray::Options parse(const std::vector<std::string>& args) {
         throw std::runtime_error("pch requires --target and at least one --header");
     if (options.auto_pch && (options.command != "pch" || !options.headers.empty() || options.runs < 3))
         throw std::runtime_error("--auto requires pch, at least three runs, and no --header; --target is optional");
-    if (options.command != "pch" && (!options.target.empty() || !options.headers.empty()))
-        throw std::runtime_error("--target and --header are supported only by pch");
+    if (options.command != "pch" && !options.headers.empty())
+        throw std::runtime_error("--header requires pch");
+    if (options.command != "pch" && options.command != "prune-links" && !options.target.empty())
+        throw std::runtime_error("--target requires pch or prune-links");
+    if (options.command != "prune-links" && !options.dependency.empty())
+        throw std::runtime_error("--dependency requires prune-links");
+    if (options.command == "prune-links" && options.runs < 3)
+        throw std::runtime_error("prune-links requires at least three runs");
     if (options.command != "deps" && (options.fail_on_cycles || options.c_compiler != "clang"))
         throw std::runtime_error("--c-compiler and --fail-on-cycles require deps");
-    if (options.command != "optimize" && !options.exclusions.empty())
-        throw std::runtime_error("--exclude requires optimize");
+    if (options.command != "optimize" && options.command != "prune-links" && !options.exclusions.empty())
+        throw std::runtime_error("--exclude requires optimize or prune-links");
     // Tools run from the snapshot; resolve explicit relative executable paths now.
     for (auto* tool : {&options.compiler, &options.c_compiler, &options.tidy}) {
         // The driver name is semantic: clang++ can be a symlink to clang.

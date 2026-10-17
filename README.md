@@ -120,6 +120,20 @@ Guarded include cycles and static-library link cycles can be valid. The graph
 helps choose changes to investigate; it does not remove dependencies or estimate
 a speedup. [Scope, CI usage and corpus reproduction](docs/dependencies.md).
 
+## Redundant CMake links
+
+```bash
+buildray prune-links --source /path/to/project --compiler clang++-21 \
+  --exclude 3rdparty --runs 3 --jobs 2
+```
+
+Buildray selects one literal link with an alternate path preserving link and
+compilation usage requirements, then reconfigures, checks the graph changes,
+builds, tests and measures both variants. `--target` and `--dependency` can restrict
+selection. It produces `cmake.patch` and `links.json`; no patch is applied to the
+original project. No eligible link completes without a patch or benchmark.
+[Selection rules, limits and Action usage](docs/cmake-links.md).
+
 ## What optimize does
 
 1. Copies the source tree into isolated baseline and candidate trees, excluding `.git`, `.cache`,
@@ -158,6 +172,9 @@ baseline-report.json           Base measurement for history (compare)
 current-report.json            Current measurement for history (compare)
 includes.patch                 Unified patch (optimize only)
 pch.patch                      CMake PCH patch (pch only)
+cmake.patch                    Redundant target-link patch (prune-links)
+links.json                     Eligible link candidates and selected experiment
+cmake-before.json, cmake-after.json Configured target graph evidence
 headers.json, headers.md        Inclusive header costs and target rankings (profile)
 selection.json                 Automatic PCH candidate and selection metrics (pch --auto)
 dependencies.json, .md, .dot    Include graph, cycles and CMake relationships (deps)
@@ -209,7 +226,7 @@ time. RSS is the maximum of individual compiler peaks, not aggregate build memor
   `-inl.h` or `.inl.h` are kept because they can supply template definitions.
 - Project CMake scripts and tests execute normally. Buildray uses no network
   service; project dependency downloads remain the project's responsibility.
-- Dependency graph rewrites, forward declarations,
+- Cycle-breaking rewrites, forward declarations,
   incremental builds and a tagged Marketplace release are later work. The
   composite Action can already be used by its commit SHA.
 

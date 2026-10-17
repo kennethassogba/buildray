@@ -27,6 +27,7 @@ struct Variant {
     std::string pch_target;
     std::vector<std::string> pch_headers;
     bool dependencies = false;
+    bool cmake_model = false;
 };
 
 void checked(const std::vector<std::string>& args, const fs::path& cwd, const fs::path& log) {
@@ -91,7 +92,7 @@ std::string launcher(const fs::path& executable, const fs::path& records, bool t
 void configure(const Options& options, const Variant& variant, const fs::path& executable,
                const fs::path& log) {
     fs::create_directories(variant.records);
-    if (variant.dependencies)
+    if (variant.dependencies || variant.cmake_model)
         write_file(variant.build / ".cmake/api/v1/query/codemodel-v2", "");
     std::vector<std::string> args{"cmake",
                                   "-S",
@@ -177,6 +178,21 @@ json::Array compiler_records(const fs::path& records) {
         if (entry.path().extension() == ".json") result.push_back(read_json(entry.path()));
     }
     return result;
+}
+
+std::set<std::string> test_names(const fs::path& inventory) {
+    const auto document = read_json(inventory);
+    const auto* object = document.getAsObject();
+    const auto* tests = object ? object->getArray("tests") : nullptr;
+    if (!tests) throw std::runtime_error("Invalid CTest inventory");
+    std::set<std::string> names;
+    for (const auto& entry : *tests) {
+        const auto* definition = entry.getAsObject();
+        const auto name = definition ? definition->getString("name") : std::nullopt;
+        if (!name) throw std::runtime_error("Missing CTest name");
+        names.insert(name->str());
+    }
+    return names;
 }
 
 bool cpp_source(const fs::path& file) {
@@ -510,13 +526,24 @@ Changes analyze(const Options& options, const Variant& variant, const fs::path& 
 }
 
 void patch(const Changes& changes, const Variant& baseline, const Variant& candidate,
-           const fs::path& work) {
+           const fs::path& work, const std::string& filename = "includes.patch") {
     std::string combined;
     for (const auto& [relative, replacements] : changes) {
         const auto original = read_file(candidate.source / relative);
         if (original != read_file(baseline.source / relative))
             throw std::runtime_error("Source changed during analysis: " + relative.string());
-        write_file(candidate.source / relative, apply_removals(original, replacements));
+        if (filename == "cmake.patch") {
+            if (replacements.size() != 1 || !replacements.front().text.empty())
+                throw std::runtime_error("Expected one CMake token deletion");
+            const auto& item = replacements.front();
+            if (item.offset > original.size() || item.length > original.size() - item.offset)
+                throw std::runtime_error("Invalid CMake token range");
+            auto edited = original;
+            edited.erase(item.offset, item.length);
+            write_file(candidate.source / relative, edited);
+        } else {
+            write_file(candidate.source / relative, apply_removals(original, replacements));
+        }
         const auto diff_file = work / "file.diff";
         const auto result =
             run({"diff", "-u", "--label", "a/" + relative.generic_string(), "--label",
@@ -528,7 +555,7 @@ void patch(const Changes& changes, const Variant& baseline, const Variant& candi
         combined += read_file(diff_file);
     }
     fs::remove(work / "file.diff");
-    write_file(work / "includes.patch", combined);
+    write_file(work / filename, combined);
 }
 
 void print_summary(const json::Object& report, const fs::path& work) {
@@ -552,6 +579,8 @@ void print_summary(const json::Object& report, const fs::path& work) {
         std::cout << "Patch: " << (work / "includes.patch") << '\n';
     if (fs::exists(work / "pch.patch"))
         std::cout << "Patch: " << (work / "pch.patch") << '\n';
+    if (fs::exists(work / "cmake.patch"))
+        std::cout << "Patch: " << (work / "cmake.patch") << '\n';
     if (fs::exists(work / "headers.json"))
         std::cout << "Header profile: " << (work / "headers.json") << '\n';
 }
@@ -729,13 +758,15 @@ int pipeline(const Options& options, const fs::path& executable) {
             report["c_compiler_version"] = read_file(logs / "c-compiler-version.log");
             if (report.getString("c_compiler_version")->find("clang") == llvm::StringRef::npos)
                 throw std::runtime_error("deps requires Clang for C as well as C++");
+        }
+        if (options.command == "deps" || options.command == "prune-links") {
             checked({"cmake", "-E", "capabilities"}, source, logs / "cmake-capabilities.json");
             const auto capabilities = read_json(logs / "cmake-capabilities.json");
             const auto* object = capabilities.getAsObject();
             const auto* version = object ? object->getObject("version") : nullptr;
             if (!version || version->getInteger("major").value_or(0) < 4 ||
                 (version->getInteger("major") == 4 && version->getInteger("minor").value_or(0) < 2))
-                throw std::runtime_error("deps requires CMake 4.2+ for direct target relationships");
+                throw std::runtime_error("Dependency analysis requires CMake 4.2+ for direct target relationships");
         }
         if (options.command == "optimize") {
             checked({options.tidy, "--version"}, source, logs / "tidy-version.log");
@@ -752,6 +783,7 @@ int pipeline(const Options& options, const fs::path& executable) {
         Variant candidate{work / "candidate-source", work / "candidate-build",
                           work / "candidate-records", false,
                           options.command == "pch" ? options.target : "", options.headers};
+        baseline.cmake_model = candidate.cmake_model = options.command == "prune-links";
         report["phase"] = "baseline_validation";
         std::cout << "Configuring baseline, warming build, running tests...\n" << std::flush;
         snapshot(base_source, baseline.source, work);
@@ -763,7 +795,7 @@ int pipeline(const Options& options, const fs::path& executable) {
         }
         // Configure scripts can write generated links or files into their source tree.
         // Prepare both inputs before either configure runs; optimize uses identical bytes.
-        if (options.command == "optimize" || options.command == "pch")
+        if (options.command == "optimize" || options.command == "pch" || options.command == "prune-links")
             snapshot(baseline.source, candidate.source, work);
         if (options.command == "compare") snapshot(source, candidate.source, work);
         SourceFiles originals;
@@ -878,6 +910,42 @@ int pipeline(const Options& options, const fs::path& executable) {
         } else {
             report["phase"] = "analysis";
             Changes changes;
+            json::Object cmake_before;
+            json::Object selected_link;
+            if (options.command == "prune-links") {
+                cmake_before = cmake_dependencies(baseline.source, baseline.build);
+                write_json(work / "cmake-before.json", json::Object(cmake_before));
+                auto plan = link_candidates(cmake_before, candidate.source, options);
+                auto& candidates = *plan.getArray("candidates");
+                report["eligible_links"] = static_cast<std::int64_t>(candidates.size());
+                report["removed_links"] = 0;
+                report["validation_scope"] = "one configured CMake build; one redundant literal target link; original snapshot files only";
+                if (candidates.empty()) {
+                    write_json(work / "links.json", std::move(plan));
+                    if (!options.dependency.empty())
+                        throw std::runtime_error("Requested dependency has no eligible redundant literal link");
+                    report["status"] = "passed";
+                    report["phase"] = "complete";
+                    report["performance_result"] = "no_changes";
+                    report["patch_recommended"] = false;
+                    report["validation"] = baseline_tests ? "build_and_tests_passed" : "build_only";
+                    report["measurement"] = "no eligible link; baseline validation only; no performance benchmark";
+                    write_json(work / "report.json", json::Object(report));
+                    std::cout << "No eligible redundant CMake link.\n";
+                    print_summary(report, work);
+                    return 0;
+                }
+                selected_link = json::Object(*candidates.front().getAsObject());
+                plan["selection"] = json::Object(selected_link);
+                report["selected_link"] = json::Object(selected_link);
+                const fs::path file = selected_link.getString("file")->str();
+                changes[file] = {{file.string(), static_cast<std::size_t>(*selected_link.getInteger("offset")),
+                                  static_cast<std::size_t>(*selected_link.getInteger("length")), ""}};
+                patch(changes, baseline, candidate, work, "cmake.patch");
+                write_json(work / "links.json", std::move(plan));
+                std::cout << "CMake candidate: remove " << selected_link.getString("target")->str()
+                          << " -> " << selected_link.getString("dependency")->str() << '\n' << std::flush;
+            }
             if (options.command == "pch") {
                 const auto path = candidate.source / "CMakeLists.txt";
                 if (read_file(path) != read_file(baseline.source / "CMakeLists.txt"))
@@ -895,12 +963,19 @@ int pipeline(const Options& options, const fs::path& executable) {
                 report["validation_scope"] = "one configured CMake build; private C++ PCH on one target";
             }
             configure(options, candidate, executable, logs / "candidate-configure.log");
-            if (options.command == "pch") {
+            if (options.command == "pch" || options.command == "prune-links") {
                 auto context = measurement_context(options, candidate.build);
                 if (json::Value(json::Object(context)) != *report.get("measurement_context"))
-                    throw std::runtime_error("PCH experiment changed measurement context or CMake flags");
-                context["precompiled_headers"] = true;
+                    throw std::runtime_error("Experiment changed measurement context or CMake flags");
+                context["precompiled_headers"] = options.command == "pch";
                 report["candidate_measurement_context"] = std::move(context);
+            }
+            if (options.command == "prune-links") {
+                auto after = cmake_dependencies(candidate.source, candidate.build);
+                write_json(work / "cmake-after.json", json::Object(after));
+                verify_link_removal(cmake_before, after, selected_link);
+                report["removed_links"] = 1;
+                report["cmake_graph_change_verified"] = true;
             }
             if (options.command == "optimize") {
                 // Generated headers must exist before clang-tidy parses sources.
@@ -920,7 +995,8 @@ int pipeline(const Options& options, const fs::path& executable) {
             verify_coverage(candidate);
             const auto candidate_tests = test(options, candidate, logs, "candidate");
             report["candidate_tests_passed"] = static_cast<std::int64_t>(candidate_tests);
-            if (baseline_tests != candidate_tests)
+            if (baseline_tests != candidate_tests ||
+                test_names(logs / "baseline-tests.json") != test_names(logs / "candidate-tests.json"))
                 throw std::runtime_error("CTest inventory changed");
             report["validation"] = baseline_tests ? "build_and_tests_passed" : "build_only";
             report["patch_validated"] = true;

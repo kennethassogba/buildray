@@ -105,7 +105,7 @@ json::Object cmake_graph(const fs::path& source, const fs::path& build) {
     const auto* model = model_doc.getAsObject();
     const auto* version = model ? model->getObject("version") : nullptr;
     if (!version || version->getInteger("major") != 2 || version->getInteger("minor").value_or(0) < 9)
-        throw std::runtime_error("deps requires CMake codemodel 2.9+ (CMake 4.2+)");
+        throw std::runtime_error("Dependency analysis requires CMake codemodel 2.9+ (CMake 4.2+)");
     const auto* configurations = model->getArray("configurations");
     if (!configurations || configurations->size() != 1)
         throw std::runtime_error("Expected one CMake configuration");
@@ -207,6 +207,10 @@ std::string quoted(const std::string& value) {
     return result + '"';
 }
 }  // namespace
+
+json::Object cmake_dependencies(const fs::path& source, const fs::path& build) {
+    return cmake_graph(source, build);
+}
 
 std::pair<std::size_t, std::string> include_line(const std::string& line) {
     const auto depth = line.find_first_not_of('.');

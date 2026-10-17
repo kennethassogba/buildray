@@ -64,6 +64,8 @@ add_test(NAME works COMMAND sample)
         {"BUILDRAY_EXCLUDE_PATHS": '["3rdparty"]'},
         {"BUILDRAY_COMMAND": "optimize", "BUILDRAY_EXCLUDE_PATHS": '"3rdparty"'},
         {"BUILDRAY_COMMAND": "pch", "BUILDRAY_PCH_AUTO": "true", "BUILDRAY_PCH_HEADERS": '["<vector>"]'},
+        {"BUILDRAY_LINK_TARGET": "sample"},
+        {"BUILDRAY_COMMAND": "prune-links", "BUILDRAY_RUNS": "1"},
     ]:
         execute([sys.executable, script], env={**environment, **changes}, expected=1)
     assert not (source / "injected").exists()
@@ -102,6 +104,27 @@ add_test(NAME works COMMAND sample)
     (source / "main.cpp").write_text("int main() { return 0; }\n")
     (source / "common.hpp").unlink()
     (source / "helper.cpp").unlink()
+    assert execute(["git", "status", "--porcelain"], cwd=source) == status
+
+    # CMake experiments retain the plan, graphs and patch without using the PR baseline.
+    cmake.write_text(original_cmake.replace('add_custom_target(delay ALL COMMAND ${CMAKE_COMMAND} -E sleep 1)', '') + '''
+add_library(api INTERFACE)
+add_library(bridge INTERFACE)
+target_link_libraries(bridge INTERFACE api)
+target_link_libraries(sample PRIVATE bridge api)
+''')
+    link_outputs = root / "link-outputs"
+    execute([sys.executable, script], env={**environment, "BUILDRAY_COMMAND": "prune-links",
+            "BUILDRAY_LINK_TARGET": "sample", "BUILDRAY_LINK_DEPENDENCY": "api",
+            "BUILDRAY_EXCLUDE_PATHS": '["vendor"]', "GITHUB_OUTPUT": str(link_outputs)})
+    links = dict(line.split("=", 1) for line in link_outputs.read_text().splitlines())
+    assert "baseline-sha" not in links
+    assert all(Path(links[key]).is_file() for key in ["links", "patch", "cmake-before", "cmake-after"])
+    state = json.loads(Path(links["report"]).read_text())
+    assert state["patch_validated"] and state["cmake_graph_change_verified"]
+    assert state["selected_link"]["dependency"] == "api"
+    assert "CMake candidate:" in summary.read_text()
+    cmake.write_text(original_cmake)
     assert execute(["git", "status", "--porcelain"], cwd=source) == status
 
     # The explicit cycle policy fails CI while retaining the completed graph.

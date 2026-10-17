@@ -67,6 +67,7 @@ struct Options {
     std::string target;
     std::vector<std::string> headers;
     std::vector<fs::path> exclusions;
+    std::string dependency;
 };
 
 struct CheckOptions {
@@ -93,6 +94,11 @@ json::Object dependency_graph(const fs::path& records, const fs::path& source,
                               const fs::path& build, const std::vector<fs::path>& originals);
 std::string dependencies_markdown(const json::Object& graph);
 std::string dependencies_dot(const json::Object& graph);
+json::Object cmake_dependencies(const fs::path& source, const fs::path& build);
+json::Object link_candidates(const json::Object& graph, const fs::path& source,
+                             const Options& options);
+void verify_link_removal(const json::Object& before, const json::Object& after,
+                         const json::Object& selection);
 json::Object header_profile(const fs::path& records, const fs::path& source,
                             const fs::path& build);
 std::string profile_markdown(const json::Object& profile);

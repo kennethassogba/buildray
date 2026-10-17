@@ -29,6 +29,10 @@ on:
         description: Build, test and capture dependency graphs on pinned MuJoCo and XGrammar.
         type: boolean
         default: false
+      link_corpus:
+        description: Validate and benchmark one redundant CMake link on pinned XGrammar.
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -148,6 +152,33 @@ jobs:
           jobs: '2'
           cmake-args: '["-DSPM_BUILD_TEST=ON", "-DSPM_ENABLE_SHARED=OFF", "-DSPM_ENABLE_TCMALLOC=OFF"]'
           artifact-name: sentencepiece-v0.2.2-pch
+
+  link-corpus:
+    if: github.event_name == 'workflow_dispatch' && inputs.link_corpus
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Fetch pinned XGrammar
+        run: |
+          git clone https://github.com/mlc-ai/xgrammar.git fixtures/xgrammar
+          git -C fixtures/xgrammar checkout 7e269d56c74c89de52bc8c31e42191155416371f
+          git -C fixtures/xgrammar submodule update --init 3rdparty/dlpack 3rdparty/googletest
+          printf 'set(XGRAMMAR_BUILD_PYTHON_BINDINGS OFF)\nset(XGRAMMAR_BUILD_CXX_TESTS ON)\n' > fixtures/xgrammar/config.cmake
+      - name: Validate and measure a redundant CMake link
+        uses: ./
+        with:
+          source: fixtures/xgrammar
+          command: prune-links
+          link-target: xgrammar_test
+          link-dependency: gtest
+          exclude-paths: '["3rdparty"]'
+          runs: '3'
+          jobs: '2'
+          artifact-name: xgrammar-cmake-link
 
   dependency-corpus:
     name: dependency-corpus (${{ matrix.name }})

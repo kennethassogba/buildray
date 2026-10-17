@@ -128,8 +128,8 @@ def main():
     if not source.is_relative_to(workspace) or not (source / "CMakeLists.txt").is_file():
         raise ValueError("Source must be a CMake tree inside GITHUB_WORKSPACE")
     mode = os.environ.get("BUILDRAY_COMMAND", "measure")
-    if mode not in ("measure", "optimize", "profile", "pch", "deps"):
-        raise ValueError("command must be measure, optimize, profile, pch or deps")
+    if mode not in ("measure", "optimize", "profile", "pch", "deps", "prune-links"):
+        raise ValueError("command must be measure, optimize, profile, pch, deps or prune-links")
     fail_on_cycles = boolean("BUILDRAY_FAIL_ON_CYCLES", "false")
     if fail_on_cycles and mode != "deps":
         raise ValueError("fail-on-cycles requires command deps")
@@ -147,6 +147,12 @@ def main():
     runs = integer("BUILDRAY_RUNS", "3", 100)
     if auto_pch and runs < 3:
         raise ValueError("pch-auto requires at least three runs")
+    link_target = os.environ.get("BUILDRAY_LINK_TARGET", "")
+    link_dependency = os.environ.get("BUILDRAY_LINK_DEPENDENCY", "")
+    if mode != "prune-links" and (link_target or link_dependency):
+        raise ValueError("link-target and link-dependency require command prune-links")
+    if mode == "prune-links" and runs < 3:
+        raise ValueError("prune-links requires at least three runs")
     jobs = integer("BUILDRAY_JOBS", "2", 1024)
     integer("BUILDRAY_RETENTION_DAYS", "30", 90)
     boolean("BUILDRAY_INSTALL_DEPENDENCIES", "true")
@@ -160,8 +166,8 @@ def main():
     exclusions = json.loads(os.environ.get("BUILDRAY_EXCLUDE_PATHS", "[]"))
     if not isinstance(exclusions, list) or not all(isinstance(item, str) and item for item in exclusions):
         raise ValueError("exclude-paths must be a JSON array of nonempty relative paths")
-    if exclusions and mode != "optimize":
-        raise ValueError("exclude-paths requires command optimize")
+    if exclusions and mode not in ("optimize", "prune-links"):
+        raise ValueError("exclude-paths requires command optimize or prune-links")
     reference = os.environ.get("BUILDRAY_BASELINE_REF", "").strip()
     if reference and mode == "measure" and runs < 3:
         raise ValueError("Revision comparisons need at least three runs")
@@ -181,8 +187,13 @@ def main():
                             "--max-regression-percent", str(budget)])
         if mode == "optimize":
             command.extend(["--clang-tidy", os.environ.get("BUILDRAY_CLANG_TIDY", "clang-tidy-21")])
-            for path in exclusions:
-                command.extend(["--exclude", path])
+        for path in exclusions:
+            command.extend(["--exclude", path])
+        if mode == "prune-links":
+            if link_target:
+                command.extend(["--target", link_target])
+            if link_dependency:
+                command.extend(["--dependency", link_dependency])
         if mode == "deps":
             command.extend(["--c-compiler", os.environ.get("BUILDRAY_C_COMPILER", "clang-21")])
             if fail_on_cycles:
@@ -208,9 +219,11 @@ def main():
                if report["status"] == "passed" else report["status"])
         for name, key in [("report.json", "report"), ("comparison.json", "comparison"),
                           ("baseline-report.json", "baseline-report"), ("current-report.json", "current-report"),
-                          ("includes.patch", "patch"), ("pch.patch", "patch"),
+                          ("includes.patch", "patch"), ("pch.patch", "patch"), ("cmake.patch", "patch"),
                           ("headers.json", "headers"), ("dependencies.json", "dependencies"),
-                          ("dependencies.dot", "dependency-dot"), ("selection.json", "selection")]:
+                          ("dependencies.dot", "dependency-dot"), ("selection.json", "selection"),
+                          ("links.json", "links"), ("cmake-before.json", "cmake-before"),
+                          ("cmake-after.json", "cmake-after")]:
             item = work / "run" / name
             if item.is_file():
                 shutil.copyfile(item, artifacts / name)
@@ -228,6 +241,15 @@ def main():
                 text += f"\nRemoved includes: {report.get('removed_includes', 0)}. Patch validated: {report.get('patch_validated', False)}.\n"
             if mode == "pch" and report.get("candidate"):
                 text += f"\nPCH median: {report['candidate']['median_seconds']:.3f} s. Change: {report['wall_change_percent']:+.3f}% ({report['performance_result']}).\n"
+                text += f"\nPatch validated: {report.get('patch_validated', False)}. Recommended: {report.get('patch_recommended', False)}.\n"
+            if mode == "prune-links":
+                selected = report.get("selected_link")
+                if selected:
+                    text += f"\nCMake candidate: `{selected['target']}` → `{selected['dependency']}`.\n"
+                else:
+                    text += "\nNo eligible redundant literal link; no patch or benchmark.\n"
+                if report.get("candidate"):
+                    text += f"\nCandidate median: {report['candidate']['median_seconds']:.3f} s. Change: {report['wall_change_percent']:+.3f}% ({report['performance_result']}).\n"
                 text += f"\nPatch validated: {report.get('patch_validated', False)}. Recommended: {report.get('patch_recommended', False)}.\n"
             if report.get("automatic_selection"):
                 selected = report["automatic_selection"]
