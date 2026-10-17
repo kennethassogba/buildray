@@ -21,6 +21,10 @@ on:
         description: JSON array of PCH headers for the SentencePiece experiment.
         type: string
         default: '["<string>", "<vector>", "<memory>", "<algorithm>", "<unordered_map>"]'
+      pch_auto:
+        description: Automatically profile and select a PCH header; pch-target optionally restricts the target.
+        type: boolean
+        default: false
       dependency_corpus:
         description: Build, test and capture dependency graphs on pinned MuJoCo and XGrammar.
         type: boolean
@@ -136,8 +140,9 @@ jobs:
         with:
           source: fixtures/sentencepiece
           command: pch
+          pch-auto: ${{ inputs.pch_auto }}
           pch-target: ${{ inputs.pch_target }}
-          pch-headers: ${{ inputs.pch_headers }}
+          pch-headers: ${{ inputs.pch_auto && '[]' || inputs.pch_headers }}
           install-dependencies: ${{ !inputs.profile_headers }}
           runs: '3'
           jobs: '2'

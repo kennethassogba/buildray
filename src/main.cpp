@@ -19,6 +19,7 @@ Usage:
                 [-- -DNAME=VALUE ...]
   buildray pch --source DIR --target NAME --header HEADER [--header HEADER ...]
                [options] [-- -DNAME=VALUE ...]
+  buildray pch --auto --source DIR [--target NAME] [options] [-- -DNAME=VALUE ...]
   buildray compare --baseline-source DIR --source DIR [options] [-- -DNAME=VALUE ...]
   buildray check --baseline REPORT --current REPORT [--output FILE]
                  [--max-regression-percent N]
@@ -38,6 +39,8 @@ Options:
   --session ID          Optional label shared by comparable measurements
   --target NAME         CMake target for a PCH experiment
   --header HEADER       PCH header: <system> or source-root-relative path; repeatable
+  --auto                pch: profile, select one project header/target, validate and measure
+  --exclude PATH        optimize: skip edits to a source-root-relative file/directory; repeatable
   --help                Show this help
   --version             Print version
 
@@ -56,6 +59,9 @@ headers by inclusive parse time and target. Profiling overhead is not a benchmar
 pch tests a private C++ PCH on one target, validates it, and alternates clean
 builds against a baseline with PCH disabled. Outputs: pch.patch and report.json.
 PCH generation is included in candidate timings. Neither command edits your tree.
+With --auto, pch profiles first and selects the highest inclusive-cost project
+header used by at least two compilations of a target. At least three pairs are
+required. Selection is a heuristic; only measured improvement recommends a patch.
 deps captures C/C++ include edges (including guarded/skipped includes), reports
 cycles, header fan-out, and CMake target relationships. Requires CMake 4.2+ and
 Ninja 1.13+. Outputs: dependencies.json, dependencies.md, dependencies.dot.
@@ -129,10 +135,14 @@ buildray::Options parse(const std::vector<std::string>& args) {
             options.fail_on_cycles = true;
             continue;
         }
+        if (arg == "--auto") {
+            options.auto_pch = true;
+            continue;
+        }
         if (arg != "--source" && arg != "--work-dir" && arg != "--compiler" &&
             arg != "--clang-tidy" && arg != "--runs" && arg != "--jobs" &&
             arg != "--baseline-source" && arg != "--max-regression-percent" && arg != "--session" &&
-            arg != "--target" && arg != "--header" && arg != "--c-compiler")
+            arg != "--target" && arg != "--header" && arg != "--c-compiler" && arg != "--exclude")
             throw std::runtime_error("Unknown option: " + arg);
         if (++i == args.size() || args[i].starts_with("--"))
             throw std::runtime_error("Missing value for " + arg);
@@ -160,6 +170,13 @@ buildray::Options parse(const std::vector<std::string>& args) {
             options.target = value;
         else if (arg == "--header")
             options.headers.push_back(value);
+        else if (arg == "--exclude") {
+            auto path = buildray::fs::path(value).lexically_normal();
+            if (path.filename().empty()) path = path.parent_path();
+            if (path.empty() || path.is_absolute() || path == "." || *path.begin() == "..")
+                throw std::runtime_error("--exclude requires a relative file/directory inside the source tree");
+            options.exclusions.push_back(std::move(path));
+        }
         else if (arg == "--max-regression-percent")
             options.max_regression_percent = budget(value);
     }
@@ -167,12 +184,16 @@ buildray::Options parse(const std::vector<std::string>& args) {
         throw std::runtime_error("compare requires --baseline-source and at least three runs");
     if (options.command != "compare" && !options.baseline_source.empty())
         throw std::runtime_error("--baseline-source is supported only by compare");
-    if (options.command == "pch" && (options.target.empty() || options.headers.empty()))
+    if (options.command == "pch" && !options.auto_pch && (options.target.empty() || options.headers.empty()))
         throw std::runtime_error("pch requires --target and at least one --header");
+    if (options.auto_pch && (options.command != "pch" || !options.headers.empty() || options.runs < 3))
+        throw std::runtime_error("--auto requires pch, at least three runs, and no --header; --target is optional");
     if (options.command != "pch" && (!options.target.empty() || !options.headers.empty()))
         throw std::runtime_error("--target and --header are supported only by pch");
     if (options.command != "deps" && (options.fail_on_cycles || options.c_compiler != "clang"))
         throw std::runtime_error("--c-compiler and --fail-on-cycles require deps");
+    if (options.command != "optimize" && !options.exclusions.empty())
+        throw std::runtime_error("--exclude requires optimize");
     // Tools run from the snapshot; resolve explicit relative executable paths now.
     for (auto* tool : {&options.compiler, &options.c_compiler, &options.tidy}) {
         // The driver name is semantic: clang++ can be a symlink to clang.

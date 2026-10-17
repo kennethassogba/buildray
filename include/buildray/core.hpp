@@ -61,10 +61,12 @@ struct Options {
     unsigned jobs = 2;
     bool allow_no_tests = false;
     bool fail_on_cycles = false;
+    bool auto_pch = false;
     double max_regression_percent = 5.0;
     std::string session;
     std::string target;
     std::vector<std::string> headers;
+    std::vector<fs::path> exclusions;
 };
 
 struct CheckOptions {
@@ -94,5 +96,7 @@ std::string dependencies_dot(const json::Object& graph);
 json::Object header_profile(const fs::path& records, const fs::path& source,
                             const fs::path& build);
 std::string profile_markdown(const json::Object& profile);
+json::Object select_pch(const json::Object& profile, const fs::path& source,
+                        const std::string& target = "");
 std::string pch_cmake(const Options& options, const fs::path& source);
 }  // namespace buildray

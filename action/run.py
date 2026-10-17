@@ -135,13 +135,18 @@ def main():
         raise ValueError("fail-on-cycles requires command deps")
     target = os.environ.get("BUILDRAY_PCH_TARGET", "")
     headers = json.loads(os.environ.get("BUILDRAY_PCH_HEADERS", "[]"))
+    auto_pch = boolean("BUILDRAY_PCH_AUTO", "false")
     if not isinstance(headers, list) or not all(isinstance(item, str) and item for item in headers):
         raise ValueError("pch-headers must be a JSON array of nonempty strings")
-    if mode == "pch" and (not target or not headers):
+    if auto_pch and (mode != "pch" or headers):
+        raise ValueError("pch-auto requires command pch and empty pch-headers")
+    if mode == "pch" and not auto_pch and (not target or not headers):
         raise ValueError("pch needs pch-target and pch-headers")
     if mode != "pch" and (target or headers):
         raise ValueError("pch-target and pch-headers require command pch")
     runs = integer("BUILDRAY_RUNS", "3", 100)
+    if auto_pch and runs < 3:
+        raise ValueError("pch-auto requires at least three runs")
     jobs = integer("BUILDRAY_JOBS", "2", 1024)
     integer("BUILDRAY_RETENTION_DAYS", "30", 90)
     boolean("BUILDRAY_INSTALL_DEPENDENCIES", "true")
@@ -152,6 +157,11 @@ def main():
     cmake_args = json.loads(os.environ.get("BUILDRAY_CMAKE_ARGS", "[]"))
     if not isinstance(cmake_args, list) or not all(isinstance(item, str) and item.startswith("-D") and "=" in item for item in cmake_args):
         raise ValueError("cmake-args must be a JSON array of -DNAME=VALUE strings")
+    exclusions = json.loads(os.environ.get("BUILDRAY_EXCLUDE_PATHS", "[]"))
+    if not isinstance(exclusions, list) or not all(isinstance(item, str) and item for item in exclusions):
+        raise ValueError("exclude-paths must be a JSON array of nonempty relative paths")
+    if exclusions and mode != "optimize":
+        raise ValueError("exclude-paths requires command optimize")
     reference = os.environ.get("BUILDRAY_BASELINE_REF", "").strip()
     if reference and mode == "measure" and runs < 3:
         raise ValueError("Revision comparisons need at least three runs")
@@ -171,12 +181,17 @@ def main():
                             "--max-regression-percent", str(budget)])
         if mode == "optimize":
             command.extend(["--clang-tidy", os.environ.get("BUILDRAY_CLANG_TIDY", "clang-tidy-21")])
+            for path in exclusions:
+                command.extend(["--exclude", path])
         if mode == "deps":
             command.extend(["--c-compiler", os.environ.get("BUILDRAY_C_COMPILER", "clang-21")])
             if fail_on_cycles:
                 command.append("--fail-on-cycles")
         if mode == "pch":
-            command.extend(["--target", target])
+            if auto_pch:
+                command.append("--auto")
+            if target:
+                command.extend(["--target", target])
             for header in headers:
                 command.extend(["--header", header])
         if allow_no_tests:
@@ -195,7 +210,7 @@ def main():
                           ("baseline-report.json", "baseline-report"), ("current-report.json", "current-report"),
                           ("includes.patch", "patch"), ("pch.patch", "patch"),
                           ("headers.json", "headers"), ("dependencies.json", "dependencies"),
-                          ("dependencies.dot", "dependency-dot")]:
+                          ("dependencies.dot", "dependency-dot"), ("selection.json", "selection")]:
             item = work / "run" / name
             if item.is_file():
                 shutil.copyfile(item, artifacts / name)
@@ -214,6 +229,9 @@ def main():
             if mode == "pch" and report.get("candidate"):
                 text += f"\nPCH median: {report['candidate']['median_seconds']:.3f} s. Change: {report['wall_change_percent']:+.3f}% ({report['performance_result']}).\n"
                 text += f"\nPatch validated: {report.get('patch_validated', False)}. Recommended: {report.get('patch_recommended', False)}.\n"
+            if report.get("automatic_selection"):
+                selected = report["automatic_selection"]
+                text += f"\nAutomatic candidate: `{selected['header']}` on `{selected['target']}`. Selection profiling is outside the measurements.\n"
         if os.environ.get("GITHUB_STEP_SUMMARY"):
             with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a") as stream:
                 stream.write(text)

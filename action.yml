@@ -17,6 +17,9 @@ inputs:
   cmake-args:
     description: JSON array of project CMake -D options. No shell evaluation.
     default: '[]'
+  exclude-paths:
+    description: JSON array of source-root-relative files/directories that optimize must not edit. Build and test coverage is unchanged.
+    default: '[]'
   runs:
     description: Clean build samples per revision. At least 3 for comparisons.
     default: '3'
@@ -39,11 +42,14 @@ inputs:
     description: For deps, fail with exit 5 if observed include or target-link cycles exist.
     default: 'false'
   pch-target:
-    description: CMake target for command pch.
+    description: CMake target for command pch; optional target restriction with pch-auto.
     default: ''
   pch-headers:
     description: JSON array of system headers such as <vector> or source-root-relative header paths.
     default: '[]'
+  pch-auto:
+    description: Profile and select one project-header PCH candidate, then validate and measure it. Requires command pch, empty pch-headers and at least 3 runs.
+    default: 'false'
   allow-no-tests:
     description: Explicitly allow build-only validation when no CTest tests exist.
     default: 'false'
@@ -81,6 +87,9 @@ outputs:
   headers:
     description: Header costs by target from profile.
     value: ${{ steps.run.outputs.headers }}
+  selection:
+    description: Automatic PCH selection and profiling metrics, when pch-auto is enabled.
+    value: ${{ steps.run.outputs.selection }}
   dependencies:
     description: Observed include and configured CMake dependency graph JSON.
     value: ${{ steps.run.outputs.dependencies }}
@@ -105,6 +114,7 @@ runs:
         BUILDRAY_COMMAND: ${{ inputs.command }}
         BUILDRAY_BASELINE_REF: ${{ inputs.baseline-ref }}
         BUILDRAY_CMAKE_ARGS: ${{ inputs.cmake-args }}
+        BUILDRAY_EXCLUDE_PATHS: ${{ inputs.exclude-paths }}
         BUILDRAY_RUNS: ${{ inputs.runs }}
         BUILDRAY_JOBS: ${{ inputs.jobs }}
         BUILDRAY_MAX_REGRESSION_PERCENT: ${{ inputs.max-regression-percent }}
@@ -114,6 +124,7 @@ runs:
         BUILDRAY_FAIL_ON_CYCLES: ${{ inputs.fail-on-cycles }}
         BUILDRAY_PCH_TARGET: ${{ inputs.pch-target }}
         BUILDRAY_PCH_HEADERS: ${{ inputs.pch-headers }}
+        BUILDRAY_PCH_AUTO: ${{ inputs.pch-auto }}
         BUILDRAY_ALLOW_NO_TESTS: ${{ inputs.allow-no-tests }}
         BUILDRAY_INSTALL_DEPENDENCIES: ${{ inputs.install-dependencies }}
         BUILDRAY_BINARY: ${{ inputs.buildray-path }}

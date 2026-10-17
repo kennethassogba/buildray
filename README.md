@@ -40,6 +40,10 @@ buildray optimize --source /path/to/project \
   -- -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON
 ```
 
+Keep vendored or generated source directories out of edits with repeatable literal
+paths, for example `--exclude 3rdparty --exclude src/generated`. These paths are
+relative to the source root. They remain part of the build and test validation.
+
 The work directory must not already exist. The default is a unique directory
 under `SOURCE/.buildray/`. For measurement without include analysis:
 
@@ -77,6 +81,7 @@ buildray profile --source /path/to/project --compiler clang++-21 --jobs 2
 buildray pch --source /path/to/project --target my_library \
   --header '<vector>' --header 'include/common.hpp' \
   --compiler clang++-21 --runs 5 --jobs 2
+buildray pch --auto --source /path/to/project --compiler clang++-21 --runs 3 --jobs 2
 ```
 
 `profile` builds and tests an isolated copy with Clang time traces. `headers.json`
@@ -90,6 +95,13 @@ and enabled only for the selected candidate target. PCH generation counts toward
 candidate time. The patch is recommended only when the measured gain exceeds noise.
 See [the workflow and limitations](docs/profiling.md). Both modes are also available
 through the GitHub Action.
+
+`pch --auto` profiles first, then selects one project header with the highest
+inclusive parse cost within a target, requiring at least two compilations using
+that header. `--target` can restrict the search. It runs the same validated PCH
+experiment and requires at least three build pairs. Profiling is outside those
+measurements. Selection does not establish a gain; only the measured result can
+recommend the patch. `selection.json` records the decision and its metrics.
 
 ## Dependency graphs
 
@@ -121,8 +133,8 @@ a speedup. [Scope, CI usage and corpus reproduction](docs/dependencies.md).
    Files generated or downloaded during configuration are excluded from edits.
    Suppression comments are respected. If several targets compile a file, a
    removal must be suggested for every compilation command.
-   When the analyzer also requests provider includes, proposed deletions are
-   compiled in each configuration first. Files that fail this check stay intact;
+   Every deletion-only proposal is compiled in each configuration first. Files
+   that fail this check stay intact while independent valid proposals continue;
    rejected proposals are recorded in `preflight_rejected_files`.
 5. Writes `includes.patch`, performs a clean candidate build and runs its tests.
    A compile or test failure marks the run failed and the patch unvalidated.
@@ -147,6 +159,7 @@ current-report.json            Current measurement for history (compare)
 includes.patch                 Unified patch (optimize only)
 pch.patch                      CMake PCH patch (pch only)
 headers.json, headers.md        Inclusive header costs and target rankings (profile)
+selection.json                 Automatic PCH candidate and selection metrics (pch --auto)
 dependencies.json, .md, .dot    Include graph, cycles and CMake relationships (deps)
 logs/*-compilers.json           Duration, CPU time, RSS and argv per C++ compilation
 logs/*-build.log                Build output for each sample
@@ -196,7 +209,7 @@ time. RSS is the maximum of individual compiler peaks, not aggregate build memor
   `-inl.h` or `.inl.h` are kept because they can supply template definitions.
 - Project CMake scripts and tests execute normally. Buildray uses no network
   service; project dependency downloads remain the project's responsibility.
-- Dependency graph rewrites, forward declarations, automatic PCH selection,
+- Dependency graph rewrites, forward declarations,
   incremental builds and a tagged Marketplace release are later work. The
   composite Action can already be used by its commit SHA.
 

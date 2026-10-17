@@ -41,7 +41,7 @@ Choose a local compiled CMake target and headers repeated in that target's profi
 System headers use angle brackets; project paths are relative to the source root.
 Paths with spaces are accepted. Paths outside the source tree, CMake expressions,
 duplicate headers, imported targets, aliases, and targets with an existing direct
-PCH or `REUSE_FROM` are refused. Selection is explicit in this release.
+PCH or `REUSE_FROM` are refused.
 The generated PCH wrapper must contain exactly the requested includes; inherited
 interface PCH headers are refused rather than silently added to the experiment.
 
@@ -75,6 +75,41 @@ flags separately. A forced PCH can affect macros or hide missing includes in
 future edits; keep include-cleanup validation without PCH. No source includes are
 removed by `pch`, and neither command edits the original tree.
 
+## Select a candidate automatically
+
+```bash
+buildray pch --auto --source /path/to/project --compiler clang++-21 \
+  --runs 3 --jobs 2 --work-dir /tmp/project-auto-pch
+# Restrict selection to one target when needed:
+buildray pch --auto --target core --source /path/to/project --compiler clang++-21
+```
+
+Buildray freezes the input tree, profiles one isolated build with CTest, and chooses
+one header/target pair. Eligible headers are original source-root files with `.h`,
+`.hpp`, `.hh` or `.hxx` extensions, used in at least two C++ compiler invocations of
+that target. Generated and external headers are excluded. Selection uses the
+largest per-target inclusive parse cost, with deterministic ties by target and path.
+Nested costs overlap; the score is not a prediction of savings or incremental cost.
+
+The selected candidate goes through the manual mode's complete experiment:
+baseline and candidate builds, tests, PCH creation/use checks, then at least three
+alternating clean-build pairs. Selection profiling is outside those measurements.
+There is one candidate, with no automatic fallback or search through other PCHs.
+The existing restrictions on direct or inherited PCHs still apply. `--header`
+cannot be combined with `--auto`; use manual mode for explicit system headers.
+
+The root retains `report.json`, `pch.patch`, `headers.json`, `headers.md` and
+`selection.json`. Full profile and experiment workspaces are under `profile/` and
+`experiment/`; the original frozen input is under `input/`. The report records
+`pch_auto`, `automatic_selection` and `selection_profiling_in_measurements: false`.
+Source files remain unchanged, including when the work directory is inside the
+source tree. Failure logs and selection evidence are retained.
+
+An expensive repeated header can still make other files compile differently when
+forced into a PCH. Failed compilation or tests reject the experiment. A completed
+slower or inconclusive experiment returns 0 with `patch_recommended: false`, just
+as in manual mode. No eligible header produces an error and no candidate patch.
+
 ## GitHub Action
 
 ```yaml
@@ -90,12 +125,27 @@ removed by `pch`, and neither command edits the original tree.
     pch-headers: '["<string>", "<vector>", "include/common.hpp"]'
     runs: '5'
     artifact-name: pch-experiment
+- uses: kennethassogba/buildray@YOUR_REVIEWED_COMMIT_SHA
+  with:
+    command: pch
+    pch-auto: 'true'
+    runs: '3'
+    artifact-name: automatic-pch
 ```
 
 `headers` is the profiling JSON output. `patch` points to the include patch or PCH
 patch for the selected mode. The Action retains header rankings and adds the
 profile or PCH result to the job summary. `baseline-ref` and the regression budget
 apply to `measure` only. Failed experiments retain bounded diagnostic log tails.
+Automatic mode requires empty `pch-headers`; `pch-target` is an optional restriction.
+Its `headers` and `selection` outputs retain the profile and selection JSON.
+
+For include cleanup, `exclude-paths: '["3rdparty"]'` keeps dependency sources out
+of edits while retaining their build and test coverage. Every proposed deletion
+set is compiled for that file before acceptance, even when include-cleaner does
+not request provider additions. Rejected files remain unchanged and are listed in
+`preflight_rejected_files`; independent valid removals can still be validated and
+measured. Complete linking and CTest remain required after these file checks.
 
 The implementation follows the official [Clang trace options](https://clang.llvm.org/docs/ClangCommandLineReference.html)
 and [CMake PCH API](https://cmake.org/cmake/help/latest/command/target_precompile_headers.html).

@@ -61,6 +61,16 @@ The regression fixture links a static library to `m` publicly and checks both
 relationship kinds. The old binary rejects that fixture; the corrected binary
 builds it and reports the graph.
 
+The corrected [run 38983512353](https://github.com/kennethassogba/buildray/actions/runs/38983512353)
+passes all six Buildray suites in Release and Debug with ASan/UBSan, plus both
+corpus jobs. MuJoCo builds and passes all **3,496 CTest cases**. Its completed graph
+contains 326 compiler invocations (76 C, 250 C++), 299 original-snapshot nodes,
+1,492 include edges, 368 configured targets and 4,345 typed target edges. All 17 raw
+link fragments are retained, with no include or target-link cycles observed.
+The [summary](evidence/mujoco-dependencies-summary.json) is checked in; full reports
+and graphs are in that run's `mujoco-dependencies` artifact. The interrupted local
+evaluation is not used as validation evidence.
+
 The opt-in `dependency_corpus` workflow input builds and tests both pinned projects.
 Graph tracing overhead is never reported as a performance measurement. These
 evaluations make no compile-time reduction claim.

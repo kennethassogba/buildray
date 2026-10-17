@@ -1,0 +1,88 @@
+{
+  "repository": "google-deepmind/mujoco",
+  "revision": "f640345f72b773e7ec52cd9426a57335cf9c6c28",
+  "ci_run": "https://github.com/kennethassogba/buildray/actions/runs/38983512353",
+  "buildray_commit": "e9cfd13b2a8c61a44437a2144ca56a90e261f5da",
+  "validation": "build_and_tests_passed",
+  "tests_passed": 3496,
+  "compilations": 326,
+  "c_compilations": 76,
+  "cxx_compilations": 250,
+  "node_count": 299,
+  "include_edge_count": 1492,
+  "target_count": 368,
+  "target_edge_count": 4345,
+  "raw_link_fragment_count": 17,
+  "include_cycles": [],
+  "target_link_cycles": [],
+  "top_headers": [
+    {
+      "compilations": 168,
+      "direct_includers": 86,
+      "header": "<SOURCE>/include/mujoco/mjtype.h"
+    },
+    {
+      "compilations": 165,
+      "direct_includers": 51,
+      "header": "<SOURCE>/include/mujoco/mjexport.h"
+    },
+    {
+      "compilations": 163,
+      "direct_includers": 136,
+      "header": "<SOURCE>/include/mujoco/mjmodel.h"
+    },
+    {
+      "compilations": 162,
+      "direct_includers": 96,
+      "header": "<SOURCE>/include/mujoco/mjdata.h"
+    },
+    {
+      "compilations": 159,
+      "direct_includers": 33,
+      "header": "<SOURCE>/include/mujoco/mjmacro.h"
+    },
+    {
+      "compilations": 150,
+      "direct_includers": 25,
+      "header": "<SOURCE>/include/mujoco/mjsan.h"
+    },
+    {
+      "compilations": 148,
+      "direct_includers": 15,
+      "header": "<SOURCE>/include/mujoco/mjxmacro.h"
+    },
+    {
+      "compilations": 138,
+      "direct_includers": 27,
+      "header": "<SOURCE>/include/mujoco/mjvisualize.h"
+    },
+    {
+      "compilations": 136,
+      "direct_includers": 43,
+      "header": "<SOURCE>/include/mujoco/mjspec.h"
+    },
+    {
+      "compilations": 135,
+      "direct_includers": 40,
+      "header": "<SOURCE>/include/mujoco/mjplugin.h"
+    },
+    {
+      "compilations": 124,
+      "direct_includers": 4,
+      "header": "<SOURCE>/include/mujoco/mjspecmacro.h"
+    },
+    {
+      "compilations": 123,
+      "direct_includers": 1,
+      "header": "<SOURCE>/include/mujoco/mjassert.h"
+    }
+  ],
+  "configuration": {
+    "MUJOCO_BUILD_EXAMPLES": false,
+    "MUJOCO_BUILD_SIMULATE": false,
+    "MUJOCO_BUILD_TESTS": true,
+    "MUJOCO_TEST_PYTHON_UTIL": false,
+    "precision": "double",
+    "locale": "de_DE.UTF-8"
+  }
+}

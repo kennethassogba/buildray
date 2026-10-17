@@ -377,6 +377,7 @@ Changes analyze(const Options& options, const Variant& variant, const fs::path& 
     if (!commands || commands->empty()) throw std::runtime_error("Empty compilation database");
     std::map<fs::path, std::vector<json::Value>> groups;
     std::int64_t generated_commands = 0;
+    std::int64_t excluded_commands = 0;
     for (const auto& entry : *commands) {
         const auto* object = entry.getAsObject();
         if (!object || !object->getString("file") || !object->getString("directory"))
@@ -387,6 +388,13 @@ Changes analyze(const Options& options, const Variant& variant, const fs::path& 
         file = absolute_path(file);
         if (!within(file, variant.source) || !fs::is_regular_file(file)) continue;
         if (!cpp_source(file)) continue;
+        const auto relative = file.lexically_relative(variant.source);
+        if (std::ranges::any_of(options.exclusions, [&](const fs::path& excluded) {
+                return within(relative, excluded);
+            })) {
+            ++excluded_commands;
+            continue;
+        }
         const auto original = originals.find(file.lexically_relative(variant.source));
         if (original == originals.end()) {
             ++generated_commands;
@@ -404,7 +412,6 @@ Changes analyze(const Options& options, const Variant& variant, const fs::path& 
     unsigned preflight = 0;
     for (const auto& [file, entries] : groups) {
         std::optional<std::set<Replacement>> consensus;
-        bool needs_insertions = false;
         for (const auto& entry : entries) {
             const auto analysis = work / "analysis" / std::to_string(invocation++);
             fs::create_directories(analysis);
@@ -420,7 +427,6 @@ Changes analyze(const Options& options, const Variant& variant, const fs::path& 
             std::set<Replacement> removals;
             const auto source = read_file(file);
             for (auto replacement : read_fixes(fixes)) {
-                needs_insertions = needs_insertions || !replacement.text.empty();
                 fs::path path = replacement.file;
                 if (path.is_relative()) {
                     const auto* object = entry.getAsObject();
@@ -442,10 +448,10 @@ Changes analyze(const Options& options, const Variant& variant, const fs::path& 
         }
         if (!consensus || consensus->empty()) continue;
         const auto relative = file.lexically_relative(variant.source);
-        if (needs_insertions) {
-            // An "unused directly" header may still supply a transitive declaration.
-            // Include-cleaner expects new direct includes to accompany such removals.
-            // We only delete: compile that proposal in every configuration first.
+        {
+            // Include-cleaner can miss namespace imports or require provider additions.
+            // Compile every deletion-only proposal in every configuration. Keep a
+            // rejected file unchanged while allowing independent valid proposals.
             const auto original = read_file(file);
             write_file(file, apply_removals(original, {consensus->begin(), consensus->end()}));
             bool valid = true;
@@ -495,6 +501,7 @@ Changes analyze(const Options& options, const Variant& variant, const fs::path& 
     report["translation_units_analyzed"] = static_cast<std::int64_t>(groups.size());
     report["compile_commands_analyzed"] = invocation;
     report["generated_compile_commands_skipped"] = generated_commands;
+    report["excluded_compile_commands_skipped"] = excluded_commands;
     report["preflight_rejected_files"] = std::move(rejected);
     report["preflight_compile_commands"] = preflight;
     report["removed_includes"] = static_cast<std::int64_t>(findings.size());
@@ -548,9 +555,115 @@ void print_summary(const json::Object& report, const fs::path& work) {
     if (fs::exists(work / "headers.json"))
         std::cout << "Header profile: " << (work / "headers.json") << '\n';
 }
+
+int automatic_pch(const Options& options, const fs::path& executable) {
+    check_cmake_args(options.cmake_args);
+    const auto source = absolute_path(options.source);
+    if (!fs::is_regular_file(source / "CMakeLists.txt"))
+        throw std::runtime_error("--source must contain CMakeLists.txt");
+    const auto stamp = std::chrono::system_clock::now().time_since_epoch().count();
+    const auto work = options.work.empty()
+        ? source / ".buildray" / (std::to_string(stamp) + "-" + std::to_string(::getpid()))
+        : absolute_path(options.work);
+    if (within(source, work)) throw std::runtime_error("Work directory must not contain the source directory");
+    fs::create_directories(work.parent_path());
+    if (!fs::create_directory(work))
+        throw std::runtime_error("Work directory already exists: " + work.string());
+    fs::create_directories(work / "logs");
+    json::Object report{{"schema_version", 1}, {"buildray_version", BUILDRAY_VERSION},
+                         {"command", "pch"}, {"pch_auto", true}, {"status", "running"},
+                         {"phase", "profiling"}, {"source", source.string()},
+                         {"work_dir", work.string()}, {"patch_validated", false},
+                         {"patch_recommended", false}};
+    write_json(work / "report.json", json::Object(report));
+    const auto retain_logs = [&](const std::string& phase) {
+        const auto directory = work / phase / "logs";
+        if (!fs::exists(directory)) return;
+        for (const auto& entry : fs::directory_iterator(directory)) {
+            if (!entry.is_regular_file() || entry.is_symlink() || entry.path().extension() != ".log") continue;
+            const auto destination = work / "logs" / (phase + "-" + entry.path().filename().string());
+            fs::copy_file(entry.path(), destination, fs::copy_options::overwrite_existing);
+            fs::last_write_time(destination, fs::last_write_time(entry.path()));
+        }
+    };
+    const auto retain = [&](const std::string& phase, const std::string& name) {
+        const auto path = work / phase / name;
+        if (fs::is_regular_file(path) && !fs::is_symlink(path))
+            fs::copy_file(path, work / name, fs::copy_options::overwrite_existing);
+    };
+    try {
+        std::cout << "Automatic PCH workspace: " << work << '\n' << std::flush;
+        // Freeze inputs once. Child workspaces are siblings, so an explicit work
+        // directory inside the project cannot recursively enter later snapshots.
+        snapshot(source, work / "input", work);
+        auto profile_options = options;
+        profile_options.command = "profile";
+        profile_options.auto_pch = false;
+        profile_options.source = work / "input";
+        profile_options.work = work / "profile";
+        profile_options.target.clear();
+        profile_options.headers.clear();
+        const int profile_status = pipeline(profile_options, executable);
+        retain_logs("profile");
+        if (profile_status != 0)
+            throw std::runtime_error("PCH profiling failed; see " + (work / "profile/report.json").string());
+        retain("profile", "headers.json");
+        retain("profile", "headers.md");
+        const auto profile_document = read_json(work / "headers.json");
+        const auto* profile = profile_document.getAsObject();
+        if (!profile) throw std::runtime_error("Invalid automatic PCH profile");
+        auto selection = select_pch(*profile, work / "input", options.target);
+        report["automatic_selection"] = json::Object(selection);
+        report["phase"] = "experiment";
+        write_json(work / "selection.json", json::Object(selection));
+        write_json(work / "report.json", json::Object(report));
+        std::cout << "Automatic PCH candidate: " << selection.getString("target")->str()
+                  << " with " << selection.getString("header")->str() << " ("
+                  << *selection.getInteger("compilations") << " compilations).\n" << std::flush;
+        auto experiment_options = options;
+        experiment_options.auto_pch = false;
+        experiment_options.source = work / "input";
+        experiment_options.work = work / "experiment";
+        experiment_options.target = selection.getString("target")->str();
+        experiment_options.headers = {selection.getString("header")->str()};
+        const int experiment_status = pipeline(experiment_options, executable);
+        retain_logs("experiment");
+        retain("experiment", "pch.patch");
+        const auto experiment_document = read_json(work / "experiment/report.json");
+        const auto* experiment = experiment_document.getAsObject();
+        if (!experiment) throw std::runtime_error("Invalid automatic PCH experiment report");
+        report = json::Object(*experiment);
+        report["pch_auto"] = true;
+        report["source"] = source.string();
+        report["work_dir"] = work.string();
+        report["automatic_selection"] = std::move(selection);
+        report["profile_report"] = (work / "profile/report.json").string();
+        report["experiment_report"] = (work / "experiment/report.json").string();
+        report["selection_profiling_in_measurements"] = false;
+        if (experiment_status != 0)
+            throw std::runtime_error("PCH experiment failed: " +
+                experiment->getString("error").value_or("unknown failure").str());
+        if (interrupted()) throw std::runtime_error("Interrupted");
+        write_json(work / "report.json", json::Object(report));
+        std::cout << "Automatic PCH report: " << (work / "report.json")
+                  << "\nPatch: " << (work / "pch.patch") << '\n';
+        return 0;
+    } catch (const std::exception& error) {
+        report["status"] = interrupted() ? "interrupted" : "failed";
+        report["error"] = std::string(error.what());
+        report["patch_recommended"] = false;
+        retain_logs("profile");
+        retain_logs("experiment");
+        write_file(work / "logs/automatic-pch.log", error.what());
+        write_json(work / "report.json", json::Object(report));
+        std::cerr << "buildray: " << error.what() << "\nReport: " << (work / "report.json") << '\n';
+        return interrupted() ? 130 : 1;
+    }
+}
 }  // namespace
 
 int pipeline(const Options& options, const fs::path& executable) {
+    if (options.auto_pch) return automatic_pch(options, executable);
     check_cmake_args(options.cmake_args);
     const auto source = absolute_path(options.source);
     const auto base_source =
@@ -575,6 +688,8 @@ int pipeline(const Options& options, const fs::path& executable) {
     fs::create_directories(logs);
     json::Array extra;
     for (const auto& arg : options.cmake_args) extra.push_back(arg);
+    json::Array exclusions;
+    for (const auto& path : options.exclusions) exclusions.push_back(path.generic_string());
     json::Object report{
         {"schema_version", 1},
         {"buildray_version", BUILDRAY_VERSION},
@@ -585,6 +700,7 @@ int pipeline(const Options& options, const fs::path& executable) {
         {"jobs", options.jobs},
         {"runs", options.command == "profile" || options.command == "deps" ? 1u : options.runs},
         {"cmake_args", std::move(extra)},
+        {"excluded_paths", std::move(exclusions)},
         {"measurement",
          options.command == "measure"
              ? "clean builds; warm filesystem cache; compiler caches disabled"

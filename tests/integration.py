@@ -227,11 +227,45 @@ else:
 """)
     fake.chmod(0o755)
     broken_work = root / "broken-result"
-    optimize(broken, broken_work, "--clang-tidy", str(fake), expected=1)
+    optimize(broken, broken_work, "--clang-tidy", str(fake))
     broken_report = json.loads((broken_work / "report.json").read_text())
-    assert broken_report["phase"] == "candidate_validation" and broken_report["status"] == "failed"
-    assert broken_report["patch_recommended"] is False and "baseline" not in broken_report
+    assert broken_report["status"] == "passed" and broken_report["patch_validated"]
+    assert broken_report["removed_includes"] == 0 and len(broken_report["preflight_rejected_files"]) == 1
+    assert broken_report["patch_recommended"] is False
     assert "#include <vector>" in (broken / "main file.cpp").read_text()
+
+    # Reproduce the namespace-only deletion observed on XGrammar without depending
+    # on a particular include-cleaner version. Keep that file, clean an independent
+    # file, and leave excluded dependencies intact.
+    namespace_case = root / "namespace-and-exclusions"
+    project(namespace_case)
+    (namespace_case / "namespace_only.hpp").write_text("namespace fixture_namespace {}\n")
+    main_text = '#include "namespace_only.hpp"\nusing namespace fixture_namespace;\nint other();\nint main() { return other(); }\n'
+    (namespace_case / "main file.cpp").write_text(main_text)
+    (namespace_case / "other.cpp").write_text("#include <vector>\nint other() { return 0; }\n")
+    (namespace_case / "3rdparty").mkdir()
+    vendor_text = "#include <set>\nint vendor() { return 0; }\n"
+    (namespace_case / "3rdparty/vendor.cpp").write_text(vendor_text)
+    with (namespace_case / "CMakeLists.txt").open("a") as stream:
+        stream.write('target_sources(sample PRIVATE other.cpp 3rdparty/vendor.cpp)\n')
+    namespace_original = digest(namespace_case)
+    namespace_work = root / "namespace-result"
+    namespace_tidy = root / "namespace-tidy"
+    namespace_tidy.write_text(fake.read_text().replace("'Length': 18",
+        "'Length': len(pathlib.Path(path).read_text().splitlines(keepends=True)[0])"))
+    namespace_tidy.chmod(0o755)
+    optimize(namespace_case, namespace_work, "--exclude", "3rdparty/", "--clang-tidy", str(namespace_tidy))
+    namespace_report = json.loads((namespace_work / "report.json").read_text())
+    assert namespace_report["patch_validated"] and namespace_report["removed_includes"] == 1, namespace_report
+    assert namespace_report["excluded_paths"] == ["3rdparty"]
+    assert namespace_report["excluded_compile_commands_skipped"] == 1
+    assert namespace_report["preflight_rejected_files"][0]["file"] == "main file.cpp"
+    assert (namespace_work / "candidate-source/main file.cpp").read_text() == main_text
+    assert (namespace_work / "candidate-source/3rdparty/vendor.cpp").read_text() == vendor_text
+    assert digest(namespace_case) == namespace_original
+    for path in ["../outside", "/tmp", "."]:
+        run(binary, "optimize", "--source", str(namespace_case), "--exclude", path, expected=2)
+    run(binary, "profile", "--exclude", "3rdparty", expected=2)
 
     # A declaration can survive while a template definition disappears. The
     # compiler accepts the file, but the complete build must reject the link.

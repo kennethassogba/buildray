@@ -60,6 +60,10 @@ add_test(NAME works COMMAND sample)
         {"BUILDRAY_COMMAND": "pch", "BUILDRAY_PCH_HEADERS": "<vector>"},
         {"BUILDRAY_COMMAND": "profile", "BUILDRAY_PCH_TARGET": "sample"},
         {"BUILDRAY_FAIL_ON_CYCLES": "true"},
+        {"BUILDRAY_PCH_AUTO": "true"},
+        {"BUILDRAY_EXCLUDE_PATHS": '["3rdparty"]'},
+        {"BUILDRAY_COMMAND": "optimize", "BUILDRAY_EXCLUDE_PATHS": '"3rdparty"'},
+        {"BUILDRAY_COMMAND": "pch", "BUILDRAY_PCH_AUTO": "true", "BUILDRAY_PCH_HEADERS": '["<vector>"]'},
     ]:
         execute([sys.executable, script], env={**environment, **changes}, expected=1)
     assert not (source / "injected").exists()
@@ -78,6 +82,27 @@ add_test(NAME works COMMAND sample)
         state = json.loads(Path(result_fields["report"]).read_text())
         assert state["status"] == "passed"
         assert execute(["git", "status", "--porcelain"], cwd=source) == status
+
+    # Automatic PCH retains both its selection profile and measured experiment.
+    original_cmake = cmake.read_text()
+    (source / "common.hpp").write_text('#pragma once\n#include <vector>\ninline int answer() { return std::vector<int>{}.size(); }\n')
+    (source / "helper.cpp").write_text('#include "common.hpp"\nint helper() { return answer(); }\n')
+    (source / "main.cpp").write_text('#include "common.hpp"\nint helper(); int main() { return answer() + helper(); }\n')
+    cmake.write_text(original_cmake + '\ntarget_sources(sample PRIVATE helper.cpp)\n')
+    automatic_outputs = root / "automatic-outputs"
+    execute([sys.executable, script], env={**environment, "BUILDRAY_COMMAND": "pch",
+            "BUILDRAY_PCH_AUTO": "true", "GITHUB_OUTPUT": str(automatic_outputs)})
+    automatic = dict(line.split("=", 1) for line in automatic_outputs.read_text().splitlines())
+    auto_report = json.loads(Path(automatic["report"]).read_text())
+    assert auto_report["pch_auto"] and auto_report["patch_validated"]
+    assert auto_report["automatic_selection"]["header"] == "common.hpp"
+    assert all(Path(automatic[key]).is_file() for key in ["headers", "selection", "patch"])
+    assert "Automatic candidate:" in summary.read_text()
+    cmake.write_text(original_cmake)
+    (source / "main.cpp").write_text("int main() { return 0; }\n")
+    (source / "common.hpp").unlink()
+    (source / "helper.cpp").unlink()
+    assert execute(["git", "status", "--porcelain"], cwd=source) == status
 
     # The explicit cycle policy fails CI while retaining the completed graph.
     (source / "cycle.h").write_text('#pragma once\n#include "cycle.h"\n')

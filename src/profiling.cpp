@@ -164,6 +164,52 @@ std::string profile_markdown(const json::Object& profile) {
     return out.str();
 }
 
+json::Object select_pch(const json::Object& profile, const fs::path& source,
+                        const std::string& selected_target) {
+    if (!selected_target.empty() && !safe_name(selected_target, false))
+        throw std::runtime_error("Unsupported PCH target name");
+    const auto* targets = profile.getArray("targets");
+    if (!targets) throw std::runtime_error("Missing per-target header profile");
+    json::Object selected;
+    double best_seconds = -1;
+    std::pair<std::string, std::string> best_key;
+    for (const auto& value : *targets) {
+        if (interrupted()) throw std::runtime_error("Interrupted");
+        const auto* target = value.getAsObject();
+        const auto name = target ? target->getString("target") : std::nullopt;
+        const auto* headers = target ? target->getArray("headers") : nullptr;
+        if (!name || !headers) throw std::runtime_error("Invalid per-target header profile");
+        if ((!selected_target.empty() && *name != selected_target) || !safe_name(name->str(), false)) continue;
+        for (const auto& row : *headers) {
+            const auto* header = row.getAsObject();
+            const auto path = header ? header->getString("header") : std::nullopt;
+            const auto seconds = header ? header->getNumber("inclusive_seconds") : std::nullopt;
+            const auto compilations = header ? header->getInteger("compilations") : std::nullopt;
+            if (!path || !seconds || !compilations || !std::isfinite(*seconds) || *seconds < 0 || *compilations < 0)
+                throw std::runtime_error("Invalid PCH selection metric");
+            if (!path->starts_with("<SOURCE>/") || *compilations < 2 || *seconds == 0) continue;
+            const fs::path relative = path->drop_front(9).str();
+            const auto extension = relative.extension();
+            if (!safe_name(relative.generic_string(), true) || relative.is_absolute() ||
+                (extension != ".h" && extension != ".hpp" && extension != ".hh" && extension != ".hxx") ||
+                !within(absolute_path(source / relative), absolute_path(source)) ||
+                !fs::is_regular_file(source / relative)) continue;
+            const auto key = std::pair{name->str(), relative.lexically_normal().generic_string()};
+            if (*seconds < best_seconds || (*seconds == best_seconds && key >= best_key)) continue;
+            best_seconds = *seconds;
+            best_key = key;
+            selected = json::Object{{"target", key.first}, {"header", key.second},
+                                     {"profile_header", path->str()},
+                                     {"inclusive_seconds", *seconds}, {"compilations", *compilations},
+                                     {"rule", "highest per-target inclusive parse cost among original project headers used in at least two compilations; ties by target and path"},
+                                     {"scope", "one candidate; inclusive parse cost is not predicted build-time savings"}};
+        }
+    }
+    if (selected.empty())
+        throw std::runtime_error("No eligible project header used by at least two compilations of the selected targets; use an explicit --target and --header");
+    return selected;
+}
+
 std::string pch_cmake(const Options& options, const fs::path& source) {
     if (!safe_name(options.target, false)) throw std::runtime_error("Unsupported PCH target name");
     std::string includes;

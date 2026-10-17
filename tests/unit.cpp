@@ -199,6 +199,29 @@ Diagnostics:
         require(include_line(".. /path with spaces/header.h") ==
                     std::pair<std::size_t, std::string>{2, "/path with spaces/header.h"},
                 "include depth and spaced paths");
+        write_file(temporary / "project/common.hpp", "#pragma once\n");
+        const auto make_header = [](const std::string& name, double seconds, int count) {
+            return json::Object{{"header", name}, {"inclusive_seconds", seconds}, {"compilations", count}};
+        };
+        const json::Object pch_profile{{"targets", json::Array{
+            json::Object{{"target", "a"}, {"headers", json::Array{
+                make_header("/external.hpp", 100, 20),
+                make_header("<SOURCE>/../escape.hpp", 100, 20),
+                make_header("<SOURCE>/generated.hpp", 100, 20),
+                make_header("<SOURCE>/common.hpp", 2, 2)}}},
+            json::Object{{"target", "b"}, {"headers", json::Array{
+                make_header("<SOURCE>/common.hpp", 3, 3)}}},
+            json::Object{{"target", "one_off"}, {"headers", json::Array{
+                make_header("<SOURCE>/common.hpp", 100, 1)}}}}}};
+        const auto selected = select_pch(pch_profile, temporary / "project");
+        require(selected.getString("target") == "b" && selected.getString("header") == "common.hpp",
+                "PCH selection uses repeated original project headers and per-target cost");
+        require(select_pch(pch_profile, temporary / "project", "a").getString("target") == "a",
+                "PCH target restriction");
+        rejects([&] { select_pch(pch_profile, temporary / "project", "missing"); },
+                "unknown targets must not silently fall back");
+        rejects([&] { select_pch(pch_profile, temporary / "project", "one_off"); },
+                "one-off headers do not justify automatic PCH selection");
         const auto dependency_build = temporary / "dependency-build";
         const auto replies = dependency_build / ".cmake/api/v1/reply";
         write_json(replies / "index-test.json", json::Object{{"reply", json::Object{
