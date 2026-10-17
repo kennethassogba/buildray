@@ -1,0 +1,40 @@
+--- a/src/engine/engine_crossplatform.h
++++ b/src/engine/engine_crossplatform.h
+@@ -30,7 +30,6 @@
+   #define strcasecmp _stricmp
+   #define strncasecmp _strnicmp
+ #else  // assumes POSIX
+-  #include <strings.h>
+ #endif
+ 
+ // Environment variable handling.
+--- a/src/engine/engine_io.h
++++ b/src/engine/engine_io.h
+@@ -20,7 +20,6 @@
+ #include <mujoco/mjmodel.h>
+ 
+ #ifdef __cplusplus
+-#include <cstddef>
+ extern "C" {
+ #else
+ #include <stddef.h>
+--- a/src/engine/engine_util_sparse.h
++++ b/src/engine/engine_util_sparse.h
+@@ -20,7 +20,6 @@
+ #include <mujoco/mjdata.h>
+ #include <mujoco/mjexport.h>
+ #include <mujoco/mjtype.h>
+-#include "engine/engine_util_sparse_avx.h"
+ 
+ #ifdef __cplusplus
+ extern "C" {
+--- a/src/user/user_objects.h
++++ b/src/user/user_objects.h
+@@ -34,7 +34,6 @@
+ #include <mujoco/mjspec.h>
+ #include <mujoco/mjtype.h>
+ #include "user/user_cache.h"
+-#include "user/user_util.h"
+ 
+ // forward declarations of all mjC/X classes
+ class mjCError;

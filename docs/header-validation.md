@@ -136,7 +136,7 @@ The integration project now treats unused compiler arguments as errors too.
 Header runs with no eligible changes still validate both clean builds and the
 CTest inventories, but skip timing identical copies. The long MuJoCo experiment
 from the affected version completes both 3,496-case test passes, then rejects
-the candidate because of the opaque GoogleTest display names described below. A fresh one-pair corpus run will validate the corrected tool;
+the candidate because of the opaque GoogleTest display names described below. The final one-pair corpus run below validates the corrected tool;
 one pair cannot recommend a performance change. The manual workflow defaults to
 three pairs and exposes `header_runs` for these shorter validation runs.
 
@@ -236,3 +236,33 @@ The same CI run validates SentencePiece’s unchanged eight-removal patch again;
 see its [report](evidence/sentencepiece-headers-ci-report.json) and
 [findings](evidence/sentencepiece-headers-ci-findings.json). One pair does not
 recommend a performance change, and these removals are already present upstream.
+
+
+## Final MuJoCo configuration result
+
+[Run 39037818246](https://github.com/kennethassogba/buildray/actions/runs/39037818246)
+completes successfully for all three header corpus projects and both native test
+jobs. On pinned MuJoCo, the corrected tool validates four include removals in
+four internal headers. It indexes 326 active commands, records 167 outside the
+default build, and runs 67 user/standalone preflights. Both variants build, link
+and pass all 3,496 CTest cases. The comparator recognizes 153 opaque GoogleTest
+parameters in each inventory, with stable execution filters. No forward
+declaration is accepted.
+
+The single clean-build pair is 444.607 s before and 447.608 s after (+0.675%).
+It reports `insufficient_samples`, `patch_validated: true` and
+`patch_recommended: false`. These values do not establish a performance gain.
+The [report](evidence/mujoco-headers-ci-report.json),
+[findings](evidence/mujoco-headers-ci-findings.json) and
+[experimental patch](evidence/mujoco-headers-ci.patch) are retained.
+
+All four directives are still present on upstream
+`651bae11c3c38efe483f033b4b7e869e7ce3f4ec`; the
+[upstream check](evidence/mujoco-headers-upstream-check.json) records this.
+They are not published as an upstream patch: `engine_util_sparse.h` calls AVX
+helpers behind `mjUSEAVX`, and `engine_crossplatform.h` intentionally provides
+POSIX string comparison declarations. Their unused status in this configuration
+does not justify removing those includes across configurations. The other two
+removals remain local findings; a contribution needs validation against current
+upstream in both precision modes. This is why a configured validation result
+still requires review before contributing.

@@ -1,0 +1,25 @@
+{
+  "upstream_revision": "651bae11c3c38efe483f033b4b7e869e7ce3f4ec",
+  "findings": [
+    {
+      "file": "src/engine/engine_util_sparse.h",
+      "directive": "#include \"engine/engine_util_sparse_avx.h\"",
+      "present": true
+    },
+    {
+      "file": "src/engine/engine_crossplatform.h",
+      "directive": "#include <strings.h>",
+      "present": true
+    },
+    {
+      "file": "src/engine/engine_io.h",
+      "directive": "#include <cstddef>",
+      "present": true
+    },
+    {
+      "file": "src/user/user_objects.h",
+      "directive": "#include \"user/user_util.h\"",
+      "present": true
+    }
+  ]
+}
