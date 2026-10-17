@@ -209,6 +209,17 @@ endif()
     assert not failed["unity_auto_exclusions"] and len(failed["unity_attempts"]) == 1
     third.write_text(saved_third)
     cmake.write_text(saved_cmake)
+    # A file created by configure in the snapshot cannot become a published exclusion.
+    main.write_text("namespace { int duplicate = 0; }\n" + saved_main)
+    cmake.write_text(saved_cmake + '''file(WRITE "${CMAKE_CURRENT_SOURCE_DIR}/generated.cpp" "namespace { int duplicate = 1; }\\n")
+target_sources(sample PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/generated.cpp")
+''')
+    _, failed = invoke("generated-source", "--unity-retries", 2, expected=1)
+    assert "original source tree" in failed["error"] and not failed["patch_validated"]
+    assert not failed["unity_auto_exclusions"] and len(failed["unity_attempts"]) == 1
+    assert not (lib / "generated.cpp").exists()
+    main.write_text(saved_main)
+    cmake.write_text(saved_cmake)
     _, scanned = invoke("scanned-modules", "--unity-exclude", "lib/c/a.c", "--unity-exclude", "lib/c/b.c",
                         "--", "-DCMAKE_CXX_STANDARD=26", "-DCMAKE_CXX_SCAN_FOR_MODULES=ON", expected=1)
     assert "did not combine" in scanned["error"], scanned

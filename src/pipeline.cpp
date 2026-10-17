@@ -1086,9 +1086,13 @@ int pipeline(const Options& options, const fs::path& executable) {
                                                                candidate.source, candidate.build);
                     auto* history = report.getArray("unity_auto_exclusions");
                     for (const auto& file : isolated) {
+                        if (!fs::is_regular_file(source / file))
+                            throw std::runtime_error("Unity isolation requires files from the original source tree");
                         if (std::ranges::find(unity_options.unity_exclusions, file) !=
                             unity_options.unity_exclusions.end())
                             throw std::runtime_error("Unity exclusion did not isolate a failed source");
+                    }
+                    for (const auto& file : isolated) {
                         unity_options.unity_exclusions.push_back(file);
                         history->push_back(file.generic_string());
                     }

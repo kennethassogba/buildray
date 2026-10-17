@@ -50,14 +50,15 @@ Buildray can exclude all original sources in failed compiler groups and try agai
 The budget is 0–8 retries and defaults to zero. Each retry regenerates the patch,
 reconfigures, checks flags, and starts another clean build. Only failed compiler
 records for multi-source unity groups on the selected target can trigger this.
-Standalone failures, missing records, compiler crashes, generated build-tree
-inputs, coverage changes, link failures and test failures remain blocking.
+Standalone failures, missing records, compiler exit codes other than 1, inputs
+absent from the original source tree, coverage changes, link failures and test
+failures remain blocking.
 It stops if no useful grouping remains. Sources are never renamed or rewritten.
 This coarse isolation can exclude more files than necessary; it does not identify
 the smallest conflicting pair or diagnose every compiler error.
 
 `report.json` records every attempt, its build log, and `unity_auto_exclusions`.
-Failed attempt plans and compiler records are retained as `unity-attempt-N-*.json`;
+Plans used for retries and failed compiler records are retained as `unity-attempt-N-*.json`;
 the final `unity.patch` contains both manual and learned exclusions. The Action
 also retains these JSON files and the last 64 KiB of each attempt's build log.
 Retries and discovery happen before timing; only the final fixed layout is timed.
