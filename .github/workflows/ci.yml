@@ -29,6 +29,10 @@ on:
         description: Build, test and capture dependency graphs on pinned MuJoCo and XGrammar.
         type: boolean
         default: false
+      header_corpus:
+        description: Validate and benchmark header cleanup and forward declarations on the existing AI corpus.
+        type: boolean
+        default: false
       link_corpus:
         description: Validate and benchmark one redundant CMake link on pinned XGrammar.
         type: boolean
@@ -225,3 +229,64 @@ jobs:
           cmake-args: ${{ matrix.cmake_args }}
           jobs: '2'
           artifact-name: ${{ matrix.name }}-dependencies
+
+  header-corpus:
+    name: header-corpus (${{ matrix.name }})
+    if: github.event_name == 'workflow_dispatch' && inputs.header_corpus
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: xgrammar
+            repository: mlc-ai/xgrammar
+            revision: 7e269d56c74c89de52bc8c31e42191155416371f
+            paths: '["cpp"]'
+            exclusions: '["3rdparty"]'
+            cmake_args: '[]'
+          - name: sentencepiece
+            repository: google/sentencepiece
+            revision: e0cce7d37b065b5140349dbe12c6bcf6192fdd78
+            paths: '["src"]'
+            exclusions: '["third_party", "src/builtin_pb"]'
+            cmake_args: '["-DSPM_BUILD_TEST=ON", "-DSPM_ENABLE_SHARED=OFF", "-DSPM_ENABLE_TCMALLOC=OFF"]'
+          - name: mujoco
+            repository: google-deepmind/mujoco
+            revision: f640345f72b773e7ec52cd9426a57335cf9c6c28
+            paths: '["src"]'
+            exclusions: '[]'
+            cmake_args: '["-DMUJOCO_BUILD_EXAMPLES=OFF", "-DMUJOCO_BUILD_SIMULATE=OFF", "-DMUJOCO_BUILD_TESTS=ON", "-DMUJOCO_TEST_PYTHON_UTIL=OFF"]'
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - uses: actions/checkout@v6
+        with:
+          repository: ${{ matrix.repository }}
+          ref: ${{ matrix.revision }}
+          path: fixtures/${{ matrix.name }}
+          persist-credentials: false
+      - name: Prepare XGrammar configuration
+        if: matrix.name == 'xgrammar'
+        working-directory: fixtures/xgrammar
+        run: |
+          git submodule update --init --depth 1 3rdparty/dlpack 3rdparty/googletest
+          printf '%s\n' 'set(XGRAMMAR_BUILD_PYTHON_BINDINGS OFF)' 'set(XGRAMMAR_BUILD_CXX_TESTS ON)' > config.cmake
+      - name: Prepare MuJoCo test locale
+        if: matrix.name == 'mujoco'
+        run: sudo locale-gen de_DE.UTF-8
+      - name: Validate and measure header changes
+        uses: ./
+        with:
+          command: headers
+          source: fixtures/${{ matrix.name }}
+          forward-declarations: 'true'
+          header-paths: ${{ matrix.paths }}
+          exclude-paths: ${{ matrix.exclusions }}
+          max-header-edits: '4'
+          cmake-args: ${{ matrix.cmake_args }}
+          runs: '3'
+          jobs: '2'
+          artifact-name: ${{ matrix.name }}-header-cleanup

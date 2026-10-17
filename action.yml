@@ -9,7 +9,7 @@ inputs:
     description: CMake source directory relative to the checkout.
     default: '.'
   command:
-    description: measure, optimize, profile, pch, deps, or prune-links (one redundant CMake link experiment).
+    description: measure, optimize, headers, profile, pch, deps, or prune-links.
     default: measure
   baseline-ref:
     description: Base Git revision for measure. Empty outside PRs means a standalone measurement.
@@ -18,7 +18,7 @@ inputs:
     description: JSON array of project CMake -D options. No shell evaluation.
     default: '[]'
   exclude-paths:
-    description: JSON array of relative files/directories that optimize or prune-links must not edit. Build and test coverage is unchanged.
+    description: JSON array of relative files/directories that optimize, headers or prune-links must not edit. Build and test coverage is unchanged.
     default: '[]'
   runs:
     description: Clean build samples per revision. At least 3 for comparisons.
@@ -33,7 +33,7 @@ inputs:
     description: Clang C++ compiler for the project and tool bootstrap.
     default: clang++-21
   clang-tidy:
-    description: Include analyzer for optimize.
+    description: Include analyzer for optimize and headers.
     default: clang-tidy-21
   c-compiler:
     description: Clang C compiler for command deps.
@@ -56,6 +56,15 @@ inputs:
   link-dependency:
     description: Optional direct dependency restriction for command prune-links. Fail if it is not an eligible redundant literal link.
     default: ''
+  forward-declarations:
+    description: For headers, try replacing eligible project includes with simple class/struct declarations.
+    default: 'false'
+  header-paths:
+    description: For headers, optional JSON array of relative files/directories to edit.
+    default: '[]'
+  max-header-edits:
+    description: For headers, maximum accepted header files per run (1-1000).
+    default: '8'
   allow-no-tests:
     description: Explicitly allow build-only validation when no CTest tests exist.
     default: 'false'
@@ -63,7 +72,7 @@ inputs:
     description: Install Clang/LLVM 21, Ninja and CMake on an Ubuntu runner.
     default: 'true'
   buildray-path:
-    description: Optional prebuilt CLI path. Otherwise build the action source in C++26.
+    description: Optional prebuilt CLI path. Otherwise build the action source. For headers, keep buildray-header-tool next to it.
     default: ''
   artifact-name:
     description: Name for retained reports and the optional patch.
@@ -99,6 +108,9 @@ outputs:
   links:
     description: Redundant CMake link candidates and selected experiment.
     value: ${{ steps.run.outputs.links }}
+  header-cleanup:
+    description: Header findings, rejected proposals and validation counts.
+    value: ${{ steps.run.outputs.header-cleanup }}
   dependencies:
     description: Observed include and configured CMake dependency graph JSON.
     value: ${{ steps.run.outputs.dependencies }}
@@ -136,6 +148,9 @@ runs:
         BUILDRAY_PCH_AUTO: ${{ inputs.pch-auto }}
         BUILDRAY_LINK_TARGET: ${{ inputs.link-target }}
         BUILDRAY_LINK_DEPENDENCY: ${{ inputs.link-dependency }}
+        BUILDRAY_FORWARD_DECLARATIONS: ${{ inputs.forward-declarations }}
+        BUILDRAY_HEADER_PATHS: ${{ inputs.header-paths }}
+        BUILDRAY_MAX_HEADER_EDITS: ${{ inputs.max-header-edits }}
         BUILDRAY_ALLOW_NO_TESTS: ${{ inputs.allow-no-tests }}
         BUILDRAY_INSTALL_DEPENDENCIES: ${{ inputs.install-dependencies }}
         BUILDRAY_BINARY: ${{ inputs.buildray-path }}

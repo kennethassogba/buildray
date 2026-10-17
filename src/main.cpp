@@ -13,6 +13,7 @@ constexpr const char* help = "Buildray " BUILDRAY_VERSION R"( - measured C++ bui
 
 Usage:
   buildray optimize --source DIR [options] [-- -DNAME=VALUE ...]
+  buildray headers --source DIR [--forward-declarations] [options] [-- -DNAME=VALUE ...]
   buildray measure  --source DIR [options] [-- -DNAME=VALUE ...]
   buildray profile --source DIR [options] [-- -DNAME=VALUE ...]
   buildray deps --source DIR [--c-compiler PATH] [--fail-on-cycles] [options]
@@ -43,7 +44,10 @@ Options:
   --dependency NAME     prune-links: restrict selection to this direct dependency
   --header HEADER       PCH header: <system> or source-root-relative path; repeatable
   --auto                pch: profile, select one project header/target, validate and measure
-  --exclude PATH        optimize/prune-links: skip edits to a relative file/directory; repeatable
+  --exclude PATH        optimize/headers/prune-links: skip edits to a relative path; repeatable
+  --forward-declarations headers: try replacing eligible project includes with class/struct declarations
+  --header-path PATH    headers: restrict edited headers to a relative file/directory; repeatable
+  --max-header-edits N  headers: accepted header files per run, 1..1000 (default: 8)
   --help                Show this help
   --version             Print version
 
@@ -75,6 +79,12 @@ reconfigures, checks graph changes, builds and tests, then measures three or mor
 clean-build pairs. Outputs: cmake.patch, links.json, before/after CMake graphs.
 No eligible candidate completes without a patch or benchmark. This is configured
 graph redundancy, not proof that a library's symbols are unused.
+headers analyzes observed original project headers with Clang AST and include-cleaner.
+Each candidate must compile standalone in observed C++ contexts and in all observed
+C/C++ users, then pass the complete clean build and CTest. --forward-declarations
+tries simple project class/struct declarations for pointer/reference uses. Templates,
+aliases, nested/inline/anonymous namespaces and attributed records are kept.
+Outputs: headers.patch and header-cleanup.json. Original headers stay unchanged.
 
 Exit codes: 0 completed, 1 pipeline/validation failure, 2 invalid arguments,
 3 regression over budget and noise, 4 incomparable reports, 5 cycles, 130 interrupted.
@@ -127,7 +137,7 @@ buildray::Options parse(const std::vector<std::string>& args) {
     options.command = args.front();
     if (options.command != "optimize" && options.command != "measure" &&
         options.command != "compare" && options.command != "profile" && options.command != "pch" &&
-        options.command != "deps" && options.command != "prune-links")
+        options.command != "deps" && options.command != "prune-links" && options.command != "headers")
         throw std::runtime_error("Unknown command: " + options.command);
     for (std::size_t i = 1; i < args.size(); ++i) {
         const auto& arg = args[i];
@@ -148,15 +158,22 @@ buildray::Options parse(const std::vector<std::string>& args) {
             options.auto_pch = true;
             continue;
         }
+        if (arg == "--forward-declarations") {
+            options.forward_declarations = true;
+            continue;
+        }
         if (arg != "--source" && arg != "--work-dir" && arg != "--compiler" &&
             arg != "--clang-tidy" && arg != "--runs" && arg != "--jobs" &&
             arg != "--baseline-source" && arg != "--max-regression-percent" && arg != "--session" &&
-            arg != "--target" && arg != "--header" && arg != "--c-compiler" && arg != "--exclude" && arg != "--dependency")
+            arg != "--target" && arg != "--header" && arg != "--c-compiler" && arg != "--exclude" && arg != "--dependency" &&
+            arg != "--header-path" && arg != "--max-header-edits")
             throw std::runtime_error("Unknown option: " + arg);
         if (++i == args.size() || args[i].starts_with("--"))
             throw std::runtime_error("Missing value for " + arg);
         const auto& value = args[i];
         if (value.empty()) throw std::runtime_error("Empty value for " + arg);
+        if (arg == "--max-header-edits" && options.command != "headers")
+            throw std::runtime_error("--max-header-edits requires headers");
         if (arg == "--source")
             options.source = value;
         else if (arg == "--work-dir")
@@ -171,6 +188,8 @@ buildray::Options parse(const std::vector<std::string>& args) {
             options.runs = number(value, 100);
         else if (arg == "--jobs")
             options.jobs = number(value, 1024);
+        else if (arg == "--max-header-edits")
+            options.max_header_edits = number(value, 1000);
         else if (arg == "--baseline-source")
             options.baseline_source = value;
         else if (arg == "--session")
@@ -181,12 +200,13 @@ buildray::Options parse(const std::vector<std::string>& args) {
             options.dependency = value;
         else if (arg == "--header")
             options.headers.push_back(value);
-        else if (arg == "--exclude") {
+        else if (arg == "--exclude" || arg == "--header-path") {
             auto path = buildray::fs::path(value).lexically_normal();
             if (path.filename().empty()) path = path.parent_path();
             if (path.empty() || path.is_absolute() || path == "." || *path.begin() == "..")
-                throw std::runtime_error("--exclude requires a relative file/directory inside the source tree");
-            options.exclusions.push_back(std::move(path));
+                throw std::runtime_error(arg + " requires a relative file/directory inside the source tree");
+            if (arg == "--exclude") options.exclusions.push_back(std::move(path));
+            else options.header_paths.push_back(std::move(path));
         }
         else if (arg == "--max-regression-percent")
             options.max_regression_percent = budget(value);
@@ -209,8 +229,10 @@ buildray::Options parse(const std::vector<std::string>& args) {
         throw std::runtime_error("prune-links requires at least three runs");
     if (options.command != "deps" && (options.fail_on_cycles || options.c_compiler != "clang"))
         throw std::runtime_error("--c-compiler and --fail-on-cycles require deps");
-    if (options.command != "optimize" && options.command != "prune-links" && !options.exclusions.empty())
-        throw std::runtime_error("--exclude requires optimize or prune-links");
+    if (options.command != "optimize" && options.command != "prune-links" && options.command != "headers" && !options.exclusions.empty())
+        throw std::runtime_error("--exclude requires optimize, headers or prune-links");
+    if (options.command != "headers" && (options.forward_declarations || !options.header_paths.empty() || options.max_header_edits != 8))
+        throw std::runtime_error("Header options require command headers");
     // Tools run from the snapshot; resolve explicit relative executable paths now.
     for (auto* tool : {&options.compiler, &options.c_compiler, &options.tidy}) {
         // The driver name is semantic: clang++ can be a symlink to clang.

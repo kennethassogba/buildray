@@ -542,7 +542,7 @@ void patch(const Changes& changes, const Variant& baseline, const Variant& candi
             edited.erase(item.offset, item.length);
             write_file(candidate.source / relative, edited);
         } else {
-            write_file(candidate.source / relative, apply_removals(original, replacements));
+            write_file(candidate.source / relative, apply_include_replacements(original, replacements));
         }
         const auto diff_file = work / "file.diff";
         const auto result =
@@ -581,6 +581,8 @@ void print_summary(const json::Object& report, const fs::path& work) {
         std::cout << "Patch: " << (work / "pch.patch") << '\n';
     if (fs::exists(work / "cmake.patch"))
         std::cout << "Patch: " << (work / "cmake.patch") << '\n';
+    if (fs::exists(work / "headers.patch"))
+        std::cout << "Patch: " << (work / "headers.patch") << '\n';
     if (fs::exists(work / "headers.json"))
         std::cout << "Header profile: " << (work / "headers.json") << '\n';
 }
@@ -691,6 +693,10 @@ int automatic_pch(const Options& options, const fs::path& executable) {
 }
 }  // namespace
 
+std::vector<std::string> compile_arguments(const json::Object& entry) {
+    return compiler_arguments(entry);
+}
+
 int pipeline(const Options& options, const fs::path& executable) {
     if (options.auto_pch) return automatic_pch(options, executable);
     check_cmake_args(options.cmake_args);
@@ -768,7 +774,7 @@ int pipeline(const Options& options, const fs::path& executable) {
                 (version->getInteger("major") == 4 && version->getInteger("minor").value_or(0) < 2))
                 throw std::runtime_error("Dependency analysis requires CMake 4.2+ for direct target relationships");
         }
-        if (options.command == "optimize") {
+        if (options.command == "optimize" || options.command == "headers") {
             checked({options.tidy, "--version"}, source, logs / "tidy-version.log");
             report["clang_tidy_version"] = read_file(logs / "tidy-version.log");
             checked(
@@ -795,13 +801,15 @@ int pipeline(const Options& options, const fs::path& executable) {
         }
         // Configure scripts can write generated links or files into their source tree.
         // Prepare both inputs before either configure runs; optimize uses identical bytes.
-        if (options.command == "optimize" || options.command == "pch" || options.command == "prune-links")
+        if (options.command == "optimize" || options.command == "pch" || options.command == "prune-links" || options.command == "headers")
             snapshot(baseline.source, candidate.source, work);
         if (options.command == "compare") snapshot(source, candidate.source, work);
         SourceFiles originals;
-        if (options.command == "optimize") {
+        if (options.command == "optimize" || options.command == "headers") {
             for (const auto& entry : fs::recursive_directory_iterator(candidate.source)) {
-                if (entry.is_regular_file() && cpp_source(entry.path()))
+                const auto ext = entry.path().extension();
+                if (entry.is_regular_file() && (cpp_source(entry.path()) ||
+                    (options.command == "headers" && (ext == ".h" || ext == ".hpp" || ext == ".hh" || ext == ".hxx"))))
                     originals[entry.path().lexically_relative(candidate.source)] =
                         read_file(entry.path());
             }
@@ -978,14 +986,21 @@ int pipeline(const Options& options, const fs::path& executable) {
                 report["removed_links"] = 1;
                 report["cmake_graph_change_verified"] = true;
             }
-            if (options.command == "optimize") {
+            if (options.command == "optimize" || options.command == "headers") {
                 // Generated headers must exist before clang-tidy parses sources.
                 clear_records(candidate.records);
                 build(options, candidate, logs / "candidate-initial-build.log");
                 verify_coverage(candidate);
-                std::cout << "Analyzing unused includes with clang-tidy...\n" << std::flush;
-                changes = analyze(options, candidate, work, originals, report);
-                patch(changes, baseline, candidate, work);
+                if (options.command == "headers") {
+                    for (auto item : analyze_headers(options, candidate.source, candidate.build, work, executable, originals, report))
+                        changes[fs::path(item.file)].push_back(std::move(item));
+                    report["validation_scope"] = "one configured CMake build; observed original project headers; standalone and observed-user preflights; complete build and CTest";
+                    patch(changes, baseline, candidate, work, "headers.patch");
+                } else {
+                    std::cout << "Analyzing unused includes with clang-tidy...\n" << std::flush;
+                    changes = analyze(options, candidate, work, originals, report);
+                    patch(changes, baseline, candidate, work);
+                }
             }
             write_json(work / "report.json", json::Object(report));
             report["phase"] = "candidate_validation";

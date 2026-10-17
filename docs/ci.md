@@ -122,3 +122,6 @@ A completed comparison uses `status: passed` for pipeline completion and
 
 [Validation evidence](ci-validation.md) covers the native commands, the Action
 bootstrap on GitHub, and retained report replay.
+
+Header cleanup and forward declarations are available with `command: headers`.
+See [the inputs, outputs and validation limits](header-cleanup.md#github-action).

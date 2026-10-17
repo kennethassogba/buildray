@@ -5,6 +5,7 @@
 #include <compare>
 #include <cstddef>
 #include <filesystem>
+#include <map>
 #include <string>
 #include <utility>
 #include <vector>
@@ -45,6 +46,7 @@ struct Replacement {
 std::vector<Replacement> read_fixes(const fs::path& path);
 bool removable_include(const std::string& source, const Replacement& replacement);
 std::string apply_removals(std::string source, std::vector<Replacement> replacements);
+std::string apply_include_replacements(std::string source, std::vector<Replacement> replacements);
 double median(std::vector<double> values);
 double mad(const std::vector<double>& values);
 
@@ -68,6 +70,9 @@ struct Options {
     std::vector<std::string> headers;
     std::vector<fs::path> exclusions;
     std::string dependency;
+    bool forward_declarations = false;
+    unsigned max_header_edits = 8;
+    std::vector<fs::path> header_paths;
 };
 
 struct CheckOptions {
@@ -105,4 +110,8 @@ std::string profile_markdown(const json::Object& profile);
 json::Object select_pch(const json::Object& profile, const fs::path& source,
                         const std::string& target = "");
 std::string pch_cmake(const Options& options, const fs::path& source);
+std::vector<std::string> compile_arguments(const json::Object& entry);
+std::vector<Replacement> analyze_headers(const Options& options, const fs::path& source,
+    const fs::path& build, const fs::path& work, const fs::path& executable,
+    const std::map<fs::path, std::string>& originals, json::Object& report);
 }  // namespace buildray

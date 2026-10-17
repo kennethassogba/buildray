@@ -146,17 +146,25 @@ bool removable_include(const std::string& source, const Replacement& item) {
     return true;
 }
 
-std::string apply_removals(std::string source, std::vector<Replacement> items) {
+std::string apply_include_replacements(std::string source, std::vector<Replacement> items) {
     std::ranges::sort(items);
     items.erase(std::unique(items.begin(), items.end()), items.end());
     std::size_t last = 0;
     for (const auto& item : items) {
-        if (item.offset < last || !removable_include(source, item))
+        auto deletion = item;
+        deletion.text.clear();
+        if (item.offset < last || !removable_include(source, deletion))
             throw std::runtime_error("Unsafe or overlapping include replacement");
         last = item.offset + item.length;
     }
-    for (auto i = items.rbegin(); i != items.rend(); ++i) source.erase(i->offset, i->length);
+    for (auto i = items.rbegin(); i != items.rend(); ++i) source.replace(i->offset, i->length, i->text);
     return source;
+}
+
+std::string apply_removals(std::string source, std::vector<Replacement> items) {
+    for (const auto& item : items)
+        if (!item.text.empty()) throw std::runtime_error("Unsafe include deletion with replacement text");
+    return apply_include_replacements(std::move(source), std::move(items));
 }
 
 double median(std::vector<double> values) {

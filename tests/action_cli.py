@@ -66,6 +66,9 @@ add_test(NAME works COMMAND sample)
         {"BUILDRAY_COMMAND": "pch", "BUILDRAY_PCH_AUTO": "true", "BUILDRAY_PCH_HEADERS": '["<vector>"]'},
         {"BUILDRAY_LINK_TARGET": "sample"},
         {"BUILDRAY_COMMAND": "prune-links", "BUILDRAY_RUNS": "1"},
+        {"BUILDRAY_FORWARD_DECLARATIONS": "true"},
+        {"BUILDRAY_COMMAND": "headers", "BUILDRAY_HEADER_PATHS": '"include"'},
+        {"BUILDRAY_COMMAND": "headers", "BUILDRAY_MAX_HEADER_EDITS": "0"},
     ]:
         execute([sys.executable, script], env={**environment, **changes}, expected=1)
     assert not (source / "injected").exists()
@@ -124,6 +127,26 @@ target_link_libraries(sample PRIVATE bridge api)
     assert state["patch_validated"] and state["cmake_graph_change_verified"]
     assert state["selected_link"]["dependency"] == "api"
     assert "CMake candidate:" in summary.read_text()
+    cmake.write_text(original_cmake)
+    assert execute(["git", "status", "--porcelain"], cwd=source) == status
+
+    # Header mode retains the exact declarations and patch, independently of PR history.
+    (source / "record.hpp").write_text('#pragma once\nnamespace fixture { class Record {}; }\n')
+    (source / "declaration.hpp").write_text('#pragma once\n#include <vector>\n#include "record.hpp"\nnamespace fixture { void use(Record*); }\n')
+    (source / "main.cpp").write_text('#include "declaration.hpp"\nint main() { return 0; }\n')
+    cmake.write_text(original_cmake.replace('add_custom_target(delay ALL COMMAND ${CMAKE_COMMAND} -E sleep 1)', ''))
+    header_outputs = root / "header-outputs"
+    execute([sys.executable, script], env={**environment, "BUILDRAY_COMMAND": "headers",
+            "BUILDRAY_FORWARD_DECLARATIONS": "true", "BUILDRAY_HEADER_PATHS": '["declaration.hpp"]',
+            "BUILDRAY_MAX_HEADER_EDITS": "2", "BUILDRAY_RUNS": "1", "GITHUB_OUTPUT": str(header_outputs)})
+    fields = dict(line.split("=", 1) for line in header_outputs.read_text().splitlines())
+    assert "baseline-sha" not in fields and all(Path(fields[key]).is_file() for key in ["patch", "header-cleanup", "report"])
+    state = json.loads(Path(fields["report"]).read_text())
+    assert state["patch_validated"] and state["forwarded_includes"] == 1
+    assert state["header_unused_includes"] == 1
+    (source / "record.hpp").unlink()
+    (source / "declaration.hpp").unlink()
+    (source / "main.cpp").write_text("int main() { return 0; }\n")
     cmake.write_text(original_cmake)
     assert execute(["git", "status", "--porcelain"], cwd=source) == status
 

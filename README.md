@@ -7,10 +7,12 @@ Buildray is written in **C++26**. It supports Linux, Clang, CMake and Ninja.
 ## Build
 
 Requirements: a compiler with C++26 mode (tested with Clang 21), CMake 3.30+,
-Ninja, LLVM development libraries 20+, clang-tidy with `misc-include-cleaner`,
+Ninja, LLVM and Clang development libraries 20+, clang-tidy with `misc-include-cleaner`,
 clang-scan-deps (for CMake's C++ module scanning), and GNU diff. Python 3.12+ is used
 by the integration tests and GitHub Action; the CLI itself is native C++.
-Keep the matching LLVM runtime installed for the executable.
+Install `libclang-21-dev` alongside LLVM 21. Keep the matching LLVM and Clang
+runtimes installed. Installation places `buildray` and `buildray-header-tool`
+in the same directory; header analysis needs both executables.
 
 ```bash
 cmake -S . -B build -G Ninja \
@@ -73,6 +75,25 @@ buildray check --baseline base/report.json --current current/report.json \
 `check` recomputes statistics from raw samples and rejects incompatible tool,
 configuration or machine context. [Comparison details and limits](docs/ci.md).
 `buildray --help` lists all options and exit codes.
+
+## Header cleanup and forward declarations
+
+```bash
+buildray headers --source /path/to/project --forward-declarations \
+  --header-path src --exclude 3rdparty --max-header-edits 8 \
+  --compiler clang++-21 --clang-tidy clang-tidy-21 --runs 3 --jobs 2
+```
+
+`headers` removes unused includes from observed project headers. With
+`--forward-declarations`, it also tries replacing a direct project include with
+class or struct declarations derived from Clang's AST. It checks standalone
+headers, recompiles every observed C/C++ user, then builds, links, tests and
+measures the combined patch. Your original tree stays intact.
+
+The run writes `headers.patch` and `header-cleanup.json`, including rejected
+proposals and validation counts. Passing validation does not establish a speedup;
+the measured gain must exceed noise before Buildray recommends the patch.
+[Selection rules, limits and Action usage](docs/header-cleanup.md).
 
 ## Header costs and PCH
 
@@ -171,6 +192,8 @@ comparison.json, comparison.md Comparison and CI gate (compare)
 baseline-report.json           Base measurement for history (compare)
 current-report.json            Current measurement for history (compare)
 includes.patch                 Unified patch (optimize only)
+headers.patch                  Header include and forward-declaration patch (headers)
+header-cleanup.json            Header findings, rejected proposals and validation counts
 pch.patch                      CMake PCH patch (pch only)
 cmake.patch                    Redundant target-link patch (prune-links)
 links.json                     Eligible link candidates and selected experiment
@@ -191,7 +214,7 @@ baseline-build/, candidate-build/
 when a nonempty validated patch also has an `improved` performance result. A
 failed candidate can leave a patch for diagnosis: its existence is not validation.
 
-For `optimize` and `pch`, `performance_result` is `improved`, `regressed`, `inconclusive`,
+For `optimize`, `headers`, `prune-links` and `pch`, `performance_result` is `improved`, `regressed`, `inconclusive`,
 `insufficient_samples` (fewer than three runs), or `no_changes`. The noise
 threshold is the larger of 2% of baseline time and three times the larger MAD.
 This is a reporting heuristic, not a statistical significance test. A noisy
@@ -220,13 +243,14 @@ time. RSS is the maximum of individual compiler peaks, not aggregate build memor
 - CTest tests are required. Missing tests fail unless `--allow-no-tests` is
   explicit; that report says `build_only`. Disabled, skipped and failing tests
   are refused. Each test has a 120-second timeout.
-- Headers are not edited. Macro includes, continued directives and directives
+- `optimize` edits source files; `headers` edits observed project headers.
+  Macro includes, continued directives and directives
   carrying IWYU pragmas are not automatically removed. Source symlinks are refused.
   Implementation includes ending in `.inc`, `.inl`, `.ipp`, `.tpp`, `_inl.h`,
   `-inl.h` or `.inl.h` are kept because they can supply template definitions.
 - Project CMake scripts and tests execute normally. Buildray uses no network
   service; project dependency downloads remain the project's responsibility.
-- Cycle-breaking rewrites, forward declarations,
+- Cycle-breaking rewrites, general template forward declarations,
   incremental builds and a tagged Marketplace release are later work. The
   composite Action can already be used by its commit SHA.
 
