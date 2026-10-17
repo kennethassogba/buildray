@@ -151,7 +151,7 @@ test validation. Reports include compiler counts, CPU time, per-compiler peak
 RSS and before/after timings for each file. A measured incremental regression
 blocks a clean-build patch recommendation. See [the protocol](docs/incremental.md).
 The [corpus results](docs/incremental-validation.md) retain individual before/after
-measurements, including source-file regressions hidden by a clean-build gain.
+measurements, including cases where Unity slows down a source-file rebuild.
 
 ## Dependency graphs
 

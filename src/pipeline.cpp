@@ -132,10 +132,12 @@ void clean(const Variant& variant, const fs::path& log) {
     checked({"cmake", "--build", variant.build.string(), "--target", "clean"}, variant.source, log);
 }
 
-ProcessResult build(const Options& options, const Variant& variant, const fs::path& log) {
-    const auto result = run(
-        {"cmake", "--build", variant.build.string(), "--parallel", std::to_string(options.jobs)},
-        variant.source, log);
+ProcessResult build(const Options& options, const Variant& variant, const fs::path& log,
+                    bool explain = false) {
+    std::vector<std::string> args{"cmake", "--build", variant.build.string(), "--parallel",
+                                  std::to_string(options.jobs)};
+    if (explain) args.insert(args.end(), {"--", "-d", "explain"});
+    const auto result = run(args, variant.source, log);
     if (result.code != 0)
         throw std::runtime_error("Build failed (exit " + std::to_string(result.code) + "); see " +
                                  log.string());
@@ -470,17 +472,14 @@ void incremental_samples(const Options& options, const Variant& baseline, const 
                 unsigned settling_builds = 0;
                 for (;; ++settling_builds) {
                     clear_records(variant.records);
-                    run({"ninja", "-C", variant.build.string(), "-d", "explain", "-n"},
-                        variant.source, logs / (name + "-settle-" + std::to_string(settling_builds) + "-explanation.log"));
                     const auto log = logs / (name + "-settle-" + std::to_string(settling_builds) + ".log");
-                    noop = build(options, variant, log);
+                    noop = build(options, variant, log, true);
                     const auto pending = compiler_records(variant.records);
                     write_json(logs / (name + "-settle-" + std::to_string(settling_builds) + "-compilers.json"), json::Array(pending));
                     fs::copy_file(log, logs / (name + "-noop.log"), fs::copy_options::overwrite_existing);
                     if (pending.empty() && read_file(log).find("ninja: no work to do.") != std::string::npos) break;
                     if (settling_builds == 2) {
-                        run({"ninja", "-C", variant.build.string(), "-d", "explain", "-n"},
-                            variant.source, logs / (name + "-dirty-explanation.log"));
+                        fs::copy_file(log, logs / (name + "-dirty-explanation.log"), fs::copy_options::overwrite_existing);
                         throw std::runtime_error("Incremental build was not up to date before editing after two settling builds; see " + name + "-dirty-explanation.log");
                     }
                 }

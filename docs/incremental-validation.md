@@ -73,11 +73,15 @@ established timing improvement for that case.
 ## MuJoCo readiness check
 
 The [initial PCH job](https://github.com/kennethassogba/buildray/actions/runs/39063875317/job/117487317262)
-builds both variants and passes all 3,519 CTest entries in each. It then refuses
-to time the first probe: the untouched baseline relinks 81 targets during its
-readiness check. No incremental timing samples are accepted from that attempt.
+and [initial Unity job](https://github.com/kennethassogba/buildray/actions/runs/39063875317/job/117487317269)
+both build their variants and pass all 3,519 CTest entries in each. Both then
+refuse to time the first probe: the untouched baseline relinks 81 targets during
+its readiness check. No incremental timing samples are accepted from these attempts.
 The [report](evidence/mujoco-pch-incremental-initial-report.json) and
 [readiness log](evidence/mujoco-pch-incremental-initial-noop.log) retain the rejection.
+The [Unity report](evidence/mujoco-unity-incremental-initial-report.json) and
+[readiness log](evidence/mujoco-unity-incremental-initial-noop.log) retain the same
+failure after three automatic isolation retries and successful candidate tests.
 
 Readiness now allows two untimed settling attempts, but still requires a real
 no-op build before every measured edit. Persistent work remains an error. Each
