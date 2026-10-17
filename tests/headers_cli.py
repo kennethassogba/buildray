@@ -40,7 +40,7 @@ add_executable(sample main.cpp api.cpp helper.c)
 add_library(configured OBJECT variant.cpp)
 target_compile_definitions(configured PRIVATE DETAIL_REQUIRED=1)
 add_library(unbuilt OBJECT EXCLUDE_FROM_ALL unbuilt.cpp)
-if(BYPASS_C_LAUNCHER)
+if(BYPASS_C_CAPTURE)
   set_property(TARGET sample PROPERTY C_COMPILER_LAUNCHER "${CMAKE_COMMAND};-E;env")
 endif()
 enable_testing()
@@ -143,7 +143,7 @@ int main() { demo::Detail value; return demo::inspect(value) + helper(); }
     assert excluded["performance_result"] == "no_changes"
 
     _, bypass = invoke("c-launcher-bypass", "--header-path", "api.hpp",
-                       "--", "-DBYPASS_C_LAUNCHER=ON", expected=1)
+                       "--", "-DBYPASS_C_CAPTURE=ON", expected=1)
     assert "coverage" in bypass["error"] and not bypass["patch_validated"]
 
     # A forced declaration can compile yet remove a required initialization effect.
