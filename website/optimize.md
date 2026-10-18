@@ -42,6 +42,12 @@ buildray unity --source /path/to/project --target my_library \
 
 Unity produces a CMake option that defaults to off. After applying the patch, `-DBUILDRAY_UNITY=ON` enables the tested groups. Add `--rebuild-file` to either mode to measure files you often edit.
 
+To check how Unity or PCH behaves at different job counts, add
+`--job-levels 1,2,4,8`. Buildray runs each level sequentially, validates the same
+candidate and keeps its measurements separate. The report marks job counts
+above the machine's detected CPU capacity. See the
+[parallelism reference](https://github.com/kennethassogba/buildray/blob/main/docs/parallelism.md).
+
 ## Examine dependencies
 
 ```bash

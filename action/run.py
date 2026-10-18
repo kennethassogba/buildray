@@ -126,8 +126,27 @@ def retain_failure_logs(run, artifacts):
                   file=sys.stderr, flush=True)
 
 
-def retain_run_evidence(run, artifacts, report):
+def retain_run_evidence(run, artifacts, report, emit_outputs=True):
+    if report.get('parallelism_sweep'):
+        for level in report.get('levels', []):
+            jobs = level.get('jobs')
+            if type(jobs) is not int or not 1 <= jobs <= 1024:
+                continue
+            child = run / f'jobs-{jobs}'
+            path = child / 'report.json'
+            if not path.is_file() or path.is_symlink():
+                continue
+            destination = artifacts / child.name
+            destination.mkdir(exist_ok=True)
+            child_report = json.loads(path.read_text())
+            retain_run_evidence(child, destination, child_report, emit_outputs=False)
+            for item in (child / 'logs').glob('*'):
+                if item.is_file() and not item.is_symlink() and item.suffix in ('.json', '.xml', '.log'):
+                    target = destination / 'logs' / item.name
+                    target.parent.mkdir(exist_ok=True)
+                    shutil.copyfile(item, target)
     for name, key in [("report.json", "report"), ("comparison.json", "comparison"),
+                      ("parallelism.json", "parallelism"), ("parallelism.md", "parallelism-summary"),
                       ("baseline-report.json", "baseline-report"), ("current-report.json", "current-report"),
                       ("includes.patch", "patch"), ("pch.patch", "patch"), ("cmake.patch", "patch"), ("headers.patch", "patch"),
                       ("unity.patch", "patch"), ("unity.json", "unity"),
@@ -140,7 +159,8 @@ def retain_run_evidence(run, artifacts, report):
         item = run / name
         if item.is_file() and not item.is_symlink():
             shutil.copyfile(item, artifacts / name)
-            output(key, artifacts / name)
+            if emit_outputs:
+                output(key, artifacts / name)
     for item in run.glob("unity-attempt-*.json"):
         if item.is_file() and not item.is_symlink():
             shutil.copyfile(item, artifacts / item.name)
@@ -263,6 +283,12 @@ def main():
     if mode != "headers" and (forward_declarations or header_paths or max_header_edits != 8):
         raise ValueError("header options require command headers")
     jobs = integer("BUILDRAY_JOBS", "2", 1024)
+    job_levels = json.loads(os.environ.get("BUILDRAY_JOB_LEVELS", "[]"))
+    if not isinstance(job_levels, list) or any(type(j) is not int or not 1 <= j <= 1024 for j in job_levels):
+        raise ValueError("job-levels must be a JSON array of integer job counts (1-1024)")
+    if job_levels and (not 2 <= len(job_levels) <= 8 or len(set(job_levels)) != len(job_levels)
+                       or mode not in ("unity", "pch") or auto_pch or unity_retries or runs < 3):
+        raise ValueError("job-levels requires unity or manual pch, 2-8 distinct counts, three or more runs and no automatic retries/selection")
     integer("BUILDRAY_RETENTION_DAYS", "30", 90)
     boolean("BUILDRAY_INSTALL_DEPENDENCIES", "true")
     allow_no_tests = boolean("BUILDRAY_ALLOW_NO_TESTS", "false")
@@ -288,8 +314,12 @@ def main():
     with evidence(artifacts) as action_status:
         binary = bootstrap(action, work, compiler, os.environ.get("BUILDRAY_BINARY", ""), jobs)
         command = [binary, mode, "--source", source, "--work-dir", work / "run",
-                   "--compiler", compiler, "--runs", str(runs), "--jobs", str(jobs),
+                   "--compiler", compiler, "--runs", str(runs),
                    "--session", str(uuid.uuid4())]
+        if job_levels:
+            command.extend(["--job-levels", ','.join(str(j) for j in job_levels)])
+        else:
+            command.extend(["--jobs", str(jobs)])
         for path in rebuild_files:
             command.extend(["--rebuild-file", path])
         if incremental_only:
@@ -346,7 +376,7 @@ def main():
         output("result", ("cycles" if result.returncode == 5 else report.get("performance_result", "passed"))
                if report["status"] == "passed" else report["status"])
         retain_run_evidence(work / "run", artifacts, report)
-        summary = work / ("run/headers.md" if mode == "profile" else
+        summary = work / ("run/parallelism.md" if job_levels else "run/headers.md" if mode == "profile" else
                           "run/dependencies.md" if mode == "deps" else "run/comparison.md")
         if summary.is_file():
             text = summary.read_text()

@@ -43,6 +43,12 @@ buildray unity --source /chemin/du/projet --target ma_bibliotheque \
 
 Unity produit une option CMake désactivée par défaut. Après application du patch, `-DBUILDRAY_UNITY=ON` active les groupes testés. Ajoutez `--rebuild-file` aux deux modes pour mesurer les fichiers que vous modifiez souvent.
 
+Pour comparer Unity ou PCH à plusieurs niveaux de parallélisme, ajoutez
+`--job-levels 1,2,4,8`. Buildray exécute les niveaux l’un après l’autre, valide
+le même patch et garde leurs mesures séparées. Le rapport signale les niveaux
+qui dépassent la capacité CPU détectée. Voir la
+[référence du parallélisme](https://github.com/kennethassogba/buildray/blob/main/docs/parallelism.md).
+
 ## Examiner les dépendances {#examine-dependencies}
 
 ```bash

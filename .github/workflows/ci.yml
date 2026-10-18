@@ -5,6 +5,10 @@ on:
   pull_request:
   workflow_dispatch:
     inputs:
+      parallelism_corpus:
+        description: Measure XGrammar Unity at 1, 2, 4 and 8 jobs and verify the upstream PR groups.
+        type: boolean
+        default: false
       unused_dependencies:
         description: Validate unused static-library dependencies on the three pinned corpus projects with a common LLD toolchain.
         type: boolean
@@ -105,6 +109,9 @@ permissions:
   contents: read
 
 jobs:
+  parallelism-corpus:
+    if: github.event_name == 'workflow_dispatch' && inputs.parallelism_corpus
+    uses: ./.github/workflows/parallelism.yml
   unused-dependencies:
     if: github.event_name == 'workflow_dispatch' && inputs.unused_dependencies
     uses: ./.github/workflows/unused-dependencies.yml

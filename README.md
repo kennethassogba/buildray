@@ -188,6 +188,12 @@ selection. It produces `cmake.patch` and `links.json`; no patch is applied to th
 original project. No eligible link completes without a patch or benchmark.
 [Selection rules, limits and Action usage](docs/cmake-links.md).
 
+## Compare job counts
+
+Unity and PCH experiments can also compare job counts with
+`--job-levels 1,2,4,8`. Levels run sequentially with the same candidate and retain
+separate paired measurements. See [parallelism comparisons](docs/parallelism.md).
+
 ## Unused static-library dependencies
 
 ```bash

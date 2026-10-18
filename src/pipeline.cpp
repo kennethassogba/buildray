@@ -879,6 +879,170 @@ void print_summary(const json::Object& report, const fs::path& work) {
                   << "\nIncremental summary: " << (work / "incremental.md") << '\n';
 }
 
+int parallelism_sweep(const Options& options, const fs::path& executable) {
+    check_cmake_args(options.cmake_args);
+    const auto source = absolute_path(options.source);
+    if (!fs::is_regular_file(source / "CMakeLists.txt"))
+        throw std::runtime_error("--source must contain CMakeLists.txt");
+    if (options.command == "unity") unity_cmake(options, source);
+    else pch_cmake(options, source);
+    const auto stamp = std::chrono::system_clock::now().time_since_epoch().count();
+    const auto work = options.work.empty() ? source / ".buildray" /
+        (std::to_string(stamp) + "-" + std::to_string(::getpid())) : absolute_path(options.work);
+    if (within(source, work)) throw std::runtime_error("Work directory must not contain the source directory");
+    fs::create_directories(work.parent_path());
+    if (!fs::create_directory(work)) throw std::runtime_error("Work directory already exists: " + work.string());
+    json::Array levels, counts;
+    for (const auto jobs : options.job_levels) {
+        counts.push_back(jobs);
+        levels.push_back(json::Object{{"jobs", jobs}, {"status", "not_run"},
+            {"report", "jobs-" + std::to_string(jobs) + "/report.json"}});
+    }
+    json::Object report{{"schema_version", 1}, {"buildray_version", BUILDRAY_VERSION},
+        {"command", options.command}, {"parallelism_sweep", true}, {"status", "running"},
+        {"source", source.string()}, {"work_dir", work.string()}, {"runs", options.runs},
+        {"job_levels", std::move(counts)}, {"levels", std::move(levels)},
+        {"patch_validated", false}, {"patch_recommended", false},
+        {"candidate_consistency_verified", false}, {"performance_result", "not_measured"},
+        {"measurement", "sequential paired experiments on one frozen source tree; no pooling across job counts"}};
+    const auto escape = [](std::string value) {
+        for (const auto& [from, to] : {std::pair{"|", "&#124;"}, {"`", "&#96;"}, {"\n", " "}, {"\r", " "}}) {
+            std::size_t pos = 0;
+            while ((pos = value.find(from, pos)) != std::string::npos) { value.replace(pos, std::string(from).size(), to); pos += std::string(to).size(); }
+        }
+        return value;
+    };
+    const auto persist = [&] {
+        write_json(work / "report.json", json::Object(report));
+        write_json(work / "parallelism.json", json::Object(report));
+        std::ostringstream out;
+        out << std::fixed << std::setprecision(3) << "# Parallelism comparison\n\nStatus: "
+            << report.getString("status")->str() << ". Runs are sequential. Each level has its own paired samples and full validation.\n\n"
+            << "| Jobs | Before (s) | After (s) | Change | Result | Exceeds detected CPU capacity |\n"
+            << "| ---: | ---: | ---: | ---: | --- | --- |\n";
+        for (const auto& value : *report.getArray("levels")) {
+            const auto& row = *value.getAsObject();
+            out << "| " << *row.getInteger("jobs") << " | ";
+            if (const auto* before = row.getObject("baseline"); before && row.getObject("candidate"))
+                out << *before->getNumber("median_seconds") << " | " << *row.getObject("candidate")->getNumber("median_seconds")
+                    << " | " << *row.getNumber("wall_change_percent") << "% | " << row.getString("performance_result")->str();
+            else out << "— | — | — | " << row.getString("status")->str();
+            const auto over = row.getBoolean("exceeds_detected_cpu_capacity");
+            out << " | " << (over ? (*over ? "yes" : "no") : "unknown") << " |\n";
+        }
+        out << "\nCPU affinity and quota, compiler counts, per-compiler peak RSS, raw samples and test results are in each level's report. RSS is not total build memory.\n"
+            << "\n| Jobs | Edited file | Before (s) | After (s) | Change | Result |\n| ---: | --- | ---: | ---: | ---: | --- |\n";
+        for (const auto& value : *report.getArray("levels")) {
+            const auto& row = *value.getAsObject();
+            if (const auto* inc = row.getObject("incremental"))
+                for (const auto& scenario : *inc->getArray("scenarios")) {
+                    const auto& item = *scenario.getAsObject();
+                    if (item.getString("status") != "passed") continue;
+                    out << "| " << *row.getInteger("jobs") << " | `" << escape(item.getString("file")->str()) << "` | "
+                        << *item.getObject("baseline")->getNumber("median_seconds") << " | "
+                        << *item.getObject("candidate")->getNumber("median_seconds") << " | "
+                        << *item.getNumber("wall_change_percent") << "% | " << item.getString("performance_result")->str() << " |\n";
+                }
+        }
+        write_file(work / "parallelism.md", out.str());
+    };
+    persist();
+    try {
+        // Freeze once, excluding the whole output tree even for a custom nested
+        // work directory. Child workspaces are siblings of this input snapshot.
+        snapshot(source, work / "input", work);
+        std::optional<json::Value> reference_context, reference_plan;
+        std::optional<std::string> reference_patch;
+        fs::path first_patch;
+        std::set<std::string> verdicts;
+        bool recommended = true, regression = false;
+        for (auto& value : *report.getArray("levels")) {
+            auto& row = *value.getAsObject();
+            if (interrupted()) throw std::runtime_error("Interrupted during parallelism comparison");
+            const auto jobs = static_cast<unsigned>(*row.getInteger("jobs"));
+            auto child = options;
+            child.job_levels.clear();
+            child.jobs = jobs;
+            child.source = work / "input";
+            child.work = work / ("jobs-" + std::to_string(jobs));
+            row["status"] = "running";
+            persist();
+            std::cout << "Parallelism: " << jobs << " jobs\n" << std::flush;
+            const auto code = pipeline(child, executable);
+            const auto document = read_json(child.work / "report.json");
+            const auto& result = *document.getAsObject();
+            row["exit_code"] = code;
+            row["status"] = result.getString("status")->str();
+            for (const auto* key : {"baseline", "candidate", "wall_change_percent", "performance_result",
+                    "baseline_tests_passed", "candidate_tests_passed", "incremental", "patch_validated",
+                    "patch_recommended", "measurement_context", "error"})
+                if (const auto* item = result.get(key)) row[key] = json::Value(*item);
+            persist();
+            if (code != 0 || result.getString("status") != "passed" || !result.getBoolean("patch_validated").value_or(false))
+                throw std::runtime_error("Parallelism validation failed at " + std::to_string(jobs) + " jobs; see " + (child.work / "report.json").string());
+            auto context = json::Object(*result.getObject("measurement_context"));
+            double capacity = static_cast<double>(context.getInteger("cpu_affinity_count").value_or(0));
+            std::istringstream quota(context.getString("cpu_quota")->str());
+            std::string limit;
+            double period = 0;
+            if (quota >> limit >> period; period > 0 && limit.find_first_not_of("0123456789") == std::string::npos) {
+                const auto cores = std::stod(limit) / period;
+                if (cores > 0) capacity = capacity > 0 ? std::min(capacity, cores) : cores;
+            }
+            if (capacity > 0) {
+                row["effective_cpu_capacity"] = capacity;
+                row["exceeds_detected_cpu_capacity"] = static_cast<double>(jobs) > capacity;
+            }
+            context.erase("jobs");
+            for (const auto* key : {"compiler_version", "cmake_version", "ninja_version"}) context[key] = result.getString(key)->str();
+            json::Value identity(std::move(context));
+            if (reference_context && *reference_context != identity)
+                throw std::runtime_error("Machine, toolchain or configuration changed between job levels");
+            if (!reference_context) reference_context = std::move(identity);
+            const auto candidate = child.work / (options.command + ".patch");
+            const auto contents = read_file(candidate);
+            if (reference_patch && *reference_patch != contents)
+                throw std::runtime_error("Candidate patch changed between job levels");
+            if (!reference_patch) { reference_patch = contents; first_patch = candidate; }
+            if (options.command == "unity") {
+                const auto plan = read_json(child.work / "unity.json");
+                if (reference_plan && *reference_plan != plan)
+                    throw std::runtime_error("Unity source groups changed between job levels");
+                if (!reference_plan) reference_plan = json::Value(plan);
+            }
+            recommended &= result.getBoolean("patch_recommended").value_or(false);
+            const auto verdict = result.getString("performance_result").value_or("not_measured").str();
+            verdicts.insert(verdict);
+            regression |= verdict == "regressed";
+            if (const auto* inc = result.getObject("incremental")) regression |= inc->getBoolean("regression_detected").value_or(false);
+            persist();
+        }
+        fs::copy_file(first_patch, work / (options.command + ".patch"));
+        report["status"] = "passed";
+        report["candidate_consistency_verified"] = true;
+        report["patch_validated"] = true;
+        report["regression_detected"] = regression;
+        report["patch_recommended"] = recommended && !regression;
+        report["performance_result"] = verdicts.size() == 1 ? *verdicts.begin() : "mixed_results";
+        persist();
+        std::cout << "Parallelism report: " << work / "parallelism.json" << "\nSummary: " << work / "parallelism.md" << '\n';
+        return 0;
+    } catch (const std::exception& error) {
+        report["status"] = interrupted() ? "interrupted" : "failed";
+        report["error"] = std::string(error.what());
+        report["patch_validated"] = false;
+        report["candidate_consistency_verified"] = false;
+        report["patch_recommended"] = false;
+        std::error_code cleanup_error;
+        fs::remove(work / (options.command + ".patch"), cleanup_error);
+        for (auto& value : *report.getArray("levels"))
+            if (value.getAsObject()->getString("status") == "running") (*value.getAsObject())["status"] = interrupted() ? "interrupted" : "failed";
+        persist();
+        std::cerr << "buildray: " << error.what() << "\nReport: " << work / "report.json" << '\n';
+        return interrupted() ? 130 : 1;
+    }
+}
+
 json::Object unused_plan(const Options& options, const Variant& baseline, const Variant& candidate,
                          const fs::path& work, const fs::path& executable, const json::Object& before) {
     const auto started = std::chrono::steady_clock::now();
@@ -1194,6 +1358,7 @@ std::vector<std::string> compile_arguments(const json::Object& entry) {
 }
 
 int pipeline(const Options& options, const fs::path& executable) {
+    if (!options.job_levels.empty()) return parallelism_sweep(options, executable);
     if (options.auto_pch) return automatic_pch(options, executable);
     check_cmake_args(options.cmake_args);
     const auto source = absolute_path(options.source);

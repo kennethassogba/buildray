@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.30)
-project(buildray VERSION 0.11.0 LANGUAGES CXX)
+project(buildray VERSION 0.12.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 26)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -99,4 +99,8 @@ if(BUILD_TESTING)
     add_test(NAME incremental COMMAND ${Python3_EXECUTABLE}
         ${CMAKE_CURRENT_SOURCE_DIR}/tests/incremental_cli.py $<TARGET_FILE:buildray> ${BUILDRAY_CLANGXX})
     set_tests_properties(incremental PROPERTIES TIMEOUT 240)
+    add_test(NAME parallelism COMMAND ${Python3_EXECUTABLE}
+        ${CMAKE_CURRENT_SOURCE_DIR}/tests/parallelism_cli.py $<TARGET_FILE:buildray>
+        ${BUILDRAY_CLANGXX} ${CMAKE_CURRENT_SOURCE_DIR}/action/run.py)
+    set_tests_properties(parallelism PROPERTIES TIMEOUT 240)
 endif()

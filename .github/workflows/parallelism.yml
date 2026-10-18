@@ -1,0 +1,81 @@
+name: XGrammar parallelism
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark:
+    name: XGrammar / jobs ${{ matrix.label }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: 1-2
+            levels: '[1,2]'
+          - label: 4-8
+            levels: '[4,8]'
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - uses: actions/checkout@v6
+        with:
+          repository: mlc-ai/xgrammar
+          ref: 7e269d56c74c89de52bc8c31e42191155416371f
+          path: fixtures/xgrammar
+          persist-credentials: false
+      - uses: actions/checkout@v6
+        with:
+          repository: kennethassogba/xgrammar
+          ref: f95f769b2eca1ca10a2820ff6566eca20efddc23
+          path: fixtures/xgrammar-pr995
+          persist-credentials: false
+      - name: Prepare matching native configurations
+        run: |
+          for tree in fixtures/xgrammar fixtures/xgrammar-pr995; do
+            git -C "$tree" submodule update --init --depth 1 3rdparty/dlpack 3rdparty/googletest
+            printf '%s\n' 'set(XGRAMMAR_BUILD_PYTHON_BINDINGS OFF)' 'set(XGRAMMAR_BUILD_CXX_TESTS ON)' > "$tree/config.cmake"
+          done
+      - name: Validate and measure each job level
+        id: bench
+        uses: ./
+        with:
+          command: unity
+          source: fixtures/xgrammar
+          unity-target: xgrammar
+          unity-batch-size: '4'
+          runs: '3'
+          jobs: '2'
+          job-levels: ${{ matrix.levels }}
+          artifact-name: parallelism-xgrammar-${{ matrix.label }}
+      - name: Independently build the upstream Unity option and compare groups
+        env:
+          ARTIFACTS: ${{ steps.bench.outputs.artifact-path }}
+          LEVELS: ${{ matrix.levels }}
+        run: |
+          cmake -S fixtures/xgrammar-pr995 -B "$RUNNER_TEMP/upstream-unity" -G Ninja \
+            -DCMAKE_CXX_COMPILER=clang++-21 -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_UNITY_BUILD=OFF \
+            -DCMAKE_DISABLE_PRECOMPILE_HEADERS=ON -DXGRAMMAR_ENABLE_UNITY_BUILD=ON
+          cmake --build "$RUNNER_TEMP/upstream-unity" --parallel 2
+          ctest --test-dir "$RUNNER_TEMP/upstream-unity" --output-on-failure \
+            --no-tests=error --output-junit "$ARTIFACTS/upstream-pr995-tests.xml"
+          python tests/corpus/verify_upstream_unity.py \
+            --source fixtures/xgrammar-pr995 --build "$RUNNER_TEMP/upstream-unity" \
+            --artifacts "$ARTIFACTS" --levels "$LEVELS"
+      - name: Retain upstream equivalence evidence
+        if: always() && steps.bench.outputs.artifact-path != ''
+        uses: actions/upload-artifact@v7
+        with:
+          name: parallelism-upstream-equivalence-${{ matrix.label }}
+          path: |
+            ${{ steps.bench.outputs.artifact-path }}/upstream-*.json
+            ${{ steps.bench.outputs.artifact-path }}/upstream-*.xml
+          if-no-files-found: warn

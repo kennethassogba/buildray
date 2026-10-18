@@ -61,6 +61,7 @@ struct Options {
     std::vector<std::string> cmake_args;
     unsigned runs = 3;
     unsigned jobs = 2;
+    std::vector<unsigned> job_levels;
     bool allow_no_tests = false;
     bool fail_on_cycles = false;
     bool auto_pch = false;

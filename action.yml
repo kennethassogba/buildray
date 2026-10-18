@@ -53,6 +53,9 @@ inputs:
   unity-target:
     description: CMake target for command unity. Only this target gets unity batches.
     default: ''
+  job-levels:
+    description: For unity or manual pch, JSON array of 2-8 distinct job counts, e.g. [1,2,4,8]. Runs sequentially; needs at least three pairs and no automatic selection/retries. jobs controls tool bootstrap only when this is set.
+    default: '[]'
   unity-batch-size:
     description: Maximum source files per unity batch (2-32). Larger batches can increase compiler memory use.
     default: '4'
@@ -105,6 +108,12 @@ inputs:
     description: Artifact retention (1-90 days).
     default: '30'
 outputs:
+  parallelism:
+    description: Per-job paired measurements, CPU capacity, validation and consistency checks.
+    value: ${{ steps.run.outputs.parallelism }}
+  parallelism-summary:
+    description: Markdown comparison across job levels.
+    value: ${{ steps.run.outputs.parallelism-summary }}
   baseline-sha:
     description: Resolved baseline commit when comparing revisions.
     value: ${{ steps.run.outputs.baseline-sha }}
@@ -171,6 +180,7 @@ runs:
         BUILDRAY_EXCLUDE_PATHS: ${{ inputs.exclude-paths }}
         BUILDRAY_RUNS: ${{ inputs.runs }}
         BUILDRAY_JOBS: ${{ inputs.jobs }}
+        BUILDRAY_JOB_LEVELS: ${{ inputs.job-levels }}
         BUILDRAY_MAX_REGRESSION_PERCENT: ${{ inputs.max-regression-percent }}
         BUILDRAY_COMPILER: ${{ inputs.compiler }}
         BUILDRAY_CLANG_TIDY: ${{ inputs.clang-tidy }}

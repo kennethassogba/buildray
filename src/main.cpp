@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <charconv>
 #include <cmath>
 #include <iostream>
@@ -42,6 +43,7 @@ Options:
   --rebuild-file PATH   pch/unity/prune-deps: measure a single-file rebuild; repeatable
   --incremental-only    Skip repeated clean timings; requires --rebuild-file (full validation still runs)
   --jobs N              Fixed build parallelism, 1..1024 (default: 2)
+  --job-levels LIST     unity/pch: sequential comparisons, e.g. 1,2,4,8; replaces --jobs
   --allow-no-tests      Permit build-only validation when no CTest tests exist
   --baseline-source DIR  Base revision source for paired comparison
   --max-regression-percent N  Regression budget (default: 5)
@@ -169,6 +171,7 @@ buildray::Options parse(const std::vector<std::string>& args) {
     buildray::Options options;
     options.command = args.front();
     bool explicit_c_compiler = false;
+    bool explicit_jobs = false;
     if (options.command != "optimize" && options.command != "measure" &&
         options.command != "compare" && options.command != "profile" && options.command != "pch" &&
         options.command != "deps" && options.command != "prune-links" && options.command != "prune-deps" && options.command != "headers" && options.command != "unity")
@@ -201,7 +204,7 @@ buildray::Options parse(const std::vector<std::string>& args) {
             continue;
         }
         if (arg != "--source" && arg != "--work-dir" && arg != "--compiler" &&
-            arg != "--clang-tidy" && arg != "--runs" && arg != "--jobs" &&
+            arg != "--clang-tidy" && arg != "--runs" && arg != "--jobs" && arg != "--job-levels" &&
             arg != "--baseline-source" && arg != "--max-regression-percent" && arg != "--session" &&
             arg != "--target" && arg != "--header" && arg != "--c-compiler" && arg != "--exclude" && arg != "--dependency" &&
             arg != "--header-path" && arg != "--max-header-edits" && arg != "--batch-size" && arg != "--unity-exclude" && arg != "--unity-retries" && arg != "--rebuild-file" && arg != "--max-dependency-trials" && arg != "--dependency-time-budget")
@@ -230,8 +233,24 @@ buildray::Options parse(const std::vector<std::string>& args) {
             options.tidy = value;
         else if (arg == "--runs")
             options.runs = number(value, 100);
-        else if (arg == "--jobs")
+        else if (arg == "--jobs") {
             options.jobs = number(value, 1024);
+            explicit_jobs = true;
+        }
+        else if (arg == "--job-levels") {
+            if (!options.job_levels.empty()) throw std::runtime_error("Duplicate --job-levels");
+            std::size_t start = 0;
+            do {
+                const auto end = value.find(',', start);
+                const auto count = number(value.substr(start, end == std::string::npos ? end : end - start), 1024);
+                if (std::ranges::find(options.job_levels, count) != options.job_levels.end())
+                    throw std::runtime_error("--job-levels must contain distinct job counts");
+                options.job_levels.push_back(count);
+                if (options.job_levels.size() > 8) throw std::runtime_error("--job-levels accepts at most eight counts");
+                if (end == std::string::npos) break;
+                start = end + 1;
+            } while (true);
+        }
         else if (arg == "--max-dependency-trials")
             options.max_dependency_trials = number(value, 10000);
         else if (arg == "--dependency-time-budget")
@@ -307,6 +326,11 @@ buildray::Options parse(const std::vector<std::string>& args) {
         throw std::runtime_error("--exclude requires optimize, headers, prune-links or prune-deps");
     if (options.command != "headers" && (options.forward_declarations || !options.header_paths.empty() || options.max_header_edits != 8))
         throw std::runtime_error("Header options require command headers");
+    if (!options.job_levels.empty() &&
+        ((options.command != "unity" && options.command != "pch") ||
+         explicit_jobs || options.job_levels.size() < 2 || options.runs < 3 ||
+         options.auto_pch || options.unity_retries != 0))
+        throw std::runtime_error("--job-levels requires unity or manual pch, 2..8 distinct counts, at least three runs, no --jobs and no automatic retries/selection");
     // Tools run from the snapshot; resolve explicit relative executable paths now.
     for (auto* tool : {&options.compiler, &options.c_compiler, &options.tidy}) {
         // The driver name is semantic: clang++ can be a symlink to clang.
