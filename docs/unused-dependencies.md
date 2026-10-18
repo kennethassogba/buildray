@@ -14,7 +14,7 @@ buildray prune-deps --source /path/to/project \
      -DCMAKE_MODULE_LINKER_FLAGS=--ld-path=/usr/lib/llvm-21/bin/ld.lld
 ```
 
-This first implementation needs Linux ELF, Clang, LLD with
+This mode needs Linux ELF, Clang, LLD with
 `--print-archive-stats`, CMake 4.2+ and Ninja 1.13+. Set the LLD path for your
 machine. Buildray does not change the linker automatically: the supplied flags
 apply to both variants. Results obtained with LLD describe that toolchain, even
@@ -45,8 +45,11 @@ reuse their earlier rejection. Baseline archive statistics, reference binaries
 and compiler commands are reused throughout the search.
 
 Forty compatible unused dependencies can therefore take one trial configuration,
-rather than forty complete builds. Difficult groups can still require work
-proportional to their size. Bisection is not a guarantee of logarithmic cost.
+rather than forty complete builds. In difficult groups, the number of trial
+configurations can still grow in proportion to the number of candidates. Each
+trial also checks the combined patch and replays affected links, including
+earlier accepted removals. Total runtime is not guaranteed to be linear or
+logarithmic.
 
 `--max-dependency-trials` limits trial configurations to 64 by default.
 `--dependency-time-budget` defaults to 300 seconds and includes baseline archive

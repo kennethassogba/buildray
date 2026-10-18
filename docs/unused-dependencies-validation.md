@@ -5,6 +5,12 @@ uses the native `prune-deps` CLI through the GitHub Action. The
 [workflow](../.github/workflows/unused-dependencies.yml) pins XGrammar,
 SentencePiece and MuJoCo, enables their C++ tests and records the complete flags.
 
+A [later corpus run](https://github.com/kennethassogba/buildray/actions/runs/39121159118)
+tests the batched search on the same revisions. It keeps full build and test
+validation, measures incremental pairs when a patch is found, and skips repeated
+clean timings. Its artifacts contain archive-profile and trial-configuration
+counts. The clean-build timings below come from the original run.
+
 Both variants use Clang 21 and ELF LLD explicitly. MuJoCo normally selects gold
 in some targets; these results describe the common LLD profile, not its default
 linker. PCH, Unity and compiler caches are disabled. Configuration, analysis,
