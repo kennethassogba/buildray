@@ -39,7 +39,9 @@ jobs:
           for path, pattern in patterns.items():
               before = subprocess.check_output(['git', 'show', f'{base}:{path}'], text=True)
               after = pathlib.Path(path).read_text()
-              if set(re.findall(pattern, before)) != set(re.findall(pattern, after)) and not documented:
+              previous = {item.strip() for item in re.findall(pattern, before)}
+              current = {item.strip() for item in re.findall(pattern, after)}
+              if previous != current and not documented:
                   raise SystemExit('CLI/Action options changed. Update the affected guide page in website/ in this PR.')
           PY
       - uses: actions/setup-node@v6
