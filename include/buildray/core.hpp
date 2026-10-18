@@ -104,7 +104,8 @@ void verify_link_coverage(const json::Object& graph, const fs::path& build,
                           const json::Array& records);
 json::Object verify_unused_link_inputs(const fs::path& baseline_source, const fs::path& baseline_build,
     const fs::path& candidate_source, const fs::path& candidate_build,
-    const json::Array& baseline_links, const fs::path& analysis, const fs::path& executable);
+    const json::Array& baseline_links, const json::Object& baseline_graph,
+    const fs::path& analysis, const fs::path& executable);
 // Returns a trace line's depth and path; a zero depth means ordinary diagnostics.
 std::pair<std::size_t, std::string> include_line(const std::string& line);
 json::Object dependency_graph(const fs::path& records, const fs::path& source,

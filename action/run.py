@@ -376,8 +376,11 @@ def main():
                 text += f"\nPatch validated: {report.get('patch_validated', False)}. Recommended: {report.get('patch_recommended', False)}.\n"
                 if report.get('baseline', {}).get('linker_driver_wall_sum_median_seconds') is not None:
                     before = report['baseline']['linker_driver_wall_sum_median_seconds']
-                    after = report['candidate']['linker_driver_wall_sum_median_seconds']
-                    text += f"\nLink-driver time sum, median: {before:.3f} → {after:.3f} s (parallel links may overlap).\n"
+                    if report.get('candidate'):
+                        after = report['candidate']['linker_driver_wall_sum_median_seconds']
+                        text += f"\nLink-driver time sum, median: {before:.3f} → {after:.3f} s (parallel links may overlap).\n"
+                    else:
+                        text += f"\nBaseline link-driver time sum, median: {before:.3f} s; no candidate comparison (parallel links may overlap).\n"
             if report.get("automatic_selection"):
                 selected = report["automatic_selection"]
                 text += f"\nAutomatic candidate: `{selected['header']}` on `{selected['target']}`. Selection profiling is outside the measurements.\n"

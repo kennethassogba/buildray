@@ -134,7 +134,15 @@ void replay(std::vector<std::string> command, const fs::path& cwd, const fs::pat
         throw std::runtime_error("Link response files are not supported by dependency cleanup");
     command[output_index(command)] = output.string();
     // CMake 4.2 requests linker depfiles. Replays must not overwrite Ninja's own file.
-    for (auto& arg : command) {
+    for (std::size_t i = 0; i < command.size(); ++i) {
+        auto& arg = command[i];
+        if (arg == "--dependency-file") {
+            const auto next = i + (i + 1 < command.size() && command[i + 1] == "-Xlinker" ? 2 : 1);
+            if (next >= command.size()) throw std::runtime_error("Missing linker dependency-file output");
+            command[next] = output.string() + ".d";
+        }
+        if (arg == "-Wl,--dependency-file")
+            throw std::runtime_error("Split -Wl dependency-file arguments are unsupported for link replay");
         for (const auto* prefix : {"-Wl,--dependency-file=", "-Wl,--dependency-file,", "--dependency-file="})
             if (arg.starts_with(prefix)) arg = std::string(prefix) + output.string() + ".d";
         if (arg.find("--print-archive-stats") != std::string::npos ||
@@ -250,7 +258,7 @@ void verify_link_coverage(const json::Object& graph, const fs::path& build, cons
 
 json::Object verify_unused_link_inputs(const fs::path& bs, const fs::path& bb,
     const fs::path& cs, const fs::path& cb, const json::Array& baseline_links,
-    const fs::path& analysis, const fs::path& executable) {
+    const json::Object& baseline_graph, const fs::path& analysis, const fs::path& executable) {
     if (compilations(bs, bb) != compilations(cs, cb))
         throw std::runtime_error("Dependency removal changed compiler commands or usage requirements");
     Commands before;
@@ -267,6 +275,7 @@ json::Object verify_unused_link_inputs(const fs::path& bs, const fs::path& bb,
     if (before.size() != after.size()) throw std::runtime_error("Dependency removal changed the active link target inventory");
     fs::create_directories(analysis);
     json::Array evidence;
+    std::set<std::string> removed_paths;
     unsigned index = 0;
     for (const auto& [output, argv] : before) {
         const auto found = after.find(output);
@@ -294,6 +303,7 @@ json::Object verify_unused_link_inputs(const fs::path& bs, const fs::path& bb,
             if (item == stats.end() || item->second.second != 0)
                 throw std::runtime_error("Removed archive contributed objects or lacks extraction evidence: " + arg);
             archives.push_back(json::Object{{"archive", arg}, {"members", static_cast<std::int64_t>(item->second.first)}, {"extracted", 0}});
+            removed_paths.insert(normalize(path.string(), bs, bb));
         }
         auto candidate = found->second;
         for (auto& arg : candidate) arg = baseline_path(std::move(arg), bs, bb);
@@ -307,7 +317,39 @@ json::Object verify_unused_link_inputs(const fs::path& bs, const fs::path& bb,
         fs::remove(folder / "candidate.elf");
     }
     if (evidence.empty()) throw std::runtime_error("Declaration removal did not remove any actual linker inputs");
+    const auto active_compilations = [](const fs::path& source, const fs::path& build) {
+        const auto active = active_outputs(build);
+        const auto doc = read_json(build / "compile_commands.json");
+        std::set<std::string> result;
+        for (const auto& value : *doc.getAsArray()) {
+            const auto& row = *value.getAsObject();
+            const auto output = absolute_path(fs::path(text(row, "directory")) / text(row, "output"));
+            if (active.contains(output)) result.insert(normalize(output.string(), source, build));
+        }
+        return result;
+    };
+    const auto before_active = active_compilations(bs, bb), after_active = active_compilations(cs, cb);
+    std::set<std::string> permitted_targets;
+    for (const auto& value : *baseline_graph.getArray("targets")) {
+        const auto& row = *value.getAsObject();
+        if (row.getString("type") != "STATIC_LIBRARY") continue;
+        for (const auto& value_path : *row.getArray("artifacts")) {
+            const auto path = value_path.getAsString();
+            if (path && removed_paths.contains(path->str())) permitted_targets.insert(text(row, "name"));
+        }
+    }
+    for (const auto& output : after_active)
+        if (!before_active.contains(output)) throw std::runtime_error("Dependency removal added an active compilation");
+    json::Array omitted;
+    for (const auto& output : before_active) {
+        if (after_active.contains(output)) continue;
+        if (!std::ranges::any_of(permitted_targets, [&](const auto& target) {
+                return output.find("/CMakeFiles/" + target + ".dir/") != std::string::npos;
+            })) throw std::runtime_error("Dependency removal skipped compilation outside the removed archives");
+        omitted.push_back(output);
+    }
     return json::Object{{"compiler_commands_unchanged", true}, {"changed_links", std::move(evidence)},
+        {"omitted_archive_compilations", std::move(omitted)},
         {"scope", "ELF LLD archive extraction and byte-identical link replay using the same baseline objects; one configured build"}};
 }
 }  // namespace buildray

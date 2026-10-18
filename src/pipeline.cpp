@@ -910,7 +910,7 @@ json::Object unused_plan(const Options& options, const Variant& baseline, const 
             write_json(folder / "cmake-after.json", json::Object(after));
             verify_link_removal(before, after, selected);
             auto proof = verify_unused_link_inputs(baseline.source, baseline.build,
-                candidate.source, candidate.build, links, folder / "link-replay", executable);
+                candidate.source, candidate.build, links, before, folder / "link-replay", executable);
             for (auto& item : *proof.getArray("changed_links")) {
                 auto& row = *item.getAsObject();
                 row["evidence_directory"] = fs::path(row.getString("evidence_directory")->str()).lexically_relative(work).generic_string();
