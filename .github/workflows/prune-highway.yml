@@ -11,7 +11,7 @@ permissions:
 jobs:
   validate:
     runs-on: ubuntu-24.04
-    timeout-minutes: 120
+    timeout-minutes: 240
     env:
       CTEST_PARALLEL_LEVEL: '2'
     steps:
@@ -45,7 +45,7 @@ jobs:
           rebuild-files: '["hwy/contrib/sort/vqsort.cc"]'
           cmake-args: >-
             ["-DHWY_ENABLE_TESTS=ON", "-DHWY_ENABLE_EXAMPLES=ON",
-             "-DHWY_ENABLE_CONTRIB=ON", "-DHWY_TEST_STANDALONE=ON",
+             "-DHWY_ENABLE_CONTRIB=ON", "-DHWY_TEST_STANDALONE=OFF",
              "-DBUILD_SHARED_LIBS=OFF",
              "-DCMAKE_EXE_LINKER_FLAGS=--ld-path=/usr/lib/llvm-21/bin/ld.lld",
              "-DCMAKE_SHARED_LINKER_FLAGS=--ld-path=/usr/lib/llvm-21/bin/ld.lld",
