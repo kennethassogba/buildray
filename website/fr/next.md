@@ -8,9 +8,9 @@ title: La suite
 
 ## Les prochaines étapes {#next-steps}
 
-1. Tester des groupes de 100 et 1 000 dépendances, dont certaines doivent rester. Mesurer la durée de recherche, le nombre d’essais et la mémoire utilisée.
+1. Valider les retraits par groupes sur un vrai projet avec de nombreux consommateurs. Mesurer la durée de recherche, le nombre d’essais, la mémoire utilisée et les reconstructions évitées.
 2. Prendre en charge les fichiers `.rsp`, qui contiennent une liste d’arguments du compilateur. Ils bloquent actuellement la recherche sur MuJoCo.
-3. Valider plusieurs retraits ensemble sur un vrai projet. Mesurer les builds complets et les reconstructions après modification d’une bibliothèque, notamment les liens évités. Des tests qui passent ne suffisent pas à prouver un gain.
+3. Prendre en charge les listes de bibliothèques et les noms de cibles exprimés avec des variables CMake. Ils sont courants et limitent actuellement les liens que Buildray peut tester.
 
 Les [résultats du nettoyage](https://github.com/kennethassogba/buildray/blob/main/docs/unused-dependencies-validation.md) distinguent le projet de test des mesures sur les vrais projets. Ne trouver aucun retrait éligible ne signifie pas que toutes les dépendances sont nécessaires.
 

@@ -12,6 +12,8 @@ jobs:
   validate:
     runs-on: ubuntu-24.04
     timeout-minutes: 120
+    env:
+      CTEST_PARALLEL_LEVEL: '2'
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v7
@@ -23,11 +25,20 @@ jobs:
           ref: 1693ca7926ed12c5520623564e465cff97d93374
           path: fixtures/highway
           persist-credentials: false
+      - name: Install build tools and Highway's tested Clang version
+        run: |
+          bash action/install.sh
+          echo 'deb https://apt.llvm.org/noble/ llvm-toolchain-noble-22 main' | sudo tee /etc/apt/sources.list.d/highway-llvm22.list
+          sudo apt-get update
+          sudo apt-get install -y clang-22 clang-tools-22
       - name: Validate grouped removals and measure library edits
         uses: ./
         with:
           command: prune-deps
           source: fixtures/highway
+          install-dependencies: 'false'
+          compiler: clang++-22
+          c-compiler: clang-22
           runs: '3'
           jobs: '4'
           incremental-only: 'true'
@@ -40,3 +51,10 @@ jobs:
              "-DCMAKE_SHARED_LINKER_FLAGS=--ld-path=/usr/lib/llvm-21/bin/ld.lld",
              "-DCMAKE_MODULE_LINKER_FLAGS=--ld-path=/usr/lib/llvm-21/bin/ld.lld"]
           artifact-name: prune-highway
+      - name: Keep raw logs if validation fails or is cancelled
+        if: failure() || cancelled()
+        uses: actions/upload-artifact@v7
+        with:
+          name: prune-highway-incomplete-logs
+          path: ${{ runner.temp }}/buildray-action-*/run/logs/
+          if-no-files-found: warn

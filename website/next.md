@@ -8,9 +8,9 @@ title: What comes next
 
 ## Next steps
 
-1. Test groups of 100 and 1,000 dependencies, including libraries that must stay. Measure search time, trial count and memory use.
+1. Validate grouped removals on a real project with many consumers. Measure search time, trial count, memory use and rebuilds avoided.
 2. Support compiler response files: lists of arguments stored in `.rsp` files. They currently block the search on MuJoCo.
-3. Validate many removals together on a real project. Measure complete builds and rebuilds after library edits, including links avoided. Passing the tests alone is not a speedup.
+3. Support library lists and target names expressed through CMake variables. They are common in real projects and currently limit which links Buildray can test.
 
 The [dependency results](https://github.com/kennethassogba/buildray/blob/main/docs/unused-dependencies-validation.md) separate the test project from the real-project measurements. No eligible removal means the supported search found none, not that every dependency is necessary.
 
