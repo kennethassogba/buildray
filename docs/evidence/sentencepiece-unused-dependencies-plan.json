@@ -1,0 +1,9 @@
+{
+  "attempts": [],
+  "candidate_links": 0,
+  "candidates": [],
+  "rule": "one private literal static-library link; unchanged compiler commands; removed archives must extract zero members; identical ELF from replaying the same baseline objects; full build and CTest",
+  "scope": "ELF LLD analysis; executable/shared/module consumers only; delete or retain compile-only requirements; CMake <3.27 retains the original link; no public interface, shared-library or variable-list cleanup",
+  "search_exhausted": true,
+  "trial_limit": 16
+}

@@ -1,0 +1,269 @@
+{
+  "baseline": {
+    "linker_driver_wall_sum_median_seconds": 0.31315615499999999,
+    "linker_invocations_median": 6,
+    "mad_seconds": 1.5482000009114927e-05,
+    "max_seconds": 180.554647727,
+    "median_seconds": 180.09688825200001,
+    "min_seconds": 180.09687277,
+    "samples": [
+      {
+        "compiler_cpu_seconds": 355.34655800000013,
+        "compiler_invocations": 236,
+        "compiler_wall_sum_seconds": 355.50295764699996,
+        "linked_outputs": [
+          {
+            "output": "<BUILD>/src/spm_train",
+            "wall_seconds": 0.053948040000000003
+          },
+          {
+            "output": "<BUILD>/src/spm_normalize",
+            "wall_seconds": 0.051752484000000001
+          },
+          {
+            "output": "<BUILD>/src/spm_export_vocab",
+            "wall_seconds": 0.054045114999999998
+          },
+          {
+            "output": "<BUILD>/src/spm_decode",
+            "wall_seconds": 0.048423000000000001
+          },
+          {
+            "output": "<BUILD>/src/spm_encode",
+            "wall_seconds": 0.046981680999999997
+          },
+          {
+            "output": "<BUILD>/src/spm_test",
+            "wall_seconds": 0.058005834999999999
+          }
+        ],
+        "linker_driver_cpu_seconds": 0.35727600000000004,
+        "linker_driver_wall_sum_seconds": 0.31315615499999999,
+        "linker_invocations": 6,
+        "max_compiler_rss_kib": 346804,
+        "max_linker_driver_rss_kib": 96344,
+        "pch_creations": 0,
+        "wall_seconds": 180.554647727
+      },
+      {
+        "compiler_cpu_seconds": 353.86888299999993,
+        "compiler_invocations": 236,
+        "compiler_wall_sum_seconds": 353.96689539600004,
+        "linked_outputs": [
+          {
+            "output": "<BUILD>/src/spm_train",
+            "wall_seconds": 0.055712915000000002
+          },
+          {
+            "output": "<BUILD>/src/spm_decode",
+            "wall_seconds": 0.048581918000000002
+          },
+          {
+            "output": "<BUILD>/src/spm_encode",
+            "wall_seconds": 0.050649232000000002
+          },
+          {
+            "output": "<BUILD>/src/spm_normalize",
+            "wall_seconds": 0.054920006
+          },
+          {
+            "output": "<BUILD>/src/spm_export_vocab",
+            "wall_seconds": 0.04973093
+          },
+          {
+            "output": "<BUILD>/src/spm_test",
+            "wall_seconds": 0.054362744999999997
+          }
+        ],
+        "linker_driver_cpu_seconds": 0.364367,
+        "linker_driver_wall_sum_seconds": 0.31395774599999998,
+        "linker_invocations": 6,
+        "max_compiler_rss_kib": 344792,
+        "max_linker_driver_rss_kib": 96420,
+        "pch_creations": 0,
+        "wall_seconds": 180.09688825200001
+      },
+      {
+        "compiler_cpu_seconds": 354.48710199999982,
+        "compiler_invocations": 236,
+        "compiler_wall_sum_seconds": 354.59222973399977,
+        "linked_outputs": [
+          {
+            "output": "<BUILD>/src/spm_encode",
+            "wall_seconds": 0.049446509999999999
+          },
+          {
+            "output": "<BUILD>/src/spm_train",
+            "wall_seconds": 0.053130072
+          },
+          {
+            "output": "<BUILD>/src/spm_test",
+            "wall_seconds": 0.056349152999999999
+          },
+          {
+            "output": "<BUILD>/src/spm_export_vocab",
+            "wall_seconds": 0.048474987999999997
+          },
+          {
+            "output": "<BUILD>/src/spm_decode",
+            "wall_seconds": 0.049337076000000001
+          },
+          {
+            "output": "<BUILD>/src/spm_normalize",
+            "wall_seconds": 0.053205145000000002
+          }
+        ],
+        "linker_driver_cpu_seconds": 0.36129700000000003,
+        "linker_driver_wall_sum_seconds": 0.309942944,
+        "linker_invocations": 6,
+        "max_compiler_rss_kib": 344748,
+        "max_linker_driver_rss_kib": 96164,
+        "pch_creations": 0,
+        "wall_seconds": 180.09687277
+      }
+    ]
+  },
+  "baseline_tests_passed": 1,
+  "baseline_validation_links": {
+    "linked_outputs": [
+      {
+        "output": "<BUILD>/src/spm_train",
+        "wall_seconds": 0.055794852999999998
+      },
+      {
+        "output": "<BUILD>/src/spm_decode",
+        "wall_seconds": 0.049971262000000002
+      },
+      {
+        "output": "<BUILD>/src/spm_normalize",
+        "wall_seconds": 0.053000934
+      },
+      {
+        "output": "<BUILD>/src/spm_encode",
+        "wall_seconds": 0.050878592
+      },
+      {
+        "output": "<BUILD>/src/spm_export_vocab",
+        "wall_seconds": 0.050498806
+      },
+      {
+        "output": "<BUILD>/src/spm_test",
+        "wall_seconds": 0.058620551999999999
+      }
+    ],
+    "linker_driver_cpu_seconds": 0.37240899999999999,
+    "linker_driver_wall_sum_seconds": 0.31876499899999999,
+    "linker_invocations": 6,
+    "max_linker_driver_rss_kib": 96572
+  },
+  "buildray_version": "0.11.0",
+  "c_compiler_version": "Ubuntu clang version 21.1.8 (++20251221032922+2078da43e25a-1~exp1~20251221153059.70)\nTarget: x86_64-pc-linux-gnu\nThread model: posix\nInstalledDir: /usr/lib/llvm-21/bin\n",
+  "cmake_args": [
+    "-DSPM_BUILD_TEST=ON",
+    "-DSPM_ENABLE_SHARED=OFF",
+    "-DSPM_ENABLE_TCMALLOC=OFF",
+    "-DCMAKE_EXE_LINKER_FLAGS=--ld-path=/usr/lib/llvm-21/bin/ld.lld",
+    "-DCMAKE_SHARED_LINKER_FLAGS=--ld-path=/usr/lib/llvm-21/bin/ld.lld",
+    "-DCMAKE_MODULE_LINKER_FLAGS=--ld-path=/usr/lib/llvm-21/bin/ld.lld"
+  ],
+  "cmake_version": "cmake version 4.2.3\n\nCMake suite maintained and supported by Kitware (kitware.com/cmake).\n",
+  "command": "prune-deps",
+  "compiler_version": "Ubuntu clang version 21.1.8 (++20251221032922+2078da43e25a-1~exp1~20251221153059.70)\nTarget: x86_64-pc-linux-gnu\nThread model: posix\nInstalledDir: /usr/lib/llvm-21/bin\n",
+  "dependency_trials": [],
+  "eligible_links": 0,
+  "excluded_paths": [
+    "3rdparty",
+    "third_party"
+  ],
+  "jobs": 2,
+  "link_measurement_scope": "compiler-driver link invocations, including driver startup; sums may overlap under parallelism; maximum individual driver RSS, not aggregate memory; archive analysis and replays excluded from timing",
+  "measurement": "baseline-only clean builds with link-driver measurements; no confirmed removable dependency and no candidate comparison; inspect links.json for rejected or unsupported cases",
+  "measurement_context": {
+    "architecture": "x86_64",
+    "buildray_version": "0.11.0",
+    "cache_flags": {
+      "CMAKE_BUILD_TYPE": "Release",
+      "CMAKE_CXX_FLAGS": "",
+      "CMAKE_CXX_FLAGS-ADVANCED": "1",
+      "CMAKE_CXX_FLAGS_DEBUG": "-g",
+      "CMAKE_CXX_FLAGS_DEBUG-ADVANCED": "1",
+      "CMAKE_CXX_FLAGS_MINSIZEREL": "-Os -DNDEBUG",
+      "CMAKE_CXX_FLAGS_MINSIZEREL-ADVANCED": "1",
+      "CMAKE_CXX_FLAGS_RELEASE": "-O3 -DNDEBUG",
+      "CMAKE_CXX_FLAGS_RELEASE-ADVANCED": "1",
+      "CMAKE_CXX_FLAGS_RELWITHDEBINFO": "-O2 -g -DNDEBUG",
+      "CMAKE_CXX_FLAGS_RELWITHDEBINFO-ADVANCED": "1",
+      "CMAKE_C_FLAGS": "",
+      "CMAKE_C_FLAGS-ADVANCED": "1",
+      "CMAKE_C_FLAGS_DEBUG": "-g",
+      "CMAKE_C_FLAGS_DEBUG-ADVANCED": "1",
+      "CMAKE_C_FLAGS_MINSIZEREL": "-Os -DNDEBUG",
+      "CMAKE_C_FLAGS_MINSIZEREL-ADVANCED": "1",
+      "CMAKE_C_FLAGS_RELEASE": "-O3 -DNDEBUG",
+      "CMAKE_C_FLAGS_RELEASE-ADVANCED": "1",
+      "CMAKE_C_FLAGS_RELWITHDEBINFO": "-O2 -g -DNDEBUG",
+      "CMAKE_C_FLAGS_RELWITHDEBINFO-ADVANCED": "1",
+      "CMAKE_EXE_LINKER_FLAGS": "--ld-path=/usr/lib/llvm-21/bin/ld.lld",
+      "CMAKE_EXE_LINKER_FLAGS-ADVANCED": "1",
+      "CMAKE_EXE_LINKER_FLAGS_DEBUG": "",
+      "CMAKE_EXE_LINKER_FLAGS_DEBUG-ADVANCED": "1",
+      "CMAKE_EXE_LINKER_FLAGS_MINSIZEREL": "",
+      "CMAKE_EXE_LINKER_FLAGS_MINSIZEREL-ADVANCED": "1",
+      "CMAKE_EXE_LINKER_FLAGS_RELEASE": "",
+      "CMAKE_EXE_LINKER_FLAGS_RELEASE-ADVANCED": "1",
+      "CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO": "",
+      "CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO-ADVANCED": "1",
+      "CMAKE_PROJECT_NAME": "sentencepiece",
+      "CMAKE_SHARED_LINKER_FLAGS": "--ld-path=/usr/lib/llvm-21/bin/ld.lld",
+      "CMAKE_SHARED_LINKER_FLAGS-ADVANCED": "1",
+      "CMAKE_SHARED_LINKER_FLAGS_DEBUG": "",
+      "CMAKE_SHARED_LINKER_FLAGS_DEBUG-ADVANCED": "1",
+      "CMAKE_SHARED_LINKER_FLAGS_MINSIZEREL": "",
+      "CMAKE_SHARED_LINKER_FLAGS_MINSIZEREL-ADVANCED": "1",
+      "CMAKE_SHARED_LINKER_FLAGS_RELEASE": "",
+      "CMAKE_SHARED_LINKER_FLAGS_RELEASE-ADVANCED": "1",
+      "CMAKE_SHARED_LINKER_FLAGS_RELWITHDEBINFO": "",
+      "CMAKE_SHARED_LINKER_FLAGS_RELWITHDEBINFO-ADVANCED": "1"
+    },
+    "cmake_args": [
+      "-DSPM_BUILD_TEST=ON",
+      "-DSPM_ENABLE_SHARED=OFF",
+      "-DSPM_ENABLE_TCMALLOC=OFF",
+      "-DCMAKE_EXE_LINKER_FLAGS=--ld-path=/usr/lib/llvm-21/bin/ld.lld",
+      "-DCMAKE_SHARED_LINKER_FLAGS=--ld-path=/usr/lib/llvm-21/bin/ld.lld",
+      "-DCMAKE_MODULE_LINKER_FLAGS=--ld-path=/usr/lib/llvm-21/bin/ld.lld"
+    ],
+    "cpu_affinity_count": 4,
+    "cpu_model": "AMD EPYC 7763 64-Core Processor",
+    "cpu_quota": "unavailable",
+    "environment_flags": {
+      "CFLAGS": "",
+      "CXXFLAGS": "",
+      "LDFLAGS": ""
+    },
+    "jobs": 2,
+    "kernel": "6.17.0-1022-azure",
+    "method": "clean-build-warm-filesystem-v1",
+    "precompiled_headers": false,
+    "sampling": "paired_alternating",
+    "session": "33b4a288-320d-4279-8325-81c69fc861e5",
+    "tests_required": true,
+    "unity_build": false
+  },
+  "ninja_version": "1.13.0.git.kitware.jobserver-pipe-1\n",
+  "patch_recommended": false,
+  "patch_validated": false,
+  "performance_result": "no_changes",
+  "phase": "complete",
+  "precompiled_headers": false,
+  "removed_links": 0,
+  "runs": 3,
+  "schema_version": 1,
+  "source": "/home/runner/work/buildray/buildray/fixtures/sentencepiece",
+  "status": "passed",
+  "tests_required": true,
+  "unity_build": false,
+  "validation": "build_and_tests_passed",
+  "validation_scope": "one configured Ninja all build; private literal static dependency; compiler commands preserved; zero extracted members and byte-identical ELF replay; full build and CTest",
+  "work_dir": "/home/runner/work/_temp/buildray-action-9trulrok/run"
+}

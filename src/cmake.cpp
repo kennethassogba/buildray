@@ -229,21 +229,35 @@ json::Object unused_link_candidates(const json::Object& graph, const fs::path& s
         if (path.is_absolute() || !within(absolute_path(source / path), absolute_path(source)) ||
             !fs::is_regular_file(source / path) || path.string().find_first_of("\n\r\t") != std::string::npos ||
             std::ranges::any_of(options.exclusions, [&](const fs::path& p) { return within(path, p); })) continue;
-        const auto token = literal_link(read_file(source / path), from, to, static_cast<std::size_t>(*line), true);
+        const auto contents = read_file(source / path);
+        const auto token = literal_link(contents, from, to, static_cast<std::size_t>(*line), true);
         if (!token) continue;
         auto row = json::Object{{"target", from}, {"dependency", to},
             {"file", path.generic_string()}, {"line", *line},
             {"offset", static_cast<std::int64_t>(token->offset)},
             {"length", static_cast<std::int64_t>(token->text.size())},
             {"replacement", ""}, {"compile_only", false}};
-        const auto call = literal_link(read_file(source / path), from, to, static_cast<std::size_t>(*line), true, true);
+        const auto call = literal_link(contents, from, to, static_cast<std::size_t>(*line), true, true);
+        const auto previous_line = contents.rfind('\n', call->offset);
+        const auto line_start = previous_line == std::string::npos ? 0 : previous_line + 1;
+        const auto prefix = contents.substr(line_start, call->offset - line_start);
+        if (prefix.find_first_not_of(" \t") != std::string::npos) continue;
+        const std::string indent = prefix.find('\t') == std::string::npos ? "  " : "\t";
+        const auto nested = prefix + indent;
+        const auto indent_call = [&](std::string command) {
+            for (auto pos = command.find('\n'); pos != std::string::npos;
+                 pos = command.find('\n', pos + 1 + indent.size()))
+                command.insert(pos + 1, indent);
+            return nested + command;
+        };
         auto modified = call->text;
         modified.replace(token->offset - call->offset, token->text.size(), "\"$<COMPILE_ONLY:" + to + ">\"");
         row["compile_only_offset"] = static_cast<std::int64_t>(call->offset);
         row["compile_only_length"] = static_cast<std::int64_t>(call->text.size());
         row["compile_only_replacement"] = "if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.27)\n"
-            "  cmake_policy(PUSH)\n  cmake_policy(SET CMP0099 NEW)\n  " + modified +
-            "\n  cmake_policy(POP)\nelse()\n  " + call->text + "\nendif()";
+            + nested + "cmake_policy(PUSH)\n" + nested + "cmake_policy(SET CMP0099 NEW)\n" +
+            indent_call(modified) + "\n" + nested + "cmake_policy(POP)\n" + prefix + "else()\n" +
+            indent_call(call->text) + "\n" + prefix + "endif()";
         selected.emplace(std::pair{from, to}, std::move(row));
     }
     json::Array rows;

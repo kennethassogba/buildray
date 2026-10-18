@@ -1,0 +1,143 @@
+{
+  "attempts": [
+    {
+      "compile_only": false,
+      "dependency": "gmock",
+      "evidence_directory": "dependency-trials/0",
+      "file": "CMakeLists.txt",
+      "length": 5,
+      "line": 126,
+      "offset": 4813,
+      "reason": "Dependency removal changed compiler commands or usage requirements",
+      "replacement": "",
+      "status": "rejected",
+      "target": "xgrammar_test"
+    },
+    {
+      "compile_only": true,
+      "dependency": "gmock",
+      "evidence_directory": "dependency-trials/1",
+      "file": "CMakeLists.txt",
+      "length": 68,
+      "line": 126,
+      "offset": 4762,
+      "replacement": "if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.27)\n  cmake_policy(PUSH)\n  cmake_policy(SET CMP0099 NEW)\n  target_link_libraries(xgrammar_test xgrammar gtest \"$<COMPILE_ONLY:gmock>\" gtest_main)\n  cmake_policy(POP)\nelse()\n  target_link_libraries(xgrammar_test xgrammar gtest gmock gtest_main)\nendif()",
+      "status": "accepted",
+      "target": "xgrammar_test"
+    }
+  ],
+  "candidate_links": 4,
+  "candidates": [
+    {
+      "compile_only": false,
+      "dependency": "gmock",
+      "file": "CMakeLists.txt",
+      "length": 5,
+      "line": 126,
+      "offset": 4813,
+      "replacement": "",
+      "target": "xgrammar_test"
+    },
+    {
+      "compile_only": true,
+      "dependency": "gmock",
+      "file": "CMakeLists.txt",
+      "length": 68,
+      "line": 126,
+      "offset": 4762,
+      "replacement": "if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.27)\n  cmake_policy(PUSH)\n  cmake_policy(SET CMP0099 NEW)\n  target_link_libraries(xgrammar_test xgrammar gtest \"$<COMPILE_ONLY:gmock>\" gtest_main)\n  cmake_policy(POP)\nelse()\n  target_link_libraries(xgrammar_test xgrammar gtest gmock gtest_main)\nendif()",
+      "target": "xgrammar_test"
+    },
+    {
+      "compile_only": false,
+      "dependency": "gtest",
+      "file": "CMakeLists.txt",
+      "length": 5,
+      "line": 126,
+      "offset": 4807,
+      "replacement": "",
+      "target": "xgrammar_test"
+    },
+    {
+      "compile_only": true,
+      "dependency": "gtest",
+      "file": "CMakeLists.txt",
+      "length": 68,
+      "line": 126,
+      "offset": 4762,
+      "replacement": "if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.27)\n  cmake_policy(PUSH)\n  cmake_policy(SET CMP0099 NEW)\n  target_link_libraries(xgrammar_test xgrammar \"$<COMPILE_ONLY:gtest>\" gmock gtest_main)\n  cmake_policy(POP)\nelse()\n  target_link_libraries(xgrammar_test xgrammar gtest gmock gtest_main)\nendif()",
+      "target": "xgrammar_test"
+    },
+    {
+      "compile_only": false,
+      "dependency": "gtest_main",
+      "file": "CMakeLists.txt",
+      "length": 10,
+      "line": 126,
+      "offset": 4819,
+      "replacement": "",
+      "target": "xgrammar_test"
+    },
+    {
+      "compile_only": true,
+      "dependency": "gtest_main",
+      "file": "CMakeLists.txt",
+      "length": 68,
+      "line": 126,
+      "offset": 4762,
+      "replacement": "if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.27)\n  cmake_policy(PUSH)\n  cmake_policy(SET CMP0099 NEW)\n  target_link_libraries(xgrammar_test xgrammar gtest gmock \"$<COMPILE_ONLY:gtest_main>\")\n  cmake_policy(POP)\nelse()\n  target_link_libraries(xgrammar_test xgrammar gtest gmock gtest_main)\nendif()",
+      "target": "xgrammar_test"
+    },
+    {
+      "compile_only": false,
+      "dependency": "xgrammar",
+      "file": "CMakeLists.txt",
+      "length": 8,
+      "line": 126,
+      "offset": 4798,
+      "replacement": "",
+      "target": "xgrammar_test"
+    },
+    {
+      "compile_only": true,
+      "dependency": "xgrammar",
+      "file": "CMakeLists.txt",
+      "length": 68,
+      "line": 126,
+      "offset": 4762,
+      "replacement": "if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.27)\n  cmake_policy(PUSH)\n  cmake_policy(SET CMP0099 NEW)\n  target_link_libraries(xgrammar_test \"$<COMPILE_ONLY:xgrammar>\" gtest gmock gtest_main)\n  cmake_policy(POP)\nelse()\n  target_link_libraries(xgrammar_test xgrammar gtest gmock gtest_main)\nendif()",
+      "target": "xgrammar_test"
+    }
+  ],
+  "link_evidence": {
+    "changed_links": [
+      {
+        "evidence_directory": "dependency-trials/1/link-replay/0",
+        "identical_elf": true,
+        "output": "<BUILD>/xgrammar_test",
+        "removed_archives": [
+          {
+            "archive": "lib/libgmock.a",
+            "extracted": 0,
+            "members": 1
+          }
+        ]
+      }
+    ],
+    "compiler_commands_unchanged": true,
+    "omitted_archive_compilations": [],
+    "scope": "ELF LLD archive extraction and byte-identical link replay using the same baseline objects; one configured build"
+  },
+  "rule": "one private literal static-library link; unchanged compiler commands; removed archives must extract zero members; identical ELF from replaying the same baseline objects; full build and CTest",
+  "scope": "ELF LLD analysis; executable/shared/module consumers only; delete or retain compile-only requirements; CMake <3.27 retains the original link; no public interface, shared-library or variable-list cleanup",
+  "selection": {
+    "compile_only": true,
+    "dependency": "gmock",
+    "file": "CMakeLists.txt",
+    "length": 68,
+    "line": 126,
+    "offset": 4762,
+    "replacement": "if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.27)\n  cmake_policy(PUSH)\n  cmake_policy(SET CMP0099 NEW)\n  target_link_libraries(xgrammar_test xgrammar gtest \"$<COMPILE_ONLY:gmock>\" gtest_main)\n  cmake_policy(POP)\nelse()\n  target_link_libraries(xgrammar_test xgrammar gtest gmock gtest_main)\nendif()",
+    "target": "xgrammar_test"
+  }
+}

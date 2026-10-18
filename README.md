@@ -346,6 +346,8 @@ including candidates with no measured benefit.
 selection workflow and per-file validation on XGrammar.
 [CMake link evidence](docs/cmake-validation.md) covers redundant declarations,
 exported requirements and failed experiments.
+[Unused dependency evidence](docs/unused-dependencies-validation.md) covers archive
+extraction, identical link replay and measurements with and without a candidate.
 
 [Header cleanup evidence](docs/header-validation.md) covers forward declarations,
 standalone checks and C/C++ user validation.

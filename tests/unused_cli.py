@@ -86,7 +86,12 @@ add_test(NAME works COMMAND sample)
 
     # Keep compile usage requirements while dropping an unused archive. Older CMake
     # retains the original declaration rather than seeing an unsupported expression.
-    cmake.write_text(original + 'target_compile_definitions(dead INTERFACE UNUSED_DEFINE=1)\n')
+    usage = original.replace('target_link_libraries(sample PRIVATE dead)', '''if(TRUE)
+  target_link_libraries(sample
+    PRIVATE dead
+  )
+endif()''')
+    cmake.write_text(usage + 'target_compile_definitions(dead INTERFACE UNUSED_DEFINE=1)\n')
     keep_work, kept = invoke('usage')
     assert kept['patch_validated'] and kept['selected_link']['compile_only']
     assert 'compiler commands' in kept['dependency_trials'][0]['reason']

@@ -1,0 +1,785 @@
+{
+  "baseline": {
+    "linker_driver_wall_sum_median_seconds": 31.293218732,
+    "linker_invocations_median": 1,
+    "mad_seconds": 0.020706295000010755,
+    "max_seconds": 102.06085450400001,
+    "median_seconds": 102.04014820899999,
+    "min_seconds": 101.577731392,
+    "samples": [
+      {
+        "compiler_cpu_seconds": 141.261562,
+        "compiler_invocations": 44,
+        "compiler_wall_sum_seconds": 141.29152341500006,
+        "linked_outputs": [
+          {
+            "output": "<BUILD>/xgrammar_test",
+            "wall_seconds": 31.293218732
+          }
+        ],
+        "linker_driver_cpu_seconds": 31.285164999999999,
+        "linker_driver_wall_sum_seconds": 31.293218732,
+        "linker_invocations": 1,
+        "max_compiler_rss_kib": 375936,
+        "max_linker_driver_rss_kib": 397236,
+        "pch_creations": 0,
+        "wall_seconds": 102.04014820899999
+      },
+      {
+        "compiler_cpu_seconds": 140.659232,
+        "compiler_invocations": 44,
+        "compiler_wall_sum_seconds": 140.71101062700006,
+        "linked_outputs": [
+          {
+            "output": "<BUILD>/xgrammar_test",
+            "wall_seconds": 31.160051628000002
+          }
+        ],
+        "linker_driver_cpu_seconds": 31.153763000000001,
+        "linker_driver_wall_sum_seconds": 31.160051628000002,
+        "linker_invocations": 1,
+        "max_compiler_rss_kib": 376296,
+        "max_linker_driver_rss_kib": 397172,
+        "pch_creations": 0,
+        "wall_seconds": 101.577731392
+      },
+      {
+        "compiler_cpu_seconds": 141.02542700000004,
+        "compiler_invocations": 44,
+        "compiler_wall_sum_seconds": 141.05132772999997,
+        "linked_outputs": [
+          {
+            "output": "<BUILD>/xgrammar_test",
+            "wall_seconds": 31.452895258000002
+          }
+        ],
+        "linker_driver_cpu_seconds": 31.451929,
+        "linker_driver_wall_sum_seconds": 31.452895258000002,
+        "linker_invocations": 1,
+        "max_compiler_rss_kib": 375648,
+        "max_linker_driver_rss_kib": 397484,
+        "pch_creations": 0,
+        "wall_seconds": 102.06085450400001
+      }
+    ]
+  },
+  "baseline_tests_passed": 83,
+  "baseline_validation_links": {
+    "linked_outputs": [
+      {
+        "output": "<BUILD>/xgrammar_test",
+        "wall_seconds": 31.385080887000001
+      }
+    ],
+    "linker_driver_cpu_seconds": 31.381325,
+    "linker_driver_wall_sum_seconds": 31.385080887000001,
+    "linker_invocations": 1,
+    "max_linker_driver_rss_kib": 397244
+  },
+  "buildray_version": "0.11.0",
+  "c_compiler_version": "Ubuntu clang version 21.1.8 (++20251221032922+2078da43e25a-1~exp1~20251221153059.70)\nTarget: x86_64-pc-linux-gnu\nThread model: posix\nInstalledDir: /usr/lib/llvm-21/bin\n",
+  "candidate": {
+    "linker_driver_wall_sum_median_seconds": 31.32513617,
+    "linker_invocations_median": 1,
+    "mad_seconds": 0.05440079199999559,
+    "max_seconds": 102.058721339,
+    "median_seconds": 102.00432054700001,
+    "min_seconds": 101.893007338,
+    "samples": [
+      {
+        "compiler_cpu_seconds": 140.78928300000004,
+        "compiler_invocations": 44,
+        "compiler_wall_sum_seconds": 140.85097547800001,
+        "linked_outputs": [
+          {
+            "output": "<BUILD>/xgrammar_test",
+            "wall_seconds": 31.503279673000002
+          }
+        ],
+        "linker_driver_cpu_seconds": 31.491368999999999,
+        "linker_driver_wall_sum_seconds": 31.503279673000002,
+        "linker_invocations": 1,
+        "max_compiler_rss_kib": 376120,
+        "max_linker_driver_rss_kib": 397064,
+        "pch_creations": 0,
+        "wall_seconds": 102.058721339
+      },
+      {
+        "compiler_cpu_seconds": 140.99364399999999,
+        "compiler_invocations": 44,
+        "compiler_wall_sum_seconds": 141.05116089400002,
+        "linked_outputs": [
+          {
+            "output": "<BUILD>/xgrammar_test",
+            "wall_seconds": 31.318893308
+          }
+        ],
+        "linker_driver_cpu_seconds": 31.309395000000002,
+        "linker_driver_wall_sum_seconds": 31.318893308,
+        "linker_invocations": 1,
+        "max_compiler_rss_kib": 374604,
+        "max_linker_driver_rss_kib": 396824,
+        "pch_creations": 0,
+        "wall_seconds": 101.893007338
+      },
+      {
+        "compiler_cpu_seconds": 141.00920399999998,
+        "compiler_invocations": 44,
+        "compiler_wall_sum_seconds": 141.03590286299996,
+        "linked_outputs": [
+          {
+            "output": "<BUILD>/xgrammar_test",
+            "wall_seconds": 31.32513617
+          }
+        ],
+        "linker_driver_cpu_seconds": 31.316089000000002,
+        "linker_driver_wall_sum_seconds": 31.32513617,
+        "linker_invocations": 1,
+        "max_compiler_rss_kib": 375992,
+        "max_linker_driver_rss_kib": 396800,
+        "pch_creations": 0,
+        "wall_seconds": 102.00432054700001
+      }
+    ]
+  },
+  "candidate_measurement_context": {
+    "architecture": "x86_64",
+    "buildray_version": "0.11.0",
+    "cache_flags": {
+      "CMAKE_BUILD_TYPE": "Release",
+      "CMAKE_CXX_FLAGS": "",
+      "CMAKE_CXX_FLAGS-ADVANCED": "1",
+      "CMAKE_CXX_FLAGS_DEBUG": "-g",
+      "CMAKE_CXX_FLAGS_DEBUG-ADVANCED": "1",
+      "CMAKE_CXX_FLAGS_MINSIZEREL": "-Os -DNDEBUG",
+      "CMAKE_CXX_FLAGS_MINSIZEREL-ADVANCED": "1",
+      "CMAKE_CXX_FLAGS_RELEASE": "-O3 -DNDEBUG",
+      "CMAKE_CXX_FLAGS_RELEASE-ADVANCED": "1",
+      "CMAKE_CXX_FLAGS_RELWITHDEBINFO": "-O2 -g -DNDEBUG",
+      "CMAKE_CXX_FLAGS_RELWITHDEBINFO-ADVANCED": "1",
+      "CMAKE_C_FLAGS": "",
+      "CMAKE_C_FLAGS-ADVANCED": "1",
+      "CMAKE_C_FLAGS_DEBUG": "-g",
+      "CMAKE_C_FLAGS_DEBUG-ADVANCED": "1",
+      "CMAKE_C_FLAGS_MINSIZEREL": "-Os -DNDEBUG",
+      "CMAKE_C_FLAGS_MINSIZEREL-ADVANCED": "1",
+      "CMAKE_C_FLAGS_RELEASE": "-O3 -DNDEBUG",
+      "CMAKE_C_FLAGS_RELEASE-ADVANCED": "1",
+      "CMAKE_C_FLAGS_RELWITHDEBINFO": "-O2 -g -DNDEBUG",
+      "CMAKE_C_FLAGS_RELWITHDEBINFO-ADVANCED": "1",
+      "CMAKE_EXE_LINKER_FLAGS": "--ld-path=/usr/lib/llvm-21/bin/ld.lld",
+      "CMAKE_EXE_LINKER_FLAGS-ADVANCED": "1",
+      "CMAKE_EXE_LINKER_FLAGS_DEBUG": "",
+      "CMAKE_EXE_LINKER_FLAGS_DEBUG-ADVANCED": "1",
+      "CMAKE_EXE_LINKER_FLAGS_MINSIZEREL": "",
+      "CMAKE_EXE_LINKER_FLAGS_MINSIZEREL-ADVANCED": "1",
+      "CMAKE_EXE_LINKER_FLAGS_RELEASE": "",
+      "CMAKE_EXE_LINKER_FLAGS_RELEASE-ADVANCED": "1",
+      "CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO": "",
+      "CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO-ADVANCED": "1",
+      "CMAKE_PROJECT_NAME": "xgrammar",
+      "CMAKE_SHARED_LINKER_FLAGS": "--ld-path=/usr/lib/llvm-21/bin/ld.lld",
+      "CMAKE_SHARED_LINKER_FLAGS-ADVANCED": "1",
+      "CMAKE_SHARED_LINKER_FLAGS_DEBUG": "",
+      "CMAKE_SHARED_LINKER_FLAGS_DEBUG-ADVANCED": "1",
+      "CMAKE_SHARED_LINKER_FLAGS_MINSIZEREL": "",
+      "CMAKE_SHARED_LINKER_FLAGS_MINSIZEREL-ADVANCED": "1",
+      "CMAKE_SHARED_LINKER_FLAGS_RELEASE": "",
+      "CMAKE_SHARED_LINKER_FLAGS_RELEASE-ADVANCED": "1",
+      "CMAKE_SHARED_LINKER_FLAGS_RELWITHDEBINFO": "",
+      "CMAKE_SHARED_LINKER_FLAGS_RELWITHDEBINFO-ADVANCED": "1"
+    },
+    "cmake_args": [
+      "-DCMAKE_EXE_LINKER_FLAGS=--ld-path=/usr/lib/llvm-21/bin/ld.lld",
+      "-DCMAKE_SHARED_LINKER_FLAGS=--ld-path=/usr/lib/llvm-21/bin/ld.lld",
+      "-DCMAKE_MODULE_LINKER_FLAGS=--ld-path=/usr/lib/llvm-21/bin/ld.lld"
+    ],
+    "cpu_affinity_count": 4,
+    "cpu_model": "AMD EPYC 7763 64-Core Processor",
+    "cpu_quota": "unavailable",
+    "environment_flags": {
+      "CFLAGS": "",
+      "CXXFLAGS": "",
+      "LDFLAGS": ""
+    },
+    "jobs": 2,
+    "kernel": "6.17.0-1022-azure",
+    "method": "clean-build-warm-filesystem-v1",
+    "precompiled_headers": false,
+    "sampling": "paired_alternating",
+    "session": "e3661cd8-c5c7-4b20-a412-3e8fd33378a0",
+    "tests_required": true,
+    "unity_build": false
+  },
+  "candidate_tests_passed": 83,
+  "candidate_validation_links": {
+    "linked_outputs": [
+      {
+        "output": "<BUILD>/xgrammar_test",
+        "wall_seconds": 31.598217282
+      }
+    ],
+    "linker_driver_cpu_seconds": 31.595534000000001,
+    "linker_driver_wall_sum_seconds": 31.598217282,
+    "linker_invocations": 1,
+    "max_linker_driver_rss_kib": 397104
+  },
+  "cmake_args": [
+    "-DCMAKE_EXE_LINKER_FLAGS=--ld-path=/usr/lib/llvm-21/bin/ld.lld",
+    "-DCMAKE_SHARED_LINKER_FLAGS=--ld-path=/usr/lib/llvm-21/bin/ld.lld",
+    "-DCMAKE_MODULE_LINKER_FLAGS=--ld-path=/usr/lib/llvm-21/bin/ld.lld"
+  ],
+  "cmake_graph_change_verified": true,
+  "cmake_version": "cmake version 4.2.3\n\nCMake suite maintained and supported by Kitware (kitware.com/cmake).\n",
+  "command": "prune-deps",
+  "compiler_version": "Ubuntu clang version 21.1.8 (++20251221032922+2078da43e25a-1~exp1~20251221153059.70)\nTarget: x86_64-pc-linux-gnu\nThread model: posix\nInstalledDir: /usr/lib/llvm-21/bin\n",
+  "dependency_trials": [
+    {
+      "compile_only": false,
+      "dependency": "gmock",
+      "evidence_directory": "dependency-trials/0",
+      "file": "CMakeLists.txt",
+      "length": 5,
+      "line": 126,
+      "offset": 4813,
+      "reason": "Dependency removal changed compiler commands or usage requirements",
+      "replacement": "",
+      "status": "rejected",
+      "target": "xgrammar_test"
+    },
+    {
+      "compile_only": true,
+      "dependency": "gmock",
+      "evidence_directory": "dependency-trials/1",
+      "file": "CMakeLists.txt",
+      "length": 68,
+      "line": 126,
+      "offset": 4762,
+      "replacement": "if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.27)\n  cmake_policy(PUSH)\n  cmake_policy(SET CMP0099 NEW)\n  target_link_libraries(xgrammar_test xgrammar gtest \"$<COMPILE_ONLY:gmock>\" gtest_main)\n  cmake_policy(POP)\nelse()\n  target_link_libraries(xgrammar_test xgrammar gtest gmock gtest_main)\nendif()",
+      "status": "accepted",
+      "target": "xgrammar_test"
+    }
+  ],
+  "eligible_links": 4,
+  "excluded_paths": [
+    "3rdparty",
+    "third_party"
+  ],
+  "incremental": {
+    "limitation": "dependency invalidation after a comment-only edit; not representative of arbitrary semantic changes",
+    "memory_scope": "maximum RSS of an individual compiler invocation, not total build memory",
+    "method": "single-file comment edit; existing build trees; alternating pairs; warm filesystem cache; compiler caches disabled",
+    "performance_rule": "heuristic: difference exceeds max(2% baseline, 3x max MAD); at least three pairs; not a significance test",
+    "regression_detected": false,
+    "runs": 3,
+    "scenarios": [
+      {
+        "baseline": {
+          "linker_driver_wall_sum_median_seconds": 31.325440949000001,
+          "linker_invocations_median": 1,
+          "mad_seconds": 0.018761093999998479,
+          "max_seconds": 34.713975617999999,
+          "median_seconds": 34.668118385,
+          "min_seconds": 34.649357291000001,
+          "samples": [
+            {
+              "compiled_sources": [
+                "<SOURCE>/cpp/earley_parser.cc"
+              ],
+              "compiler_cpu_seconds": 3.0388109999999999,
+              "compiler_invocations": 1,
+              "compiler_wall_sum_seconds": 3.0430742710000001,
+              "linked_outputs": [
+                {
+                  "output": "<BUILD>/xgrammar_test",
+                  "wall_seconds": 31.325440949000001
+                }
+              ],
+              "linker_driver_cpu_seconds": 31.315545,
+              "linker_driver_wall_sum_seconds": 31.325440949000001,
+              "linker_invocations": 1,
+              "log_prefix": "logs/incremental-0-baseline-0",
+              "max_compiler_rss_kib": 216308,
+              "max_linker_driver_rss_kib": 396964,
+              "noop_seconds": 0.15381574200000001,
+              "original_source_count": 1,
+              "original_source_files": [
+                "<SOURCE>/cpp/earley_parser.cc"
+              ],
+              "pch_creations": 0,
+              "settling_builds": 0,
+              "tests_passed": 83,
+              "wall_seconds": 34.668118385
+            },
+            {
+              "compiled_sources": [
+                "<SOURCE>/cpp/earley_parser.cc"
+              ],
+              "compiler_cpu_seconds": 3.0365610000000003,
+              "compiler_invocations": 1,
+              "compiler_wall_sum_seconds": 3.0373571369999999,
+              "linked_outputs": [
+                {
+                  "output": "<BUILD>/xgrammar_test",
+                  "wall_seconds": 31.313209382
+                }
+              ],
+              "linker_driver_cpu_seconds": 31.304998000000001,
+              "linker_driver_wall_sum_seconds": 31.313209382,
+              "linker_invocations": 1,
+              "log_prefix": "logs/incremental-0-baseline-1",
+              "max_compiler_rss_kib": 216380,
+              "max_linker_driver_rss_kib": 396820,
+              "noop_seconds": 0.15364098400000001,
+              "original_source_count": 1,
+              "original_source_files": [
+                "<SOURCE>/cpp/earley_parser.cc"
+              ],
+              "pch_creations": 0,
+              "settling_builds": 0,
+              "tests_passed": 83,
+              "wall_seconds": 34.649357291000001
+            },
+            {
+              "compiled_sources": [
+                "<SOURCE>/cpp/earley_parser.cc"
+              ],
+              "compiler_cpu_seconds": 3.0174020000000001,
+              "compiler_invocations": 1,
+              "compiler_wall_sum_seconds": 3.0212035209999999,
+              "linked_outputs": [
+                {
+                  "output": "<BUILD>/xgrammar_test",
+                  "wall_seconds": 31.394345402999999
+                }
+              ],
+              "linker_driver_cpu_seconds": 31.385801999999998,
+              "linker_driver_wall_sum_seconds": 31.394345402999999,
+              "linker_invocations": 1,
+              "log_prefix": "logs/incremental-0-baseline-2",
+              "max_compiler_rss_kib": 216436,
+              "max_linker_driver_rss_kib": 397040,
+              "noop_seconds": 0.15403011699999999,
+              "original_source_count": 1,
+              "original_source_files": [
+                "<SOURCE>/cpp/earley_parser.cc"
+              ],
+              "pch_creations": 0,
+              "settling_builds": 0,
+              "tests_passed": 83,
+              "wall_seconds": 34.713975617999999
+            }
+          ]
+        },
+        "baseline_samples": [
+          {
+            "compiled_sources": [
+              "<SOURCE>/cpp/earley_parser.cc"
+            ],
+            "compiler_cpu_seconds": 3.0388109999999999,
+            "compiler_invocations": 1,
+            "compiler_wall_sum_seconds": 3.0430742710000001,
+            "linked_outputs": [
+              {
+                "output": "<BUILD>/xgrammar_test",
+                "wall_seconds": 31.325440949000001
+              }
+            ],
+            "linker_driver_cpu_seconds": 31.315545,
+            "linker_driver_wall_sum_seconds": 31.325440949000001,
+            "linker_invocations": 1,
+            "log_prefix": "logs/incremental-0-baseline-0",
+            "max_compiler_rss_kib": 216308,
+            "max_linker_driver_rss_kib": 396964,
+            "noop_seconds": 0.15381574200000001,
+            "original_source_count": 1,
+            "original_source_files": [
+              "<SOURCE>/cpp/earley_parser.cc"
+            ],
+            "pch_creations": 0,
+            "settling_builds": 0,
+            "tests_passed": 83,
+            "wall_seconds": 34.668118385
+          },
+          {
+            "compiled_sources": [
+              "<SOURCE>/cpp/earley_parser.cc"
+            ],
+            "compiler_cpu_seconds": 3.0365610000000003,
+            "compiler_invocations": 1,
+            "compiler_wall_sum_seconds": 3.0373571369999999,
+            "linked_outputs": [
+              {
+                "output": "<BUILD>/xgrammar_test",
+                "wall_seconds": 31.313209382
+              }
+            ],
+            "linker_driver_cpu_seconds": 31.304998000000001,
+            "linker_driver_wall_sum_seconds": 31.313209382,
+            "linker_invocations": 1,
+            "log_prefix": "logs/incremental-0-baseline-1",
+            "max_compiler_rss_kib": 216380,
+            "max_linker_driver_rss_kib": 396820,
+            "noop_seconds": 0.15364098400000001,
+            "original_source_count": 1,
+            "original_source_files": [
+              "<SOURCE>/cpp/earley_parser.cc"
+            ],
+            "pch_creations": 0,
+            "settling_builds": 0,
+            "tests_passed": 83,
+            "wall_seconds": 34.649357291000001
+          },
+          {
+            "compiled_sources": [
+              "<SOURCE>/cpp/earley_parser.cc"
+            ],
+            "compiler_cpu_seconds": 3.0174020000000001,
+            "compiler_invocations": 1,
+            "compiler_wall_sum_seconds": 3.0212035209999999,
+            "linked_outputs": [
+              {
+                "output": "<BUILD>/xgrammar_test",
+                "wall_seconds": 31.394345402999999
+              }
+            ],
+            "linker_driver_cpu_seconds": 31.385801999999998,
+            "linker_driver_wall_sum_seconds": 31.394345402999999,
+            "linker_invocations": 1,
+            "log_prefix": "logs/incremental-0-baseline-2",
+            "max_compiler_rss_kib": 216436,
+            "max_linker_driver_rss_kib": 397040,
+            "noop_seconds": 0.15403011699999999,
+            "original_source_count": 1,
+            "original_source_files": [
+              "<SOURCE>/cpp/earley_parser.cc"
+            ],
+            "pch_creations": 0,
+            "settling_builds": 0,
+            "tests_passed": 83,
+            "wall_seconds": 34.713975617999999
+          }
+        ],
+        "candidate": {
+          "linker_driver_wall_sum_median_seconds": 31.240284163999998,
+          "linker_invocations_median": 1,
+          "mad_seconds": 0.08801180500000072,
+          "max_seconds": 34.758164977,
+          "median_seconds": 34.586639122000001,
+          "min_seconds": 34.498627317,
+          "samples": [
+            {
+              "compiled_sources": [
+                "<SOURCE>/cpp/earley_parser.cc"
+              ],
+              "compiler_cpu_seconds": 3.0510710000000003,
+              "compiler_invocations": 1,
+              "compiler_wall_sum_seconds": 3.0519044420000001,
+              "linked_outputs": [
+                {
+                  "output": "<BUILD>/xgrammar_test",
+                  "wall_seconds": 31.406710554
+                }
+              ],
+              "linker_driver_cpu_seconds": 31.396566999999997,
+              "linker_driver_wall_sum_seconds": 31.406710554,
+              "linker_invocations": 1,
+              "log_prefix": "logs/incremental-0-candidate-0",
+              "max_compiler_rss_kib": 216488,
+              "max_linker_driver_rss_kib": 396964,
+              "noop_seconds": 0.15503611,
+              "original_source_count": 1,
+              "original_source_files": [
+                "<SOURCE>/cpp/earley_parser.cc"
+              ],
+              "pch_creations": 0,
+              "settling_builds": 0,
+              "tests_passed": 83,
+              "wall_seconds": 34.758164977
+            },
+            {
+              "compiled_sources": [
+                "<SOURCE>/cpp/earley_parser.cc"
+              ],
+              "compiler_cpu_seconds": 3.0432389999999998,
+              "compiler_invocations": 1,
+              "compiler_wall_sum_seconds": 3.04710517,
+              "linked_outputs": [
+                {
+                  "output": "<BUILD>/xgrammar_test",
+                  "wall_seconds": 31.240284163999998
+                }
+              ],
+              "linker_driver_cpu_seconds": 31.233301000000001,
+              "linker_driver_wall_sum_seconds": 31.240284163999998,
+              "linker_invocations": 1,
+              "log_prefix": "logs/incremental-0-candidate-1",
+              "max_compiler_rss_kib": 216348,
+              "max_linker_driver_rss_kib": 396912,
+              "noop_seconds": 0.155535385,
+              "original_source_count": 1,
+              "original_source_files": [
+                "<SOURCE>/cpp/earley_parser.cc"
+              ],
+              "pch_creations": 0,
+              "settling_builds": 0,
+              "tests_passed": 83,
+              "wall_seconds": 34.586639122000001
+            },
+            {
+              "compiled_sources": [
+                "<SOURCE>/cpp/earley_parser.cc"
+              ],
+              "compiler_cpu_seconds": 3.0514030000000001,
+              "compiler_invocations": 1,
+              "compiler_wall_sum_seconds": 3.0521646869999999,
+              "linked_outputs": [
+                {
+                  "output": "<BUILD>/xgrammar_test",
+                  "wall_seconds": 31.147373612999999
+                }
+              ],
+              "linker_driver_cpu_seconds": 31.138261,
+              "linker_driver_wall_sum_seconds": 31.147373612999999,
+              "linker_invocations": 1,
+              "log_prefix": "logs/incremental-0-candidate-2",
+              "max_compiler_rss_kib": 216436,
+              "max_linker_driver_rss_kib": 396932,
+              "noop_seconds": 0.153652764,
+              "original_source_count": 1,
+              "original_source_files": [
+                "<SOURCE>/cpp/earley_parser.cc"
+              ],
+              "pch_creations": 0,
+              "settling_builds": 0,
+              "tests_passed": 83,
+              "wall_seconds": 34.498627317
+            }
+          ]
+        },
+        "candidate_samples": [
+          {
+            "compiled_sources": [
+              "<SOURCE>/cpp/earley_parser.cc"
+            ],
+            "compiler_cpu_seconds": 3.0510710000000003,
+            "compiler_invocations": 1,
+            "compiler_wall_sum_seconds": 3.0519044420000001,
+            "linked_outputs": [
+              {
+                "output": "<BUILD>/xgrammar_test",
+                "wall_seconds": 31.406710554
+              }
+            ],
+            "linker_driver_cpu_seconds": 31.396566999999997,
+            "linker_driver_wall_sum_seconds": 31.406710554,
+            "linker_invocations": 1,
+            "log_prefix": "logs/incremental-0-candidate-0",
+            "max_compiler_rss_kib": 216488,
+            "max_linker_driver_rss_kib": 396964,
+            "noop_seconds": 0.15503611,
+            "original_source_count": 1,
+            "original_source_files": [
+              "<SOURCE>/cpp/earley_parser.cc"
+            ],
+            "pch_creations": 0,
+            "settling_builds": 0,
+            "tests_passed": 83,
+            "wall_seconds": 34.758164977
+          },
+          {
+            "compiled_sources": [
+              "<SOURCE>/cpp/earley_parser.cc"
+            ],
+            "compiler_cpu_seconds": 3.0432389999999998,
+            "compiler_invocations": 1,
+            "compiler_wall_sum_seconds": 3.04710517,
+            "linked_outputs": [
+              {
+                "output": "<BUILD>/xgrammar_test",
+                "wall_seconds": 31.240284163999998
+              }
+            ],
+            "linker_driver_cpu_seconds": 31.233301000000001,
+            "linker_driver_wall_sum_seconds": 31.240284163999998,
+            "linker_invocations": 1,
+            "log_prefix": "logs/incremental-0-candidate-1",
+            "max_compiler_rss_kib": 216348,
+            "max_linker_driver_rss_kib": 396912,
+            "noop_seconds": 0.155535385,
+            "original_source_count": 1,
+            "original_source_files": [
+              "<SOURCE>/cpp/earley_parser.cc"
+            ],
+            "pch_creations": 0,
+            "settling_builds": 0,
+            "tests_passed": 83,
+            "wall_seconds": 34.586639122000001
+          },
+          {
+            "compiled_sources": [
+              "<SOURCE>/cpp/earley_parser.cc"
+            ],
+            "compiler_cpu_seconds": 3.0514030000000001,
+            "compiler_invocations": 1,
+            "compiler_wall_sum_seconds": 3.0521646869999999,
+            "linked_outputs": [
+              {
+                "output": "<BUILD>/xgrammar_test",
+                "wall_seconds": 31.147373612999999
+              }
+            ],
+            "linker_driver_cpu_seconds": 31.138261,
+            "linker_driver_wall_sum_seconds": 31.147373612999999,
+            "linker_invocations": 1,
+            "log_prefix": "logs/incremental-0-candidate-2",
+            "max_compiler_rss_kib": 216436,
+            "max_linker_driver_rss_kib": 396932,
+            "noop_seconds": 0.153652764,
+            "original_source_count": 1,
+            "original_source_files": [
+              "<SOURCE>/cpp/earley_parser.cc"
+            ],
+            "pch_creations": 0,
+            "settling_builds": 0,
+            "tests_passed": 83,
+            "wall_seconds": 34.498627317
+          }
+        ],
+        "file": "cpp/earley_parser.cc",
+        "input_restored": true,
+        "noise_threshold_seconds": 0.69336236770000004,
+        "performance_result": "inconclusive",
+        "status": "passed",
+        "wall_change_percent": -0.23502649349222396
+      }
+    ],
+    "status": "passed",
+    "timed_scope": "default build including compilation and linking; editing, no-op checks, restoration and CTest excluded"
+  },
+  "jobs": 2,
+  "link_evidence": {
+    "changed_links": [
+      {
+        "evidence_directory": "dependency-trials/1/link-replay/0",
+        "identical_elf": true,
+        "output": "<BUILD>/xgrammar_test",
+        "removed_archives": [
+          {
+            "archive": "lib/libgmock.a",
+            "extracted": 0,
+            "members": 1
+          }
+        ]
+      }
+    ],
+    "compiler_commands_unchanged": true,
+    "omitted_archive_compilations": [],
+    "scope": "ELF LLD archive extraction and byte-identical link replay using the same baseline objects; one configured build"
+  },
+  "link_measurement_scope": "compiler-driver link invocations, including driver startup; sums may overlap under parallelism; maximum individual driver RSS, not aggregate memory; archive analysis and replays excluded from timing",
+  "measurement": "clean builds; warm filesystem cache; compiler caches disabled; alternating order",
+  "measurement_context": {
+    "architecture": "x86_64",
+    "buildray_version": "0.11.0",
+    "cache_flags": {
+      "CMAKE_BUILD_TYPE": "Release",
+      "CMAKE_CXX_FLAGS": "",
+      "CMAKE_CXX_FLAGS-ADVANCED": "1",
+      "CMAKE_CXX_FLAGS_DEBUG": "-g",
+      "CMAKE_CXX_FLAGS_DEBUG-ADVANCED": "1",
+      "CMAKE_CXX_FLAGS_MINSIZEREL": "-Os -DNDEBUG",
+      "CMAKE_CXX_FLAGS_MINSIZEREL-ADVANCED": "1",
+      "CMAKE_CXX_FLAGS_RELEASE": "-O3 -DNDEBUG",
+      "CMAKE_CXX_FLAGS_RELEASE-ADVANCED": "1",
+      "CMAKE_CXX_FLAGS_RELWITHDEBINFO": "-O2 -g -DNDEBUG",
+      "CMAKE_CXX_FLAGS_RELWITHDEBINFO-ADVANCED": "1",
+      "CMAKE_C_FLAGS": "",
+      "CMAKE_C_FLAGS-ADVANCED": "1",
+      "CMAKE_C_FLAGS_DEBUG": "-g",
+      "CMAKE_C_FLAGS_DEBUG-ADVANCED": "1",
+      "CMAKE_C_FLAGS_MINSIZEREL": "-Os -DNDEBUG",
+      "CMAKE_C_FLAGS_MINSIZEREL-ADVANCED": "1",
+      "CMAKE_C_FLAGS_RELEASE": "-O3 -DNDEBUG",
+      "CMAKE_C_FLAGS_RELEASE-ADVANCED": "1",
+      "CMAKE_C_FLAGS_RELWITHDEBINFO": "-O2 -g -DNDEBUG",
+      "CMAKE_C_FLAGS_RELWITHDEBINFO-ADVANCED": "1",
+      "CMAKE_EXE_LINKER_FLAGS": "--ld-path=/usr/lib/llvm-21/bin/ld.lld",
+      "CMAKE_EXE_LINKER_FLAGS-ADVANCED": "1",
+      "CMAKE_EXE_LINKER_FLAGS_DEBUG": "",
+      "CMAKE_EXE_LINKER_FLAGS_DEBUG-ADVANCED": "1",
+      "CMAKE_EXE_LINKER_FLAGS_MINSIZEREL": "",
+      "CMAKE_EXE_LINKER_FLAGS_MINSIZEREL-ADVANCED": "1",
+      "CMAKE_EXE_LINKER_FLAGS_RELEASE": "",
+      "CMAKE_EXE_LINKER_FLAGS_RELEASE-ADVANCED": "1",
+      "CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO": "",
+      "CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO-ADVANCED": "1",
+      "CMAKE_PROJECT_NAME": "xgrammar",
+      "CMAKE_SHARED_LINKER_FLAGS": "--ld-path=/usr/lib/llvm-21/bin/ld.lld",
+      "CMAKE_SHARED_LINKER_FLAGS-ADVANCED": "1",
+      "CMAKE_SHARED_LINKER_FLAGS_DEBUG": "",
+      "CMAKE_SHARED_LINKER_FLAGS_DEBUG-ADVANCED": "1",
+      "CMAKE_SHARED_LINKER_FLAGS_MINSIZEREL": "",
+      "CMAKE_SHARED_LINKER_FLAGS_MINSIZEREL-ADVANCED": "1",
+      "CMAKE_SHARED_LINKER_FLAGS_RELEASE": "",
+      "CMAKE_SHARED_LINKER_FLAGS_RELEASE-ADVANCED": "1",
+      "CMAKE_SHARED_LINKER_FLAGS_RELWITHDEBINFO": "",
+      "CMAKE_SHARED_LINKER_FLAGS_RELWITHDEBINFO-ADVANCED": "1"
+    },
+    "cmake_args": [
+      "-DCMAKE_EXE_LINKER_FLAGS=--ld-path=/usr/lib/llvm-21/bin/ld.lld",
+      "-DCMAKE_SHARED_LINKER_FLAGS=--ld-path=/usr/lib/llvm-21/bin/ld.lld",
+      "-DCMAKE_MODULE_LINKER_FLAGS=--ld-path=/usr/lib/llvm-21/bin/ld.lld"
+    ],
+    "cpu_affinity_count": 4,
+    "cpu_model": "AMD EPYC 7763 64-Core Processor",
+    "cpu_quota": "unavailable",
+    "environment_flags": {
+      "CFLAGS": "",
+      "CXXFLAGS": "",
+      "LDFLAGS": ""
+    },
+    "jobs": 2,
+    "kernel": "6.17.0-1022-azure",
+    "method": "clean-build-warm-filesystem-v1",
+    "precompiled_headers": false,
+    "sampling": "paired_alternating",
+    "session": "e3661cd8-c5c7-4b20-a412-3e8fd33378a0",
+    "tests_required": true,
+    "unity_build": false
+  },
+  "ninja_version": "1.13.0.git.kitware.jobserver-pipe-1\n",
+  "noise_threshold_seconds": 2.0408029641800001,
+  "patch_recommended": false,
+  "patch_validated": true,
+  "performance_result": "inconclusive",
+  "performance_rule": "heuristic: difference exceeds max(2% baseline, 3x max MAD); not a significance test",
+  "phase": "complete",
+  "precompiled_headers": false,
+  "removed_links": 1,
+  "runs": 3,
+  "schema_version": 1,
+  "selected_link": {
+    "compile_only": true,
+    "dependency": "gmock",
+    "file": "CMakeLists.txt",
+    "length": 68,
+    "line": 126,
+    "offset": 4762,
+    "replacement": "if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.27)\n  cmake_policy(PUSH)\n  cmake_policy(SET CMP0099 NEW)\n  target_link_libraries(xgrammar_test xgrammar gtest \"$<COMPILE_ONLY:gmock>\" gtest_main)\n  cmake_policy(POP)\nelse()\n  target_link_libraries(xgrammar_test xgrammar gtest gmock gtest_main)\nendif()",
+    "target": "xgrammar_test"
+  },
+  "source": "/home/runner/work/buildray/buildray/fixtures/xgrammar",
+  "status": "passed",
+  "test_inventory_identity": {
+    "baseline_opaque_values": 0,
+    "candidate_opaque_values": 0,
+    "policy": "CTest names with multiplicity; GTest opaque-byte values use stable filters"
+  },
+  "tests_required": true,
+  "unity_build": false,
+  "validation": "build_and_tests_passed",
+  "validation_scope": "one configured Ninja all build; private literal static dependency; compiler commands preserved; zero extracted members and byte-identical ELF replay; full build and CTest",
+  "wall_change_percent": -0.035111338653297269,
+  "work_dir": "/home/runner/work/_temp/buildray-action-9tf5mbzc/run"
+}

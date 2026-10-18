@@ -52,7 +52,7 @@ Each proposal must pass these checks:
 
 The search stops at the first proposal passing the structural and replay checks,
 or after 16 strategies. A subsequent build or test failure is blocking. Public
-interfaces, shared-library dependencies, variable lists, response files and
+interfaces, shared-library dependencies, aliases, variable lists, response files and
 ambiguous declarations are outside this scope. Unsupported cases are skipped or
 rejected; they are not evidence that those dependencies are necessary.
 
