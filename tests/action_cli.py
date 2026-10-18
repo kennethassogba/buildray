@@ -62,6 +62,7 @@ add_test(NAME works COMMAND sample)
         {"BUILDRAY_COMMAND": "prune-deps", "BUILDRAY_DEPENDENCY_TIME_BUDGET": "0"},
         {"BUILDRAY_SOURCE": "../"},
         {"BUILDRAY_ALLOW_NO_TESTS": "yes"},
+        {"BUILDRAY_ALLOW_BASELINE_SKIPS": "yes"},
         {"BUILDRAY_COMMAND": "pch", "BUILDRAY_PCH_HEADERS": "<vector>"},
         {"BUILDRAY_COMMAND": "profile", "BUILDRAY_PCH_TARGET": "sample"},
         {"BUILDRAY_FAIL_ON_CYCLES": "true"},
@@ -86,6 +87,22 @@ add_test(NAME works COMMAND sample)
     ]:
         execute([sys.executable, script], env={**environment, **changes}, expected=1)
     assert not (source / "injected").exists()
+
+    skip_outputs = root / "skip-outputs"
+    before_skips = cmake.read_text()
+    cmake.write_text(before_skips + '''add_test(NAME known_skip COMMAND "${CMAKE_COMMAND}" -E echo skip)
+set_tests_properties(known_skip PROPERTIES SKIP_REGULAR_EXPRESSION skip)
+''')
+    execute([sys.executable, script], env={**environment, "BUILDRAY_COMMAND": "prune-deps",
+            "BUILDRAY_ALLOW_BASELINE_SKIPS": "true", "BUILDRAY_INCREMENTAL_ONLY": "true",
+            "BUILDRAY_REBUILD_FILES": '["main.cpp"]',
+            "GITHUB_OUTPUT": str(skip_outputs)})
+    skip_fields = dict(line.split("=", 1) for line in skip_outputs.read_text().splitlines())
+    skip_report = json.loads(Path(skip_fields["report"]).read_text())
+    assert skip_report["baseline_tests_passed"] == 1
+    assert skip_report["baseline_skipped_tests"] == ["known_skip"]
+    assert (Path(skip_fields["artifact-path"]) / "logs/baseline-tests.xml").is_file()
+    cmake.write_text(before_skips)
 
     for mode in ["profile", "pch", "deps", "prune-deps"]:
         output_file = root / (mode + "-outputs")

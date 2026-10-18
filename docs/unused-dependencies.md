@@ -84,6 +84,14 @@ Each trial must pass checks 1–4. The final combined patch must pass all five:
    `all` target.
 
 The final patch is checked again after search, including after a budget cutoff.
+Runtime-skipped tests fail by default. With `--allow-baseline-skips`, their sorted
+JUnit names must match the baseline after candidate builds and every incremental
+edit. Reports list them separately in `baseline_skipped_tests`,
+`candidate_skipped_tests` and incremental samples. Names retain JUnit XML escaping;
+unstable skipped names are rejected. Disabled tests, failures and an all-skipped
+run still fail. The Action exposes the same policy as `allow-baseline-skips` and
+retains the JUnit evidence.
+
 A subsequent build or test failure is blocking. Public
 interfaces, shared-library dependencies, aliases, variable lists, response files and
 ambiguous declarations are outside this scope. Unsupported cases are skipped or

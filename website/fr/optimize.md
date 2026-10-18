@@ -66,6 +66,8 @@ Ce mode demande ELF LLD, choisi explicitement pour les deux versions. Si une bib
 
 La recherche est limitée par défaut à 64 configurations d’essai et 300 secondes. Modifiez ces limites avec `--max-dependency-trials` et `--dependency-time-budget`. Le build final et les tests ont quand même lieu une fois ce budget atteint.
 
+Si votre projet ignore volontairement certains tests, utilisez `--allow-baseline-skips`. Buildray les compte séparément et exige que les mêmes tests restent ignorés après chaque changement, y compris les modifications incrémentales. Ils ne comptent jamais comme réussis ; les tests désactivés, les échecs et une exécution sans aucun test réussi bloquent toujours la validation.
+
 ## Garder uniquement un patch vérifié {#keep-a-validated-patch}
 
 Lisez `patch_validated`, `patch_recommended` et `performance_result` dans `report.json`. Un fichier `.patch` peut exister même après un échec ; sa présence ne vaut pas validation.

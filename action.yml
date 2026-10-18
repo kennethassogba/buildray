@@ -95,6 +95,9 @@ inputs:
   allow-no-tests:
     description: Explicitly allow build-only validation when no CTest tests exist.
     default: 'false'
+  allow-baseline-skips:
+    description: Allow existing runtime-skipped tests, requiring the same skipped names after every change. Skips do not count as passed tests.
+    default: 'false'
   install-dependencies:
     description: Install Clang/LLVM 21, Ninja and CMake on an Ubuntu runner.
     default: 'true'
@@ -206,6 +209,7 @@ runs:
         BUILDRAY_HEADER_PATHS: ${{ inputs.header-paths }}
         BUILDRAY_MAX_HEADER_EDITS: ${{ inputs.max-header-edits }}
         BUILDRAY_ALLOW_NO_TESTS: ${{ inputs.allow-no-tests }}
+        BUILDRAY_ALLOW_BASELINE_SKIPS: ${{ inputs.allow-baseline-skips }}
         BUILDRAY_INSTALL_DEPENDENCIES: ${{ inputs.install-dependencies }}
         BUILDRAY_BINARY: ${{ inputs.buildray-path }}
         BUILDRAY_RETENTION_DAYS: ${{ inputs.retention-days }}

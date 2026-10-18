@@ -15,6 +15,7 @@
 #include <set>
 #include <sstream>
 #include <stdexcept>
+#include <string_view>
 #include <utility>
 
 #include "buildray/core.hpp"
@@ -158,6 +159,37 @@ ProcessResult build(const Options& options, const Variant& variant, const fs::pa
     return result;
 }
 
+json::Array skipped_tests(const fs::path& junit, std::size_t expected) {
+    // Read CTest's generated JUnit records, not test output (which CTest XML-escapes).
+    // Retain encoded names verbatim: ambiguous or unstable names must fail closed.
+    const auto xml = read_file(junit);
+    static const std::regex header(R"xml(<testcase name="([^"]*)"[^>]*>)xml");
+    std::vector<std::string> names;
+    std::size_t count = 0;
+    for (auto it = std::sregex_iterator(xml.begin(), xml.end(), header);
+         it != std::sregex_iterator(); ++it) {
+        ++count;
+        const auto start = static_cast<std::size_t>(it->position() + it->length());
+        const auto end = xml.find("</testcase>", start);
+        const auto nested = xml.find("<testcase ", start);
+        if (end == std::string::npos || (nested != std::string::npos && nested < end))
+            throw std::runtime_error("Invalid CTest JUnit record: " + junit.string());
+        const auto body = std::string_view(xml).substr(start, end - start);
+        const bool skipped = body.find("<skipped") != std::string_view::npos;
+        if (body.find("<failure") != std::string_view::npos ||
+            body.find("<error") != std::string_view::npos ||
+            (!skipped && it->str().find("status=\"notrun\"") != std::string::npos))
+            throw std::runtime_error("CTest did not pass a test; see " + junit.string());
+        if (skipped) names.push_back((*it)[1].str());
+    }
+    if (count != expected)
+        throw std::runtime_error("CTest JUnit inventory does not match registered tests");
+    std::ranges::sort(names);
+    json::Array result;
+    for (const auto& name : names) result.push_back(name);
+    return result;
+}
+
 std::size_t test(const Options& options, const Variant& variant, const fs::path& logs,
                  const std::string& label) {
     const auto inventory = logs / (label + "-tests.json");
@@ -171,7 +203,15 @@ std::size_t test(const Options& options, const Variant& variant, const fs::path&
         throw std::runtime_error(
             "No CTest tests registered. Enable project tests, or explicitly use "
             "--allow-no-tests (build-only validation).");
-    if (tests->empty()) return 0;
+    if (tests->empty()) {
+        if (options.allow_baseline_skips) {
+            write_json(logs / (label + "-skipped-tests.json"), json::Array{});
+            if (label != "baseline" &&
+                read_json(logs / "baseline-skipped-tests.json") != json::Value(json::Array{}))
+                throw std::runtime_error("CTest skipped-test inventory changed");
+        }
+        return 0;
+    }
     for (const auto& item : *tests) {
         const auto* definition = item.getAsObject();
         if (!definition) throw std::runtime_error("Invalid CTest test definition");
@@ -189,8 +229,19 @@ std::size_t test(const Options& options, const Variant& variant, const fs::path&
     checked({"ctest", "--test-dir", variant.build.string(), "--output-on-failure", "--timeout",
              "120", "--no-tests=error", "--output-junit", junit.string()},
             variant.source, logs / (label + "-tests.log"));
-    // CTest returns success for runtime-skipped tests. Do not silently claim
-    // complete validation when a required test did not execute.
+    if (options.allow_baseline_skips) {
+        auto skipped = skipped_tests(junit, tests->size());
+        write_json(logs / (label + "-skipped-tests.json"), json::Array(skipped));
+        if (skipped.size() == tests->size())
+            throw std::runtime_error("No CTest tests passed; all tests were skipped");
+        if (label != "baseline" &&
+            read_json(logs / "baseline-skipped-tests.json") != json::Value(json::Array(skipped)))
+            throw std::runtime_error("CTest skipped-test inventory changed; see " + junit.string());
+        std::cout << tests->size() - skipped.size() << " passed, " << skipped.size()
+                  << " baseline skips (" << label << ").\n" << std::flush;
+        return tests->size() - skipped.size();
+    }
+    // Skips remain an error unless the caller explicitly opts into a stable baseline.
     if (read_file(junit).find("<skipped") != std::string::npos)
         throw std::runtime_error("CTest skipped a test; see " + junit.string());
     return tests->size();
@@ -585,6 +636,8 @@ void incremental_samples(const Options& options, const Variant& baseline, const 
                     test_names(logs / "baseline-tests.json", reference_opaque))
                     throw std::runtime_error("Incremental CTest inventory changed");
                 summary["tests_passed"] = static_cast<std::int64_t>(count);
+                if (options.allow_baseline_skips)
+                    summary["skipped_tests"] = read_json(logs / (name + "-skipped-tests.json"));
                 summary["noop_seconds"] = noop.seconds;
                 summary["settling_builds"] = settling_builds;
                 summary["log_prefix"] = "logs/" + name;
@@ -1509,6 +1562,8 @@ int pipeline(const Options& options, const fs::path& executable) {
         }
         const auto baseline_tests = test(options, baseline, logs, "baseline");
         report["baseline_tests_passed"] = static_cast<std::int64_t>(baseline_tests);
+        if (options.allow_baseline_skips)
+            report["baseline_skipped_tests"] = read_json(logs / "baseline-skipped-tests.json");
         if (options.command == "deps") {
             report["phase"] = "dependency_analysis";
             auto graph = dependency_graph(baseline.records, baseline.source, baseline.build, dependency_originals);
@@ -1559,6 +1614,8 @@ int pipeline(const Options& options, const fs::path& executable) {
             verify_coverage(candidate);
             const auto current_tests = test(options, candidate, logs, "candidate");
             report["candidate_tests_passed"] = static_cast<std::int64_t>(current_tests);
+            if (options.allow_baseline_skips)
+                report["candidate_skipped_tests"] = read_json(logs / "candidate-skipped-tests.json");
             report["validation"] =
                 baseline_tests && current_tests ? "build_and_tests_passed" : "build_only";
             report["phase"] = "measurement";
@@ -1801,6 +1858,8 @@ int pipeline(const Options& options, const fs::path& executable) {
                 write_json(work / "unity.json", std::move(plan));
             }
             const auto candidate_tests = test(options, candidate, logs, "candidate");
+            if (options.allow_baseline_skips)
+                report["candidate_skipped_tests"] = read_json(logs / "candidate-skipped-tests.json");
             report["candidate_tests_passed"] = static_cast<std::int64_t>(candidate_tests);
             unsigned baseline_opaque = 0, candidate_opaque = 0;
             const auto baseline_names = test_names(logs / "baseline-tests.json", baseline_opaque);

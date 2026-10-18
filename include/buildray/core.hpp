@@ -63,6 +63,7 @@ struct Options {
     unsigned jobs = 2;
     std::vector<unsigned> job_levels;
     bool allow_no_tests = false;
+    bool allow_baseline_skips = false;
     bool fail_on_cycles = false;
     bool auto_pch = false;
     double max_regression_percent = 5.0;

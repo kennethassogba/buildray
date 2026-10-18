@@ -134,15 +134,62 @@ endif()
     _, failed = invoke('test-inventory', expected=1)
     assert not failed['patch_validated'] and 'CTest inventory changed' in failed['error']
 
+    # Existing runtime skips require explicit consent and never count as passes.
+    skipped = original + '''add_test(NAME known_skip COMMAND "${CMAKE_COMMAND}" -E echo skip)
+set_tests_properties(known_skip PROPERTIES SKIP_REGULAR_EXPRESSION skip)
+add_test(NAME probe COMMAND "${CMAKE_COMMAND}" -E echo probe)
+'''
+    cmake.write_text(skipped)
+    _, strict = invoke('strict-skips', '--incremental-only', '--rebuild-file', 'dead.cpp', expected=1)
+    assert 'CTest skipped a test' in strict['error']
+    _, stable = invoke('stable-skips', '--allow-baseline-skips', '--incremental-only',
+                       '--rebuild-file', 'dead.cpp')
+    assert stable['patch_validated']
+    assert stable['baseline_tests_passed'] == stable['candidate_tests_passed'] == 2
+    assert stable['baseline_skipped_tests'] == stable['candidate_skipped_tests'] == ['known_skip']
+    for variant in ['baseline', 'candidate']:
+        for sample in stable['incremental']['scenarios'][0][variant]['samples']:
+            assert sample['tests_passed'] == 2 and sample['skipped_tests'] == ['known_skip']
+
+    for label, extra in [('new-skip', ''), ('swapped-skips',
+                          'set_tests_properties(known_skip PROPERTIES SKIP_REGULAR_EXPRESSION "")')]:
+        cmake.write_text(skipped + '''get_target_property(deps sample LINK_LIBRARIES)
+if(NOT "dead" IN_LIST deps)
+  set_tests_properties(probe PROPERTIES SKIP_REGULAR_EXPRESSION probe)
+''' + extra + '\nendif()\n')
+        _, result = invoke(label, '--allow-baseline-skips', '--incremental-only',
+                           '--rebuild-file', 'dead.cpp', expected=1)
+        assert not result['patch_validated'] and 'skipped-test inventory changed' in result['error']
+
+    cmake.write_text(skipped.replace('add_test(NAME works COMMAND sample)', '')
+                     .replace('add_test(NAME probe COMMAND "${CMAKE_COMMAND}" -E echo probe)', ''))
+    _, empty = invoke('all-skipped', '--allow-baseline-skips', '--allow-no-tests',
+                      '--incremental-only', '--rebuild-file', 'dead.cpp', expected=1)
+    assert 'all tests were skipped' in empty['error']
+    cmake.write_text(skipped + 'set_tests_properties(works PROPERTIES DISABLED TRUE)\n')
+    _, disabled = invoke('disabled-with-skips', '--allow-baseline-skips',
+                         '--incremental-only', '--rebuild-file', 'dead.cpp', expected=1)
+    assert 'Disabled tests' in disabled['error']
+
+    cmake.write_text(skipped + '''cmake_policy(SET CMP0110 NEW)
+add_test(NAME [=[skip<&"quoted]=] COMMAND "${CMAKE_COMMAND}" -E echo skip)
+set_tests_properties([=[skip<&"quoted]=] PROPERTIES SKIP_REGULAR_EXPRESSION skip)
+''')
+    _, escaped = invoke('escaped-skips', '--allow-baseline-skips', '--incremental-only',
+                        '--rebuild-file', 'dead.cpp')
+    assert escaped['patch_validated'] and len(escaped['baseline_skipped_tests']) == 2
+    assert escaped['baseline_skipped_tests'] == escaped['candidate_skipped_tests']
+
     # A static-only project has no link-driver work. With explicit build-only
     # validation it should report zero links, rather than a launcher failure.
     cmake.write_text('''cmake_minimum_required(VERSION 3.18)
 project(static_only LANGUAGES CXX)
 add_library(core STATIC dead.cpp)
 ''')
-    _, static = invoke('static-only', '--allow-no-tests')
+    _, static = invoke('static-only', '--allow-no-tests', '--allow-baseline-skips')
     assert static['performance_result'] == 'no_changes'
     assert static['validation'] == 'build_only'
+    assert static['baseline_skipped_tests'] == []
     assert static['baseline']['linker_invocations_median'] == 0
     run(binary, 'prune-links', '--source', source, '--work-dir', root / 'static-only-links',
         '--compiler', compiler, '--allow-no-tests', '--runs', 3)

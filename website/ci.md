@@ -52,6 +52,8 @@ jobs: '2'
 
 Optimization experiments compare the project with its patched copy. They ignore `baseline-ref`, which is used for revision comparisons.
 
+For a project with intentional runtime skips, `allow-baseline-skips: 'true'` permits the same skipped tests throughout validation. They are reported separately from passing tests. The default refuses all skips.
+
 The automatic revision comparison exports the base with `git archive`. It does not materialize Git submodules or LFS contents. If your project needs them, prepare both source trees and use the native `compare` command in your workflow.
 
 See the [Action inputs and outputs](https://github.com/kennethassogba/buildray/blob/main/action.yml) and [technical CI guide](https://github.com/kennethassogba/buildray/blob/main/docs/ci.md) for other modes and limitations.

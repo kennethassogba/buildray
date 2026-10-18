@@ -312,8 +312,11 @@ time. RSS is the maximum of individual compiler peaks, not aggregate build memor
   excluded targets; their includes are not claimed as observed. `headers` also
   requires Ninja 1.13+ and counts inactive compilation commands. `unity` also requires Ninja 1.13+.
 - CTest tests are required. Missing tests fail unless `--allow-no-tests` is
-  explicit; that report says `build_only`. Disabled, skipped and failing tests
-  are refused. Each test has a 120-second timeout.
+  explicit; that report says `build_only`. Disabled and failing tests are refused.
+  Runtime skips also fail by default. `--allow-baseline-skips` permits existing
+  skips only if the same tests remain skipped after every change. They are listed
+  separately and never count as passes; at least one test must pass. Each test has
+  a 120-second timeout.
 - `optimize` edits source files; `headers` edits observed project headers.
   Macro includes, continued directives and directives
   carrying IWYU pragmas are not automatically removed. Source symlinks are refused.

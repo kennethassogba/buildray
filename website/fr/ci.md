@@ -52,6 +52,8 @@ jobs: '2'
 
 Les expériences d’optimisation comparent le projet avec sa propre copie modifiée. Elles ignorent `baseline-ref`, qui sert à la comparaison entre révisions.
 
+Si le projet ignore volontairement certains tests à l’exécution, `allow-baseline-skips: 'true'` permet de conserver ces mêmes exceptions pendant la validation. Elles sont comptées séparément des tests réussis. Par défaut, tout test ignoré bloque la validation.
+
 La comparaison automatique exporte la base avec `git archive`. Elle ne prépare donc pas les sous-modules Git ni les contenus Git LFS. Si votre projet en dépend, préparez les deux sources et utilisez la CLI `compare` dans votre workflow.
 
 Les [entrées, sorties et limites complètes de l’Action](https://github.com/kennethassogba/buildray/blob/main/action.yml) et le [guide CI technique](https://github.com/kennethassogba/buildray/blob/main/docs/ci.md) couvrent les autres modes.

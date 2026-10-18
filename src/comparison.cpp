@@ -152,6 +152,7 @@ json::Object measurement_context(const Options& options, const fs::path& build) 
                                            {"CFLAGS", environment("CFLAGS")},
                                            {"LDFLAGS", environment("LDFLAGS")}}},
         {"tests_required", !options.allow_no_tests},
+        {"allow_baseline_skips", options.allow_baseline_skips},
         {"unity_build", false},
         {"precompiled_headers", false}};
 }
@@ -174,6 +175,10 @@ Comparison compare_reports(const json::Value& baseline, const json::Value& curre
                                      key);
     }
     const auto& context = *before.getObject("measurement_context");
+    if (context.getBoolean("allow_baseline_skips").value_or(false) &&
+        (!before.getArray("baseline_skipped_tests") || !after.getArray("baseline_skipped_tests") ||
+         *before.getArray("baseline_skipped_tests") != *after.getArray("baseline_skipped_tests")))
+        throw std::runtime_error("Incomparable reports: different skipped tests");
     if (context.getBoolean("tests_required").value_or(true) &&
         (*before.getInteger("baseline_tests_passed") < 1 ||
          *after.getInteger("baseline_tests_passed") < 1))

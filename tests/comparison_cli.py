@@ -66,6 +66,19 @@ with tempfile.TemporaryDirectory(prefix="buildray compare ") as temp:
     refused = json.loads((root / "check.json").read_text())
     assert refused["status"] == "incomparable"
     assert "different or missing measurement_context" in refused["error"]
+    skip_reports = []
+    for label in ['baseline', 'current']:
+        item = json.loads((work / (label + '-report.json')).read_text())
+        item['measurement_context']['allow_baseline_skips'] = True
+        item['baseline_skipped_tests'] = ['known_skip']
+        path = root / (label + '-skips.json')
+        path.write_text(json.dumps(item))
+        skip_reports.append(path)
+    run(*check, '--baseline', skip_reports[0], '--current', skip_reports[1], expected=3)
+    item['baseline_skipped_tests'] = ['different_skip']
+    skip_reports[1].write_text(json.dumps(item))
+    run(*check, '--baseline', skip_reports[0], '--current', skip_reports[1], expected=4)
+    assert 'different skipped tests' in json.loads((root / 'check.json').read_text())['error']
     # Refuse output aliases that would destroy the baseline input.
     original = (work / "baseline-report.json").read_bytes()
     run(*check, "--output", work / "baseline-report.json", expected=1)

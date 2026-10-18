@@ -45,6 +45,7 @@ Options:
   --jobs N              Fixed build parallelism, 1..1024 (default: 2)
   --job-levels LIST     unity/pch: sequential comparisons, e.g. 1,2,4,8; replaces --jobs
   --allow-no-tests      Permit build-only validation when no CTest tests exist
+  --allow-baseline-skips  Allow the same runtime-skipped tests as the baseline
   --baseline-source DIR  Base revision source for paired comparison
   --max-regression-percent N  Regression budget (default: 5)
   --session ID          Optional label shared by comparable measurements
@@ -185,6 +186,10 @@ buildray::Options parse(const std::vector<std::string>& args) {
         }
         if (arg == "--allow-no-tests") {
             options.allow_no_tests = true;
+            continue;
+        }
+        if (arg == "--allow-baseline-skips") {
+            options.allow_baseline_skips = true;
             continue;
         }
         if (arg == "--fail-on-cycles") {

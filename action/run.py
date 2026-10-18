@@ -127,6 +127,12 @@ def retain_failure_logs(run, artifacts):
 
 
 def retain_run_evidence(run, artifacts, report, emit_outputs=True):
+    if report.get('baseline_skipped_tests') is not None:
+        for item in (run / 'logs').glob('*tests*'):
+            if item.is_file() and not item.is_symlink() and item.suffix in ('.xml', '.json'):
+                destination = artifacts / 'logs' / item.name
+                destination.parent.mkdir(exist_ok=True)
+                shutil.copyfile(item, destination)
     if report.get('parallelism_sweep'):
         for level in report.get('levels', []):
             jobs = level.get('jobs')
@@ -292,6 +298,7 @@ def main():
     integer("BUILDRAY_RETENTION_DAYS", "30", 90)
     boolean("BUILDRAY_INSTALL_DEPENDENCIES", "true")
     allow_no_tests = boolean("BUILDRAY_ALLOW_NO_TESTS", "false")
+    allow_baseline_skips = boolean("BUILDRAY_ALLOW_BASELINE_SKIPS", "false")
     budget = float(os.environ.get("BUILDRAY_MAX_REGRESSION_PERCENT", "5"))
     if not math.isfinite(budget) or not 0 <= budget <= 1000:
         raise ValueError("max-regression-percent must be between 0 and 1000")
@@ -365,6 +372,8 @@ def main():
                 command.extend(["--header", header])
         if allow_no_tests:
             command.append("--allow-no-tests")
+        if allow_baseline_skips:
+            command.append("--allow-baseline-skips")
         command.extend(["--", *cmake_args])
         result = run_cli(command, work / "run", artifacts)
         report_file = work / "run/report.json"
