@@ -1,0 +1,42 @@
+name: Prune dependencies on Highway
+
+on:
+  pull_request:
+    paths: ['.github/workflows/prune-highway.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - uses: actions/checkout@v6
+        with:
+          repository: google/highway
+          ref: 1693ca7926ed12c5520623564e465cff97d93374
+          path: fixtures/highway
+          persist-credentials: false
+      - name: Validate grouped removals and measure library edits
+        uses: ./
+        with:
+          command: prune-deps
+          source: fixtures/highway
+          runs: '3'
+          jobs: '4'
+          incremental-only: 'true'
+          rebuild-files: '["hwy/contrib/sort/vqsort.cc"]'
+          cmake-args: >-
+            ["-DHWY_ENABLE_TESTS=ON", "-DHWY_ENABLE_EXAMPLES=ON",
+             "-DHWY_ENABLE_CONTRIB=ON", "-DHWY_TEST_STANDALONE=ON",
+             "-DBUILD_SHARED_LIBS=OFF",
+             "-DCMAKE_EXE_LINKER_FLAGS=--ld-path=/usr/lib/llvm-21/bin/ld.lld",
+             "-DCMAKE_SHARED_LINKER_FLAGS=--ld-path=/usr/lib/llvm-21/bin/ld.lld",
+             "-DCMAKE_MODULE_LINKER_FLAGS=--ld-path=/usr/lib/llvm-21/bin/ld.lld"]
+          artifact-name: prune-highway
