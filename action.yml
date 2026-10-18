@@ -108,6 +108,9 @@ inputs:
     description: Artifact retention (1-90 days).
     default: '30'
 outputs:
+  artifact-path:
+    description: Directory containing retained reports, patches and validation evidence.
+    value: ${{ steps.run.outputs.artifact-path }}
   parallelism:
     description: Per-job paired measurements, CPU capacity, validation and consistency checks.
     value: ${{ steps.run.outputs.parallelism }}

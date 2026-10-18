@@ -54,6 +54,7 @@ With `job-levels`, the Action's `jobs` input controls compilation of Buildray
 itself. The listed levels control the measured project. Outputs `parallelism`
 and `parallelism-summary` point to the comparison, and artifacts retain every
 child report, patch, measurement and test log.
+The `artifact-path` output gives the directory containing this evidence.
 
 The [XGrammar workflow](../.github/workflows/parallelism.yml) runs two independent
 sweeps, `1,2` and `4,8`, to reduce CI turnaround. Each sweep uses its own runner.

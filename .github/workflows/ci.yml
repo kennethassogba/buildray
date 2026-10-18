@@ -9,6 +9,10 @@ on:
         description: Measure XGrammar Unity at 1, 2, 4 and 8 jobs and verify the upstream PR groups.
         type: boolean
         default: false
+      parallelism_verify_run:
+        description: Verify saved parallelism artifacts from this run ID without repeating timings.
+        type: string
+        default: ''
       unused_dependencies:
         description: Validate unused static-library dependencies on the three pinned corpus projects with a common LLD toolchain.
         type: boolean
@@ -106,9 +110,15 @@ on:
         default: '2'
 
 permissions:
+  actions: read
   contents: read
 
 jobs:
+  parallelism-verification:
+    if: github.event_name == 'workflow_dispatch' && inputs.parallelism_verify_run != ''
+    uses: ./.github/workflows/verify-parallelism.yml
+    with:
+      run_id: ${{ inputs.parallelism_verify_run }}
   parallelism-corpus:
     if: github.event_name == 'workflow_dispatch' && inputs.parallelism_corpus
     uses: ./.github/workflows/parallelism.yml
@@ -135,6 +145,7 @@ jobs:
     uses: ./.github/workflows/mujoco-compare.yml
 
   test:
+    if: github.event_name != 'workflow_dispatch' || inputs.parallelism_verify_run == ''
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     strategy:
@@ -176,10 +187,12 @@ jobs:
       - name: Check action outputs
         if: matrix.build_type == 'Release'
         env:
+          ARTIFACT_PATH: ${{ steps.action.outputs.artifact-path }}
           COMPARISON: ${{ steps.action.outputs.comparison }}
           BASELINE: ${{ steps.action.outputs.baseline-sha }}
           EXPECTED: ${{ github.sha }}
         run: |
+          test -f "$ARTIFACT_PATH/action-status.json"
           test -f "$COMPARISON"
           test "$BASELINE" = "$EXPECTED"
       - name: Real C++ project
