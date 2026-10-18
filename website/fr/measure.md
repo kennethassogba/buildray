@@ -40,6 +40,8 @@ Buildray prépare les deux builds, vérifie qu’ils n’ont plus rien à faire,
 
 Le commentaire révèle quels fichiers une modification oblige à reconstruire. Il ne simule pas tous les changements de code possibles. Le rapport conserve les compilations déclenchées et la création éventuelle du PCH. La mémoire indiquée est le pic d’un compilateur individuel, pas la mémoire totale du build ou du linker.
 
+Le nettoyage des dépendances mesure aussi le nombre de liens et la durée des commandes qui lancent le linker, démarrage du pilote compris. Des liens parallèles peuvent se recouvrir : leur durée cumulée n’est pas le temps total du build. Une dépendance inutile peut coûter peu dans un build complet mais provoquer des liens évitables après une modification.
+
 `--incremental-only` évite de répéter les builds complets pour les chronométrer ; les builds et tests de validation restent nécessaires. Il ne produit pas de recommandation automatique sur le gain d’un build complet. Un ralentissement incrémental mesuré bloque cette recommandation lorsque les deux types de mesures sont activés.
 
 ## Comparer deux révisions {#compare-revisions}

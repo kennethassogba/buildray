@@ -4,19 +4,19 @@ title: La suite
 
 # Réduire le travail déclenché par un changement {#reduce-the-work-an-edit-triggers}
 
-La prochaine priorité proposée est de comprendre et réduire les rebuilds inutiles, avec une attention particulière au lien. Les mesures MuJoCo donnent un cas concret à examiner.
+La prochaine priorité est d’expliquer pourquoi les cibles sont reconstruites, puis d’étendre le nettoyage à davantage de déclarations CMake.
 
 ## Les dépendances : ce qui existe déjà {#dependency-cleanup-today}
 
 `deps` décrit les relations entre fichiers et cibles, et signale les cycles. `prune-links` peut supprimer une déclaration CMake redondante dans un cas conservateur, puis valider et mesurer le patch.
 
-Ce premier nettoyage ne cherche pas encore à déterminer toutes les bibliothèques dont un programme peut se passer. Une déclaration peut être redondante tout en laissant exactement les mêmes entrées au linker. Sa suppression simplifie alors le CMake sans accélérer le lien.
+`prune-deps` teste maintenant le retrait de bibliothèques statiques privées avec les statistiques d’extraction des archives, un lien rejoué produisant un binaire identique et la validation complète du build et des tests. Il peut conserver les exigences de compilation quand seul le lien est inutile. Son périmètre reste limité aux déclarations littérales dans une configuration.
 
 ## Ce qu’il faut mesurer ensuite {#what-to-measure-next}
 
-Il faut enregistrer séparément les commandes et durées de lien, puis montrer ce qu’un fichier modifié oblige à recompiler et à relier. Le rapport pourra dire quelles cibles prennent du temps et pourquoi elles sont reconstruites. Cette mesure détaillée du linker est à développer.
+Le nettoyage des liens enregistre maintenant les commandes et durées individuelles, ainsi que le nombre de liens incrémentaux. La suite consiste à expliquer quel chemin de dépendances déclenche chaque reconstruction, et à prendre en charge les déclarations CMake utilisant des variables sans en changer le sens.
 
-À partir de là, nous pourrons tester des changements précis : réduire la portée d’une dépendance `PUBLIC`, retirer une bibliothèque effectivement inutile, ou séparer un header très partagé d’une implémentation qui change souvent. Chacun demande de vérifier les exigences transmises aux autres cibles, puis les builds et tests des consommateurs concernés.
+Les interfaces publiques demandent encore des vérifications entre consommateurs. Réduire la portée d’une dépendance `PUBLIC` ou séparer un header partagé d’une implémentation doit préserver les exigences reçues par les autres cibles.
 
 ## Cela peut-il accélérer le lien ? {#can-this-speed-up-linking}
 

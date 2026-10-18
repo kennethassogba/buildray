@@ -4,19 +4,19 @@ title: What comes next
 
 # Reduce the work an edit triggers
 
-The proposed next priority is to understand and reduce unnecessary rebuilds, with a closer look at linking. MuJoCo provides a concrete case to investigate.
+The next priority is to explain why targets rebuild, then extend dependency cleanup to more CMake declarations.
 
 ## Dependency cleanup today
 
 `deps` records file and target relationships and reports cycles. `prune-links` can remove one redundant CMake declaration in a conservative case, then validate and measure the patch.
 
-This first cleanup does not yet find every library a program could do without. A declaration can be redundant while leaving exactly the same linker inputs. Removing it then simplifies CMake without speeding up the link.
+`prune-deps` now tests private static-library removal with archive extraction evidence, identical-binary link replay and full build and test validation. It can retain compilation requirements when only the link is unnecessary. Its scope is deliberately limited to literal declarations in one configuration.
 
 ## What to measure next
 
-We need separate link-command timings and an explanation of which compilations and links an edited file triggers. Reports could then identify expensive targets and why they rebuild. Detailed linker measurement still needs implementation.
+Link cleanup now records individual link-driver commands and durations, including incremental rebuild counts. The next step is to explain which dependency path caused each target to rebuild, and support variable-based CMake declarations without losing their meaning.
 
-That would let us test specific changes: narrow a `PUBLIC` dependency, remove an unnecessary library, or separate a widely shared header from frequently edited implementation. Each requires checking the requirements transmitted to other targets, then building and testing the affected consumers.
+Public dependency interfaces still need separate checks across consumers. Narrowing a `PUBLIC` dependency or separating a shared header from frequently edited implementation must preserve the requirements those consumers receive.
 
 ## Can this speed up linking?
 

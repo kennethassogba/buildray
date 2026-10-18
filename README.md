@@ -11,7 +11,8 @@ Buildray is written in **C++26**. It supports Linux, Clang, CMake and Ninja.
 
 Requirements: a compiler with C++26 mode (tested with Clang 21), CMake 3.30+,
 Ninja, LLVM and Clang development libraries 20+, clang-tidy with `misc-include-cleaner`,
-clang-scan-deps (for CMake's C++ module scanning), and GNU diff. Python 3.12+ is used
+clang-scan-deps (for CMake's C++ module scanning), and GNU diff. LLD is also needed
+for the unused-dependency tests and archive analysis. Python 3.12+ is used
 by the integration tests and GitHub Action; the CLI itself is native C++.
 Install `libclang-21-dev` alongside LLVM 21. Keep the matching LLVM and Clang
 runtimes installed. Installation places `buildray` and `buildray-header-tool`
@@ -187,6 +188,28 @@ selection. It produces `cmake.patch` and `links.json`; no patch is applied to th
 original project. No eligible link completes without a patch or benchmark.
 [Selection rules, limits and Action usage](docs/cmake-links.md).
 
+## Unused static-library dependencies
+
+```bash
+buildray prune-deps --source /path/to/project --runs 3 --jobs 2 \
+  --exclude third_party --rebuild-file src/model.cc \
+  -- -DCMAKE_EXE_LINKER_FLAGS=--ld-path=/usr/lib/llvm-21/bin/ld.lld \
+     -DCMAKE_SHARED_LINKER_FLAGS=--ld-path=/usr/lib/llvm-21/bin/ld.lld \
+     -DCMAKE_MODULE_LINKER_FLAGS=--ld-path=/usr/lib/llvm-21/bin/ld.lld
+```
+
+`prune-deps` removes one private static-library dependency only when it removes
+actual linker inputs, keeps compiler commands unchanged, and produces an identical
+ELF binary when replaying the link with the same objects. It also requires zero
+archive extractions, a complete build and the same passing CTest inventory. If a
+library only supplies compilation requirements, the patch preserves them with
+`COMPILE_ONLY` and retains the original link for CMake older than 3.27.
+
+This mode needs ELF LLD, CMake 4.2+ and Ninja 1.13+. It records link counts and
+link-driver time in clean and incremental samples. With no confirmed candidate,
+it records baseline-only clean timings without claiming a gain. See
+[selection, validation and limits](docs/unused-dependencies.md).
+
 ## What optimize does
 
 1. Copies the source tree into isolated baseline and candidate trees, excluding `.git`, `.cache`,
@@ -227,7 +250,7 @@ includes.patch                 Unified patch (optimize only)
 headers.patch                  Header include and forward-declaration patch (headers)
 header-cleanup.json            Header findings, rejected proposals and validation counts
 pch.patch                      CMake PCH patch (pch only)
-cmake.patch                    Redundant target-link patch (prune-links)
+cmake.patch                    Target-link patch (prune-links, prune-deps)
 unity.patch, unity.json         Opt-in unity patch and verified source groups (unity)
 links.json                     Eligible link candidates and selected experiment
 cmake-before.json, cmake-after.json Configured target graph evidence
@@ -235,6 +258,7 @@ headers.json, headers.md        Inclusive header costs and target rankings (prof
 selection.json                 Automatic PCH candidate and selection metrics (pch --auto)
 dependencies.json, .md, .dot    Include graph, cycles and CMake relationships (deps)
 logs/*-compilers.json           Duration, CPU time, RSS and argv per compiler invocation
+logs/*-linkers.json             Link-driver times, counts, RSS and argv (link cleanup)
 logs/*-build.log                Build output for each sample
 logs/*-tests.xml                CTest validation results
 analysis/*/fixes.yaml           Original clang-tidy findings
@@ -247,7 +271,7 @@ baseline-build/, candidate-build/
 when a nonempty validated patch also has an `improved` performance result. A
 failed candidate can leave a patch for diagnosis: its existence is not validation.
 
-For `optimize`, `headers`, `prune-links`, `unity` and `pch`, `performance_result` is `improved`, `regressed`, `inconclusive`,
+For `optimize`, `headers`, `prune-links`, `prune-deps`, `unity` and `pch`, `performance_result` is `improved`, `regressed`, `inconclusive`,
 `insufficient_samples` (fewer than three runs), or `no_changes`. The noise
 threshold is the larger of 2% of baseline time and three times the larger MAD.
 This is a reporting heuristic, not a statistical significance test. A noisy
@@ -259,7 +283,7 @@ candidate target. PCH is disabled for include
 cleanup and revision comparisons; only `pch` enables it in the candidate. Cleaning, configuration, analysis and
 tests are outside the measured interval. Build wall time includes dependency
 scans, compilation, code generation, linking and launcher overhead. Per-compiler
-totals cover C++ compiler invocations (C/C++ for `headers`, `deps` and `unity`); their sum is not the parallel build's wall
+totals cover C++ compiler invocations (C/C++ for `headers`, `deps`, `unity` and link cleanup); their sum is not the parallel build's wall
 time. RSS is the maximum of individual compiler peaks, not aggregate build memory.
 
 ## Validation scope
@@ -271,7 +295,7 @@ time. RSS is the maximum of individual compiler peaks, not aggregate build memor
   Launcher overrides and `EXCLUDE_FROM_ALL` C++ targets cause a coverage error.
   Disable optional targets that are not part of the build you want to validate.
   Active unity compilation and unexpected PCH are refused, including target overrides.
-  `deps`, `headers` and `unity` instead check every C/C++ object reachable from Ninja's default `all`
+  `deps`, `headers`, `unity` and `prune-deps` instead check every C/C++ object reachable from Ninja's default `all`
   target, allowing optional excluded targets. The `deps` CMake graph still lists configured
   excluded targets; their includes are not claimed as observed. `headers` also
   requires Ninja 1.13+ and counts inactive compilation commands. `unity` also requires Ninja 1.13+.

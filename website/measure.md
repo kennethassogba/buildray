@@ -40,6 +40,8 @@ Buildray prepares both builds and checks that they have no work left. It then ad
 
 The comment reveals which files an edit causes to rebuild. It does not simulate every semantic code change. Reports retain compiler counts and PCH creation. Reported memory is the peak of one compiler invocation, not total build or linker memory.
 
+Dependency cleanup also records link counts and the time spent in link-driver commands. That includes driver startup. Parallel links can overlap, so their summed duration is not total elapsed build time. An unused dependency may cost little in a clean build but still cause unnecessary relinks after an edit.
+
 `--incremental-only` skips repeated full-build timings while retaining build and test validation. It does not automatically recommend a full-build improvement. When both types of timing are enabled, a measured incremental slowdown blocks that recommendation.
 
 ## Compare revisions

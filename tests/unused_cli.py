@@ -128,6 +128,19 @@ endif()
 ''')
     _, failed = invoke('test-inventory', expected=1)
     assert not failed['patch_validated'] and 'CTest inventory changed' in failed['error']
+
+    # A static-only project has no link-driver work. With explicit build-only
+    # validation it should report zero links, rather than a launcher failure.
+    cmake.write_text('''cmake_minimum_required(VERSION 3.18)
+project(static_only LANGUAGES CXX)
+add_library(core STATIC dead.cpp)
+''')
+    _, static = invoke('static-only', '--allow-no-tests')
+    assert static['performance_result'] == 'no_changes'
+    assert static['validation'] == 'build_only'
+    assert static['baseline']['linker_invocations_median'] == 0
+    run(binary, 'prune-links', '--source', source, '--work-dir', root / 'static-only-links',
+        '--compiler', compiler, '--allow-no-tests', '--runs', 3)
     run(binary, 'prune-deps', '--runs', 1, expected=2)
 
 print('Unused dependency experiments passed')

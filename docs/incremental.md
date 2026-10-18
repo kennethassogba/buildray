@@ -1,6 +1,6 @@
 # Measure incremental rebuilds
 
-Pass one or more `--rebuild-file` paths to `pch` or `unity`. Buildray measures
+Pass one or more `--rebuild-file` paths to `pch`, `unity` or `prune-deps`. Buildray measures
 each file separately in the baseline and candidate build trees. Select files
 that reflect your workload: an implementation file, an internal header and a
 public header are useful starting points. Header visibility is chosen by the
@@ -39,8 +39,10 @@ replaces the previous comment, so subsequent pairs also invalidate the file.
 
 Compilation, PCH regeneration when needed, code generation and linking are inside
 the timer. Editing, no-op checks and tests are outside it. Every measured rebuild
-must produce at least one successful compiler record, using a subset of the
-commands verified during full validation. C and C++ commands are covered,
+normally produces at least one successful compiler record, using a subset of the
+commands verified during full validation. For `prune-deps`, baseline probes must
+trigger compilation or linking; the candidate can do no work if the removed
+dependency was the only reason to rebuild. C and C++ commands are covered,
 including in mixed-language PCH targets. CTest runs after every sample with the
 original test inventory; failures, disabled tests and runtime skips reject the
 experiment. `--allow-no-tests` explicitly permits build-only validation.
@@ -49,7 +51,7 @@ After a scenario, the exact original file bytes are restored in both snapshots
 and each build is brought up to date outside timing. File contents are restored
 on failure and interruption too. The original input tree is never edited.
 Generated files, duplicate paths, files outside the snapshot and files that do
-not trigger compilation are refused. Projects with build commands that always
+not trigger compilation are refused, except for the link-cleanup cases above. Projects with build commands that always
 run are refused by the no-op check.
 
 Comment edits measure dependency invalidation and the amount of work required
@@ -64,7 +66,8 @@ dependency fan-out matters; three files do not describe every developer edit.
 retain the scenarios. Raw samples include wall time, compiler invocation count,
 compiled source paths, unique original input source files (expanding Unity groups),
 PCH creation count, compiler CPU time, maximum individual
-compiler RSS, no-op duration and test count. RSS is not aggregate build memory.
+compiler RSS, no-op duration and test count. Link cleanup also records link
+counts, link-driver wall/CPU time, individual RSS peaks and linked outputs. RSS is not aggregate build memory.
 Generated files and PCH wrappers stay in `compiled_sources` but do not count as
 original input source files.
 Compiler records, build logs, inventories and JUnit results are kept under

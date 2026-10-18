@@ -54,6 +54,10 @@ buildray prune-links --source /chemin/du/projet --runs 3 --jobs 2
 
 `prune-links` teste la suppression d’une seule déclaration CMake redondante dont les exigences restent accessibles par un autre chemin. Il ne recherche pas encore toutes les bibliothèques réellement inutiles. Si la commande finale de lien reste identique, aucun gain de temps n’est attendu de cette seule suppression.
 
+`prune-deps` essaie de retirer une bibliothèque statique privée de la commande de lien réelle. Il vérifie qu’elle ne fournit aucun objet au binaire, conserve les commandes de compilation et compare les binaires obtenus avec les mêmes objets. Le build complet et les tests doivent aussi passer.
+
+Ce mode demande ELF LLD, choisi explicitement pour les deux versions. Si une bibliothèque fournit seulement des headers ou des paramètres de compilation, le patch peut les conserver tout en retirant le lien. Ajoutez `--rebuild-file` pour vérifier si une modification déclenche moins de liens. La [référence de la commande](https://github.com/kennethassogba/buildray/blob/main/docs/unused-dependencies.md) donne la configuration et les limites.
+
 ## Garder uniquement un patch vérifié {#keep-a-validated-patch}
 
 Lisez `patch_validated`, `patch_recommended` et `performance_result` dans `report.json`. Un fichier `.patch` peut exister même après un échec ; sa présence ne vaut pas validation.

@@ -35,7 +35,7 @@ Options:
   --source DIR          CMake source tree (default: current directory)
   --work-dir DIR        New output directory (default: SOURCE/.buildray/unique-id)
   --compiler PATH       Clang C++ compiler (default: clang++)
-  --c-compiler PATH     Clang C compiler for deps/headers/unity or incremental pch
+  --c-compiler PATH     Clang C compiler for graphs, headers, unity, link cleanup or incremental pch
   --fail-on-cycles      deps: return 5 if include or target-link cycles exist
   --clang-tidy PATH     clang-tidy with misc-include-cleaner (default: clang-tidy)
   --runs N              Samples per variant and rebuild scenario, 1..100 (default: 3)
@@ -53,7 +53,7 @@ Options:
   --dependency NAME     Link cleanup: restrict selection to this direct dependency
   --header HEADER       PCH header: <system> or source-root-relative path; repeatable
   --auto                pch: profile, select one project header/target, validate and measure
-  --exclude PATH        optimize/headers/prune-links: skip edits to a relative path; repeatable
+  --exclude PATH        optimize/headers/link cleanup: skip edits to a relative path; repeatable
   --forward-declarations headers: try replacing eligible project includes with class/struct declarations
   --header-path PATH    headers: restrict edited headers to a relative file/directory; repeatable
   --max-header-edits N  headers: accepted header files per run, 1..1000 (default: 8)
@@ -266,13 +266,13 @@ buildray::Options parse(const std::vector<std::string>& args) {
     if (options.command != "pch" && !options.headers.empty())
         throw std::runtime_error("--header requires pch");
     if (options.command != "pch" && options.command != "prune-links" && options.command != "prune-deps" && options.command != "unity" && !options.target.empty())
-        throw std::runtime_error("--target requires pch, unity or prune-links");
+        throw std::runtime_error("--target requires pch, unity, prune-links or prune-deps");
     if (options.command == "unity" && options.target.empty())
         throw std::runtime_error("unity requires --target");
     if (options.command != "prune-links" && options.command != "prune-deps" && !options.dependency.empty())
-        throw std::runtime_error("--dependency requires prune-links");
+        throw std::runtime_error("--dependency requires prune-links or prune-deps");
     if ((options.command == "prune-links" || options.command == "prune-deps") && options.runs < 3)
-        throw std::runtime_error("prune-links requires at least three runs");
+        throw std::runtime_error("Link cleanup requires at least three runs");
     if (options.command != "deps" && options.fail_on_cycles)
         throw std::runtime_error("--fail-on-cycles requires deps");
     if ((!options.rebuild_files.empty() || options.incremental_only) && options.command != "pch" && options.command != "unity" && options.command != "prune-deps")
@@ -282,7 +282,7 @@ buildray::Options parse(const std::vector<std::string>& args) {
     if (options.command != "deps" && options.command != "headers" && options.command != "unity" &&
         options.command != "prune-links" && options.command != "prune-deps" &&
         !(options.command == "pch" && !options.rebuild_files.empty()) && explicit_c_compiler)
-        throw std::runtime_error("--c-compiler requires deps, headers, unity or incremental pch");
+        throw std::runtime_error("--c-compiler requires deps, headers, unity, link cleanup or incremental pch");
     if ((options.command == "headers" || options.command == "unity" || options.command == "pch" || options.command == "prune-links" || options.command == "prune-deps") && !explicit_c_compiler) {
         auto driver = buildray::fs::path(options.compiler);
         auto name = driver.filename().string();
@@ -292,7 +292,7 @@ buildray::Options parse(const std::vector<std::string>& args) {
         }
     }
     if (options.command != "optimize" && options.command != "prune-links" && options.command != "prune-deps" && options.command != "headers" && !options.exclusions.empty())
-        throw std::runtime_error("--exclude requires optimize, headers or prune-links");
+        throw std::runtime_error("--exclude requires optimize, headers, prune-links or prune-deps");
     if (options.command != "headers" && (options.forward_declarations || !options.header_paths.empty() || options.max_header_edits != 8))
         throw std::runtime_error("Header options require command headers");
     // Tools run from the snapshot; resolve explicit relative executable paths now.

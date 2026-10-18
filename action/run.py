@@ -272,7 +272,7 @@ def main():
     if not isinstance(exclusions, list) or not all(isinstance(item, str) and item for item in exclusions):
         raise ValueError("exclude-paths must be a JSON array of nonempty relative paths")
     if exclusions and mode not in ("optimize", "headers", "prune-links", "prune-deps"):
-        raise ValueError("exclude-paths requires command optimize, headers or prune-links")
+        raise ValueError("exclude-paths requires command optimize, headers, prune-links or prune-deps")
     reference = os.environ.get("BUILDRAY_BASELINE_REF", "").strip()
     if reference and mode == "measure" and runs < 3:
         raise ValueError("Revision comparisons need at least three runs")

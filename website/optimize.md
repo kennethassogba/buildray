@@ -53,6 +53,10 @@ buildray prune-links --source /path/to/project --runs 3 --jobs 2
 
 `prune-links` tests removing one redundant CMake declaration whose requirements remain reachable through another path. It does not yet find every unnecessary library. If the final link command stays the same, removing that declaration alone is not expected to save time.
 
+`prune-deps` goes further: it tries removing a private static library from the actual link command. It checks that the archive supplies no objects, preserves compiler commands and compares binaries produced from the same objects. The full build and tests must also pass.
+
+This mode needs ELF LLD, selected explicitly for both variants. If a library only supplies headers or compilation settings, the patch can keep those while removing the link. Add `--rebuild-file` to check whether an edit triggers fewer links. The [command reference](https://github.com/kennethassogba/buildray/blob/main/docs/unused-dependencies.md) gives the setup and limits.
+
 ## Keep a validated patch
 
 Read `patch_validated`, `patch_recommended` and `performance_result` in `report.json`. A `.patch` file can remain after a failure; its presence does not establish validation.

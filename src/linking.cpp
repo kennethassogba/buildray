@@ -252,7 +252,7 @@ void verify_link_coverage(const json::Object& graph, const fs::path& build, cons
         if (row.getInteger("exit_code") != 0 || !observed.insert(absolute_path(text(row, "output"))).second)
             throw std::runtime_error("Invalid or duplicate link measurement");
     }
-    if (expected.empty() || expected != observed)
+    if (expected != observed)
         throw std::runtime_error("Link coverage does not match active CMake executable/shared/module targets; custom linker launchers are unsupported");
 }
 
