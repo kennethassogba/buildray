@@ -165,7 +165,7 @@ std::vector<Token> tokens(const std::string& source) {
 
 std::optional<Token> literal_link(const std::string& source, const std::string& target,
                                   const std::string& dependency, std::size_t line,
-                                  bool private_only = false) {
+                                  bool private_only = false, bool whole_command = false) {
     const auto all = tokens(source);
     for (std::size_t i = 0; i + 1 < all.size(); ++i) {
         auto command = all[i].text;
@@ -195,6 +195,9 @@ std::optional<Token> literal_link(const std::string& source, const std::string& 
                 selected = token;
             }
         }
+        if (selected && whole_command)
+            return Token{source.substr(all[i].offset, all[end].offset + 1 - all[i].offset),
+                         all[i].offset, all[i].line, true};
         return selected;
     }
     return std::nullopt;
@@ -228,16 +231,37 @@ json::Object unused_link_candidates(const json::Object& graph, const fs::path& s
             std::ranges::any_of(options.exclusions, [&](const fs::path& p) { return within(path, p); })) continue;
         const auto token = literal_link(read_file(source / path), from, to, static_cast<std::size_t>(*line), true);
         if (!token) continue;
-        selected.emplace(std::pair{from, to}, json::Object{{"target", from}, {"dependency", to},
+        auto row = json::Object{{"target", from}, {"dependency", to},
             {"file", path.generic_string()}, {"line", *line},
             {"offset", static_cast<std::int64_t>(token->offset)},
-            {"length", static_cast<std::int64_t>(token->text.size())}});
+            {"length", static_cast<std::int64_t>(token->text.size())},
+            {"replacement", ""}, {"compile_only", false}};
+        const auto call = literal_link(read_file(source / path), from, to, static_cast<std::size_t>(*line), true, true);
+        auto modified = call->text;
+        modified.replace(token->offset - call->offset, token->text.size(), "\"$<COMPILE_ONLY:" + to + ">\"");
+        row["compile_only_offset"] = static_cast<std::int64_t>(call->offset);
+        row["compile_only_length"] = static_cast<std::int64_t>(call->text.size());
+        row["compile_only_replacement"] = "if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.27)\n"
+            "  cmake_policy(PUSH)\n  cmake_policy(SET CMP0099 NEW)\n  " + modified +
+            "\n  cmake_policy(POP)\nelse()\n  " + call->text + "\nendif()";
+        selected.emplace(std::pair{from, to}, std::move(row));
     }
     json::Array rows;
-    for (auto& [key, value] : selected) rows.push_back(std::move(value));
-    return json::Object{{"candidates", std::move(rows)}, {"attempts", json::Array{}},
+    for (auto& [key, value] : selected) {
+        auto compile = json::Object(value);
+        compile["offset"] = *value.getInteger("compile_only_offset");
+        compile["length"] = *value.getInteger("compile_only_length");
+        compile["replacement"] = value.getString("compile_only_replacement")->str();
+        compile["compile_only"] = true;
+        for (auto* row : {&value, &compile}) {
+            row->erase("compile_only_offset"); row->erase("compile_only_length"); row->erase("compile_only_replacement");
+        }
+        rows.push_back(std::move(value));
+        rows.push_back(std::move(compile));
+    }
+    return json::Object{{"candidates", std::move(rows)}, {"candidate_links", static_cast<std::int64_t>(selected.size())}, {"attempts", json::Array{}},
         {"rule", "one private literal static-library link; unchanged compiler commands; removed archives must extract zero members; identical ELF from replaying the same baseline objects; full build and CTest"},
-        {"scope", "ELF LLD analysis; executable/shared/module consumers only; no public interface, shared-library or variable-list cleanup"}};
+        {"scope", "ELF LLD analysis; executable/shared/module consumers only; delete or retain compile-only requirements; CMake <3.27 retains the original link; no public interface, shared-library or variable-list cleanup"}};
 }
 
 json::Object link_candidates(const json::Object& graph, const fs::path& source,
@@ -325,12 +349,14 @@ json::Object link_candidates(const json::Object& graph, const fs::path& source,
 }
 
 void verify_link_removal(const json::Object& before, const json::Object& after,
-                         const json::Object& selection) {
+                         const json::Object& selection, bool compile_only) {
     auto expected = relations(before);
     const auto from = string(selection, "target"), to = string(selection, "dependency");
     for (const auto* kind : {"linkLibraries", "compileDependencies", "interfaceLinkLibraries",
                              "interfaceCompileDependencies"})
-        expected.erase({from, to, kind});
+        if (!compile_only || (std::string_view(kind) != "compileDependencies" &&
+                              std::string_view(kind) != "interfaceCompileDependencies"))
+            expected.erase({from, to, kind});
     // Order-only dependencies may disappear with a direct link; all other
     // relationships must remain, including raw linker fragments.
     auto actual = relations(after);

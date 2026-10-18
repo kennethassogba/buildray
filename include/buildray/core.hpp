@@ -118,7 +118,7 @@ json::Object link_candidates(const json::Object& graph, const fs::path& source,
 json::Object unused_link_candidates(const json::Object& graph, const fs::path& source,
                                     const Options& options);
 void verify_link_removal(const json::Object& before, const json::Object& after,
-                         const json::Object& selection);
+                         const json::Object& selection, bool compile_only = false);
 json::Object header_profile(const fs::path& records, const fs::path& source,
                             const fs::path& build);
 std::string profile_markdown(const json::Object& profile);

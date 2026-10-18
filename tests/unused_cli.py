@@ -6,7 +6,8 @@ import subprocess
 import sys
 import tempfile
 
-binary, compiler, linker = sys.argv[1:]
+binary, compiler, linker = sys.argv[1:4]
+old_cmake = sys.argv[4] if len(sys.argv) > 4 else None
 
 
 def run(*args, expected=0, **kwargs):
@@ -29,7 +30,7 @@ with tempfile.TemporaryDirectory(prefix='buildray unused ') as folder:
     (source / 'part.c').write_text('int part(void) { return 0; }\n')
     (source / 'dead.cpp').write_text('int never_called() { return 17; }\n')
     cmake = source / 'CMakeLists.txt'
-    original = '''cmake_minimum_required(VERSION 4.2)
+    original = '''cmake_minimum_required(VERSION 3.18)
 project(unused_fixture LANGUAGES C CXX)
 add_library(dead STATIC EXCLUDE_FROM_ALL dead.cpp)
 add_executable(sample main.cpp part.c)
@@ -83,8 +84,19 @@ add_test(NAME works COMMAND sample)
         if reason:
             assert any(reason in row.get('reason', '') for row in result['dependency_trials']), result
 
-    # A successful test run alone is not enough to remove compile usage requirements.
-    rejected('usage', 'target_compile_definitions(dead INTERFACE UNUSED_DEFINE=1)\n', reason='compiler commands')
+    # Keep compile usage requirements while dropping an unused archive. Older CMake
+    # retains the original declaration rather than seeing an unsupported expression.
+    cmake.write_text(original + 'target_compile_definitions(dead INTERFACE UNUSED_DEFINE=1)\n')
+    keep_work, kept = invoke('usage')
+    assert kept['patch_validated'] and kept['selected_link']['compile_only']
+    assert 'compiler commands' in kept['dependency_trials'][0]['reason']
+    run('git', 'apply', keep_work / 'cmake.patch', cwd=source)
+    configure = old_cmake or 'cmake'
+    if not old_cmake:
+        cmake.write_text(cmake.read_text().replace('if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.27)', 'if(FALSE)'))
+    run(configure, '-S', source, '-B', root / 'legacy-applied', '-G', 'Ninja', f'-DCMAKE_CXX_COMPILER={compiler}')
+    run(configure, '--build', root / 'legacy-applied', '--parallel', 2)
+    run('ctest', '--test-dir', root / 'legacy-applied', '--output-on-failure')
     # Whole-archive can load constructors and registration objects without a symbol reference.
     rejected('whole-archive', replacement=original.replace('PRIVATE dead', 'PRIVATE "-Wl,--whole-archive" dead "-Wl,--no-whole-archive"'))
     # A required archive cannot be removed even when another library could satisfy its symbols.

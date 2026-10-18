@@ -816,13 +816,13 @@ void patch(const Changes& changes, const Variant& baseline, const Variant& candi
         if (original != read_file(baseline.source / relative))
             throw std::runtime_error("Source changed during analysis: " + relative.string());
         if (filename == "cmake.patch") {
-            if (replacements.size() != 1 || !replacements.front().text.empty())
-                throw std::runtime_error("Expected one CMake token deletion");
+            if (replacements.size() != 1)
+                throw std::runtime_error("Expected one CMake dependency edit");
             const auto& item = replacements.front();
             if (item.offset > original.size() || item.length > original.size() - item.offset)
                 throw std::runtime_error("Invalid CMake token range");
             auto edited = original;
-            edited.erase(item.offset, item.length);
+            edited.replace(item.offset, item.length, item.text);
             write_file(candidate.source / relative, edited);
         } else {
             write_file(candidate.source / relative, apply_include_replacements(original, replacements));
@@ -896,7 +896,7 @@ json::Object unused_plan(const Options& options, const Variant& baseline, const 
         try {
             Changes changes;
             changes[file] = {{file.string(), static_cast<std::size_t>(*selected.getInteger("offset")),
-                             static_cast<std::size_t>(*selected.getInteger("length")), ""}};
+                             static_cast<std::size_t>(*selected.getInteger("length")), selected.getString("replacement")->str()}};
             patch(changes, baseline, candidate, work, "cmake.patch");
             fs::copy_file(work / "cmake.patch", folder / "cmake.patch");
             // Reset the top-level cache between trials, retaining downloaded dependency
@@ -908,7 +908,7 @@ json::Object unused_plan(const Options& options, const Variant& baseline, const 
                 throw std::runtime_error("Dependency removal changed measurement context or CMake flags");
             const auto after = cmake_dependencies(candidate.source, candidate.build);
             write_json(folder / "cmake-after.json", json::Object(after));
-            verify_link_removal(before, after, selected);
+            verify_link_removal(before, after, selected, selected.getBoolean("compile_only").value_or(false));
             auto proof = verify_unused_link_inputs(baseline.source, baseline.build,
                 candidate.source, candidate.build, links, before, folder / "link-replay", executable);
             for (auto& item : *proof.getArray("changed_links")) {
@@ -1303,7 +1303,7 @@ int pipeline(const Options& options, const fs::path& executable) {
                     unused_plan(options, baseline, candidate, work, executable, cmake_before) :
                     link_candidates(cmake_before, candidate.source, options);
                 auto& candidates = *plan.getArray("candidates");
-                report["eligible_links"] = static_cast<std::int64_t>(candidates.size());
+                report["eligible_links"] = options.command == "prune-deps" ? *plan.getInteger("candidate_links") : static_cast<std::int64_t>(candidates.size());
                 report["removed_links"] = 0;
                 report["validation_scope"] = "one configured CMake build; one redundant literal target link; original snapshot files only";
                 if (options.command == "prune-deps") {
@@ -1390,7 +1390,7 @@ int pipeline(const Options& options, const fs::path& executable) {
             if (link_experiment(options)) {
                 auto after = cmake_dependencies(candidate.source, candidate.build);
                 write_json(work / "cmake-after.json", json::Object(after));
-                verify_link_removal(cmake_before, after, selected_link);
+                verify_link_removal(cmake_before, after, selected_link, selected_link.getBoolean("compile_only").value_or(false));
                 report["removed_links"] = 1;
                 report["cmake_graph_change_verified"] = true;
             }

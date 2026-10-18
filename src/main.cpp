@@ -46,11 +46,11 @@ Options:
   --baseline-source DIR  Base revision source for paired comparison
   --max-regression-percent N  Regression budget (default: 5)
   --session ID          Optional label shared by comparable measurements
-  --target NAME         PCH/unity target, or optional prune-links target restriction
+  --target NAME         PCH/unity target, or optional link-cleanup target restriction
   --batch-size N        unity: maximum sources per batch, 2..32 (default: 4)
   --unity-exclude PATH  unity: keep source files under this relative path separate; repeatable
   --unity-retries N     unity: retry failed compiler groups with their sources separate, 0..8 (default: 0)
-  --dependency NAME     prune-links: restrict selection to this direct dependency
+  --dependency NAME     Link cleanup: restrict selection to this direct dependency
   --header HEADER       PCH header: <system> or source-root-relative path; repeatable
   --auto                pch: profile, select one project header/target, validate and measure
   --exclude PATH        optimize/headers/prune-links: skip edits to a relative path; repeatable
@@ -91,7 +91,8 @@ graph redundancy, not proof that a library's symbols are unused.
 prune-deps tests private literal static-library dependencies with ELF LLD.
 It preserves compiler commands, requires zero extracted members from every removed
 archive, and replays the link with identical baseline objects to require identical
-ELF bytes. Full builds and tests follow; clean and incremental timings include
+ELF bytes. Compile-only requirements can be retained; CMake <3.27 keeps the
+original link for that patch. Full builds and tests follow; timings include
 link-driver counts, wall/CPU time and individual peak RSS. Shared libraries,
 exported interfaces, variables and response files are not removed. Configure LLD
 explicitly through project CMake flags; Buildray never switches the linker itself.
