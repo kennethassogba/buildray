@@ -42,8 +42,8 @@ buildray unity --source /path/to/project --target my_library \
 
 Unity produces a CMake option that defaults to off. After applying the patch, `-DBUILDRAY_UNITY=ON` enables the tested groups. Add `--rebuild-file` to either mode to measure files you often edit.
 
-To check how Unity or PCH behaves at different job counts, add
-`--job-levels 1,2,4,8`. Buildray runs each level sequentially, validates the same
+For Unity or a manually selected PCH, replace `--jobs` with
+`--job-levels 1,2,4,8` to compare job counts. This cannot be combined with `--auto` or Unity retries. Buildray runs each level sequentially, validates the same
 candidate and keeps its measurements separate. The report marks job counts
 above the machine's detected CPU capacity. See the
 [parallelism reference](https://github.com/kennethassogba/buildray/blob/main/docs/parallelism.md).
@@ -62,6 +62,8 @@ buildray prune-links --source /path/to/project --runs 3 --jobs 2
 `prune-deps` checks archive use once per program, then tries removing eligible private static libraries together. It splits groups that fail and keeps accepted removals in every later trial. Compiler commands must stay unchanged, and link replay must produce identical binaries from the same objects. The final combined patch must also pass the full build and tests.
 
 This mode needs ELF LLD, selected explicitly for both variants. If a library only supplies headers or compilation settings, the patch can keep those while removing the link. Add `--rebuild-file` to check whether an edit triggers fewer links. The [command reference](https://github.com/kennethassogba/buildray/blob/main/docs/unused-dependencies.md) gives the setup and limits.
+
+The search defaults to 64 trial configurations and 300 seconds. Change these with `--max-dependency-trials` and `--dependency-time-budget`. The final build and tests still run after the search budget is reached.
 
 ## Keep a validated patch
 

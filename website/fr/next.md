@@ -2,33 +2,18 @@
 title: La suite
 ---
 
-# Réduire le travail déclenché par un changement {#reduce-the-work-an-edit-triggers}
+# Tester le nettoyage des dépendances à grande échelle {#test-dependency-cleanup-at-scale}
 
-La prochaine priorité est d’expliquer pourquoi les cibles sont reconstruites, puis d’étendre le nettoyage à davantage de déclarations CMake.
+`prune-deps` teste déjà les retraits par groupes. Sur un projet de test contenant 40 bibliothèques inutiles, un essai et une vérification finale suffisent. Nous l’avons aussi exécuté sur XGrammar, SentencePiece et MuJoCo, sans démontrer de gain de temps lié à ces retraits.
 
-## Les dépendances : ce qui existe déjà {#dependency-cleanup-today}
+## Les prochaines étapes {#next-steps}
 
-`deps` décrit les relations entre fichiers et cibles, et signale les cycles. `prune-links` peut supprimer une déclaration CMake redondante dans un cas conservateur, puis valider et mesurer le patch.
+1. Tester des groupes de 100 et 1 000 dépendances, dont certaines doivent rester. Mesurer la durée de recherche, le nombre d’essais et la mémoire utilisée.
+2. Prendre en charge les fichiers `.rsp`, qui contiennent une liste d’arguments du compilateur. Ils bloquent actuellement la recherche sur MuJoCo.
+3. Valider plusieurs retraits ensemble sur un vrai projet. Mesurer les builds complets et les reconstructions après modification d’une bibliothèque, notamment les liens évités. Des tests qui passent ne suffisent pas à prouver un gain.
 
-`prune-deps` teste maintenant le retrait de bibliothèques statiques privées avec les statistiques d’extraction des archives, un lien rejoué produisant un binaire identique et la validation complète du build et des tests. Il peut conserver les exigences de compilation quand seul le lien est inutile. Son périmètre reste limité aux déclarations littérales dans une configuration.
+Les [résultats du nettoyage](https://github.com/kennethassogba/buildray/blob/main/docs/unused-dependencies-validation.md) distinguent le projet de test des mesures sur les vrais projets. Ne trouver aucun retrait éligible ne signifie pas que toutes les dépendances sont nécessaires.
 
-## Ce qu’il faut mesurer ensuite {#what-to-measure-next}
+## Plus tard {#later}
 
-Plus tard, l’usage des symboles et des objets pourrait aider à proposer des
-cibles plus petites et spécialisées. Le linker sélectionne déjà les objets
-nécessaires dans une archive statique : une grosse bibliothèque ne prouve donc
-pas à elle seule du travail inutile. Un découpage utile devra réduire la
-compilation, le lien ou les rebuilds sans casser les consommateurs. Buildray ne
-propose pas encore ces découpages.
-
-Le nettoyage des liens enregistre maintenant les commandes et durées individuelles, ainsi que le nombre de liens incrémentaux. La suite consiste à expliquer quel chemin de dépendances déclenche chaque reconstruction, et à prendre en charge les déclarations CMake utilisant des variables sans en changer le sens.
-
-Les interfaces publiques demandent encore des vérifications entre consommateurs. Réduire la portée d’une dépendance `PUBLIC` ou séparer un header partagé d’une implémentation doit préserver les exigences reçues par les autres cibles.
-
-## Cela peut-il accélérer le lien ? {#can-this-speed-up-linking}
-
-Oui, si le changement retire du travail au linker ou évite de le relancer. Une bibliothèque statique modifiée peut obliger à relier les exécutables qui la consomment. Réduire ces liens peut avoir plus d’effet qu’économiser une seconde de compilation.
-
-Mais moins de lignes dans `target_link_libraries` ne signifie pas automatiquement moins de travail. Les bibliothèques peuvent rester présentes par un autre chemin, et une dépendance apparemment inutilisée peut fournir des options, des macros ou un comportement au chargement.
-
-La bonne preuve restera une commande de lien réellement réduite, ou moins de liens déclenchés, avec des tests qui passent et un gain avant/après. La rupture automatique des cycles et l’audit complet des dépendances restent aussi à faire.
+Expliquer quelle dépendance déclenche chaque reconstruction. Puis étudier des cibles plus petites à partir de l’usage mesuré des symboles. Une grosse bibliothèque statique ne justifie pas à elle seule un découpage : le linker choisit déjà les fichiers objets dont il a besoin.

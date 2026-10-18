@@ -43,8 +43,8 @@ buildray unity --source /chemin/du/projet --target ma_bibliotheque \
 
 Unity produit une option CMake désactivée par défaut. Après application du patch, `-DBUILDRAY_UNITY=ON` active les groupes testés. Ajoutez `--rebuild-file` aux deux modes pour mesurer les fichiers que vous modifiez souvent.
 
-Pour comparer Unity ou PCH à plusieurs niveaux de parallélisme, ajoutez
-`--job-levels 1,2,4,8`. Buildray exécute les niveaux l’un après l’autre, valide
+Pour Unity ou un PCH choisi manuellement, remplacez `--jobs` par
+`--job-levels 1,2,4,8` pour comparer plusieurs nombres de jobs. Cette option ne se combine pas avec `--auto` ni les tentatives de regroupement Unity. Buildray exécute les niveaux l’un après l’autre, valide
 le même patch et garde leurs mesures séparées. Le rapport signale les niveaux
 qui dépassent la capacité CPU détectée. Voir la
 [référence du parallélisme](https://github.com/kennethassogba/buildray/blob/main/docs/parallelism.md).
@@ -63,6 +63,8 @@ buildray prune-links --source /chemin/du/projet --runs 3 --jobs 2
 `prune-deps` vérifie une fois par programme quelles archives sont utilisées, puis essaie de retirer ensemble les bibliothèques statiques privées éligibles. Il divise les groupes qui échouent et conserve les retraits acceptés dans chaque essai suivant. Les commandes de compilation doivent rester identiques, et le lien rejoué doit produire les mêmes binaires avec les mêmes objets. Le patch combiné doit aussi passer le build complet et les tests.
 
 Ce mode demande ELF LLD, choisi explicitement pour les deux versions. Si une bibliothèque fournit seulement des headers ou des paramètres de compilation, le patch peut les conserver tout en retirant le lien. Ajoutez `--rebuild-file` pour vérifier si une modification déclenche moins de liens. La [référence de la commande](https://github.com/kennethassogba/buildray/blob/main/docs/unused-dependencies.md) donne la configuration et les limites.
+
+La recherche est limitée par défaut à 64 configurations d’essai et 300 secondes. Modifiez ces limites avec `--max-dependency-trials` et `--dependency-time-budget`. Le build final et les tests ont quand même lieu une fois ce budget atteint.
 
 ## Garder uniquement un patch vérifié {#keep-a-validated-patch}
 

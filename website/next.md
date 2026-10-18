@@ -2,32 +2,18 @@
 title: What comes next
 ---
 
-# Reduce the work an edit triggers
+# Test dependency cleanup at scale
 
-The next priority is to explain why targets rebuild, then extend dependency cleanup to more CMake declarations.
+`prune-deps` already tests removals in groups. A test project with 40 unused libraries needs one trial and a final check. We have also run it on XGrammar, SentencePiece and MuJoCo, but have not demonstrated a build-time gain from those removals.
 
-## Dependency cleanup today
+## Next steps
 
-`deps` records file and target relationships and reports cycles. `prune-links` can remove one redundant CMake declaration in a conservative case, then validate and measure the patch.
+1. Test groups of 100 and 1,000 dependencies, including libraries that must stay. Measure search time, trial count and memory use.
+2. Support compiler response files: lists of arguments stored in `.rsp` files. They currently block the search on MuJoCo.
+3. Validate many removals together on a real project. Measure complete builds and rebuilds after library edits, including links avoided. Passing the tests alone is not a speedup.
 
-`prune-deps` now tests private static-library removal with archive extraction evidence, identical-binary link replay and full build and test validation. It can retain compilation requirements when only the link is unnecessary. Its scope is deliberately limited to literal declarations in one configuration.
+The [dependency results](https://github.com/kennethassogba/buildray/blob/main/docs/unused-dependencies-validation.md) separate the test project from the real-project measurements. No eligible removal means the supported search found none, not that every dependency is necessary.
 
-## What to measure next
+## Later
 
-Later, symbol and object usage could help suggest smaller, specialized targets.
-A static linker already selects the archive members it needs, so a large library
-alone is not evidence of wasted work. A useful split should reduce compilation,
-linking or rebuilds without breaking consumers. Buildray does not propose these
-splits yet.
-
-Link cleanup now records individual link-driver commands and durations, including incremental rebuild counts. The next step is to explain which dependency path caused each target to rebuild, and support variable-based CMake declarations without losing their meaning.
-
-Public dependency interfaces still need separate checks across consumers. Narrowing a `PUBLIC` dependency or separating a shared header from frequently edited implementation must preserve the requirements those consumers receive.
-
-## Can this speed up linking?
-
-Yes, if a change reduces the linker's work or avoids running it. Updating a static library can require relinking its consumers. Avoiding those links can matter more than saving a second of compilation.
-
-Fewer lines in `target_link_libraries` do not automatically mean less work. A library may remain reachable through another path. A seemingly unused dependency may also provide options, macros or behavior at load time.
-
-The evidence should be a smaller link command or fewer triggered links, passing tests and a measured before/after gain. Automatic cycle breaking and a full dependency audit also remain to be built.
+Explain which dependency causes each rebuild. Then use measured symbol usage to assess smaller, specialized targets. A large static library alone does not justify splitting it: the linker already picks the object files it needs.

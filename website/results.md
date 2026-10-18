@@ -4,7 +4,20 @@ title: Results and limits
 
 # What the experiments show
 
-We test Buildray on real projects with pinned revisions and configurations. These examples measure rebuilds after a comment edit. They do not predict performance on your machine.
+We test Buildray on real projects with fixed revisions and settings. These results do not predict performance on your machine.
+
+## Full builds: Unity on XGrammar
+
+Each row uses three alternating pairs on the same runner, with all 83 C++ tests passing before and after.
+
+| Jobs | Before → Unity | Faster |
+| ---: | ---: | ---: |
+| 1 | 172.46 → 136.32 s | 21% |
+| 2 | 103.02 → 85.01 s | 17.5% |
+| 4 | 67.08 → 56.36 s | 16% |
+| 8 | 70.46 → 60.85 s | 13.6% |
+
+Linux, Clang 21, Release, native tests enabled, Python bindings disabled. Levels 1/2 and 4/8 used separate four-CPU runners; eight jobs did not mean eight CPUs. [Reports and independent verification](https://github.com/kennethassogba/buildray/actions/runs/39129371937).
 
 ## Selected before/after measurements
 
@@ -27,6 +40,10 @@ The [18 scenarios, configurations and raw reports](https://github.com/kennethass
 One MuJoCo rebuild log contains 80 link steps. Compiling the edited source takes about five seconds, while the default build takes about 228 seconds. That warrants investigating what triggers those links and which are required. It does not prove that a particular dependency is unnecessary.
 
 Both variants use the same setting to work around temporary dependencies emitted by gold with LTO. Without it, the build kept linking even without an edit, so Buildray refused incremental timings. The evidence records the setting and diagnosis.
+
+## Dependency cleanup so far
+
+The grouped search removes 40 unused library links in one trial on a test project, followed by a final check. Real-project results are more limited: removing XGrammar's unused `gmock` link gives no measurable speedup, SentencePiece has no supported candidate, and no removal is confirmed on MuJoCo. This does not establish performance at scale. [Dependency results and limits](https://github.com/kennethassogba/buildray/blob/main/docs/unused-dependencies-validation.md).
 
 ## Limits of the evidence
 

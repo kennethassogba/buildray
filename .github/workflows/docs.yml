@@ -2,7 +2,7 @@ name: Documentation
 
 on:
   pull_request:
-    paths: ['website/**', 'package.json', 'package-lock.json', '.github/workflows/docs.yml']
+    paths: ['website/**', 'package.json', 'package-lock.json', '.github/workflows/docs.yml', 'src/main.cpp', 'action.yml']
   push:
     branches: [main]
     paths: ['website/**', 'package.json', 'package-lock.json', '.github/workflows/docs.yml']
@@ -20,6 +20,28 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Require guide updates for new CLI or Action options
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.sha }}
+        run: |
+          python3 - <<'PY'
+          import os, pathlib, re, subprocess
+          base = os.environ['BASE_REF']
+          changed = subprocess.check_output(['git', 'diff', '--name-only', f'{base}...HEAD'], text=True).splitlines()
+          documented = any(p.startswith('website/') and p.endswith('.md') and p != 'website/README.md' for p in changed)
+          patterns = {
+              'src/main.cpp': r'--[a-z][a-z0-9-]*|(?m:^\s+buildray [a-z][a-z-]*)',
+              'action.yml': r'(?m:^  [a-z][a-z0-9-]*:)',
+          }
+          for path, pattern in patterns.items():
+              before = subprocess.check_output(['git', 'show', f'{base}:{path}'], text=True)
+              after = pathlib.Path(path).read_text()
+              if set(re.findall(pattern, before)) != set(re.findall(pattern, after)) and not documented:
+                  raise SystemExit('CLI/Action options changed. Update the affected guide page in website/ in this PR.')
+          PY
       - uses: actions/setup-node@v6
         with:
           node-version: '24'

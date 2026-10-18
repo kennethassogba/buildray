@@ -21,7 +21,8 @@ Node and npm are documentation tools, not CLI runtime requirements.
 The Vite override keeps the stable VitePress theme on a patched development
 server. Check dev, build and preview when updating either dependency.
 
-`docs.yml` builds and checks local links on PRs. On changes to the website on
+`docs.yml` requires a guide update when a PR adds or removes CLI commands,
+options or Action inputs/outputs. It builds and checks local links on PRs. On changes to the website on
 `main`, it publishes the checked output to GitHub Pages. Repository Pages must
 use GitHub Actions as its build source. Deployments use the `github-pages`
 environment; pull requests only build and check the site.
