@@ -45,3 +45,10 @@ pyenv
 *.png
 *.css
 *.sty
+
+# Documentation website sources and generated output
+node_modules/
+website/.vitepress/cache/
+website/.vitepress/dist/
+!website/**/*.css
+!website/**/*.svg

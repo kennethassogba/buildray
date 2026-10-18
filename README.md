@@ -2,6 +2,9 @@
 
 Measure C++ builds, find costly headers, and validate include cleanup or PCH patches.
 
+**[Read the guide · English / Français](https://kennethassogba.github.io/buildray/)**
+for a short explanation of builds, PCH, Unity, dependency cleanup and the measurements.
+
 Buildray is written in **C++26**. It supports Linux, Clang, CMake and Ninja.
 
 ## Build
