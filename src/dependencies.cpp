@@ -138,7 +138,13 @@ json::Object cmake_graph(const fs::path& source, const fs::path& build) {
     for (const auto& [id, target] : definitions) {
         const auto& name = names.at(id);
         links[name];
+        json::Array artifacts;
+        if (const auto* paths = target.getArray("artifacts"))
+            for (const auto& value : *paths)
+                if (const auto* item = value.getAsObject())
+                    artifacts.push_back(normalized(build / required(*item, "path"), source, build));
         nodes.push_back(json::Object{{"name", name}, {"id", id}, {"type", required(target, "type")},
+                                     {"artifacts", std::move(artifacts)},
                                      {"abstract", target.getBoolean("abstract").value_or(false)}});
         // The legacy "dependencies" field is a transitive build-order graph.
         // It does not represent direct target_link_libraries and can omit cycles.

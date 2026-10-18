@@ -1,0 +1,79 @@
+name: Unused dependency corpus
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  evaluate:
+    name: ${{ matrix.project }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 240
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - project: xgrammar
+            repository: mlc-ai/xgrammar
+            revision: 7e269d56c74c89de52bc8c31e42191155416371f
+            jobs: '2'
+            rebuild_files: '["cpp/earley_parser.cc"]'
+            cmake_args: '[]'
+          - project: sentencepiece
+            repository: google/sentencepiece
+            revision: e0cce7d37b065b5140349dbe12c6bcf6192fdd78
+            jobs: '2'
+            rebuild_files: '["src/sentencepiece_processor.cc"]'
+            cmake_args: '["-DSPM_BUILD_TEST=ON", "-DSPM_ENABLE_SHARED=OFF", "-DSPM_ENABLE_TCMALLOC=OFF"]'
+          - project: mujoco
+            repository: google-deepmind/mujoco
+            revision: 651bae11c3c38efe483f033b4b7e869e7ce3f4ec
+            jobs: '4'
+            rebuild_files: '["src/user/user_model.cc"]'
+            cmake_args: '["-DMUJOCO_BUILD_EXAMPLES=OFF", "-DMUJOCO_BUILD_SIMULATE=OFF", "-DMUJOCO_BUILD_TESTS=ON", "-DMUJOCO_TEST_PYTHON_UTIL=OFF"]'
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - uses: actions/checkout@v6
+        with:
+          repository: ${{ matrix.repository }}
+          ref: ${{ matrix.revision }}
+          path: fixtures/${{ matrix.project }}
+          persist-credentials: false
+      - name: Prepare XGrammar tests
+        if: matrix.project == 'xgrammar'
+        working-directory: fixtures/xgrammar
+        run: |
+          git submodule update --init --depth 1 3rdparty/dlpack 3rdparty/googletest
+          printf '%s\n' 'set(XGRAMMAR_BUILD_PYTHON_BINDINGS OFF)' 'set(XGRAMMAR_BUILD_CXX_TESTS ON)' > config.cmake
+      - name: Prepare MuJoCo locale
+        if: matrix.project == 'mujoco'
+        run: sudo locale-gen de_DE.UTF-8
+      - name: Select a common LLD toolchain for both variants
+        env:
+          PROJECT_ARGS: ${{ matrix.cmake_args }}
+        run: |
+          python3 - <<'PY'
+          import json, os
+          args = json.loads(os.environ['PROJECT_ARGS'])
+          for kind in ['EXE', 'SHARED', 'MODULE']:
+              args.append(f'-DCMAKE_{kind}_LINKER_FLAGS=--ld-path=/usr/lib/llvm-21/bin/ld.lld')
+          with open(os.environ['GITHUB_ENV'], 'a') as stream:
+              stream.write('UNUSED_CMAKE_ARGS=' + json.dumps(args) + '\n')
+          PY
+      - name: Validate and measure unused static dependencies
+        uses: ./
+        with:
+          command: prune-deps
+          source: fixtures/${{ matrix.project }}
+          runs: '3'
+          jobs: ${{ matrix.jobs }}
+          rebuild-files: ${{ matrix.rebuild_files }}
+          exclude-paths: '["3rdparty", "third_party"]'
+          cmake-args: ${{ env.UNUSED_CMAKE_ARGS }}
+          artifact-name: unused-${{ matrix.project }}

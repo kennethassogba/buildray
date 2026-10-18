@@ -16,7 +16,7 @@ sudo apt-get install -y ca-certificates curl python3-venv
 curl -fsSL https://apt.llvm.org/llvm-snapshot.gpg.key | sudo tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc > /dev/null
 echo "deb https://apt.llvm.org/$VERSION_CODENAME/ llvm-toolchain-$VERSION_CODENAME-21 main" | sudo tee /etc/apt/sources.list.d/buildray-llvm21.list
 sudo apt-get update
-sudo apt-get install -y clang-21 clang-tools-21 clang-tidy-21 llvm-21-dev libclang-21-dev libclang-rt-21-dev ninja-build libzstd-dev
+sudo apt-get install -y clang-21 clang-tools-21 clang-tidy-21 llvm-21-dev libclang-21-dev libclang-rt-21-dev lld-21 ninja-build libzstd-dev
 
 buildray_venv=$(mktemp -d "$RUNNER_TEMP/buildray-python-XXXXXX")
 python3 -m venv "$buildray_venv"

@@ -164,7 +164,8 @@ std::vector<Token> tokens(const std::string& source) {
 }
 
 std::optional<Token> literal_link(const std::string& source, const std::string& target,
-                                  const std::string& dependency, std::size_t line) {
+                                  const std::string& dependency, std::size_t line,
+                                  bool private_only = false) {
     const auto all = tokens(source);
     for (std::size_t i = 0; i + 1 < all.size(); ++i) {
         auto command = all[i].text;
@@ -190,7 +191,7 @@ std::optional<Token> literal_link(const std::string& source, const std::string& 
             if (token.text == "PRIVATE" || token.text == "PUBLIC" || token.text == "INTERFACE")
                 scope = token.text;
             else if (token.text == dependency) {
-                if (selected || scope == "INTERFACE") return std::nullopt;
+                if (selected || scope == "INTERFACE" || (private_only && !scope.empty() && scope != "PRIVATE")) return std::nullopt;
                 selected = token;
             }
         }
@@ -199,6 +200,45 @@ std::optional<Token> literal_link(const std::string& source, const std::string& 
     return std::nullopt;
 }
 }  // namespace
+
+json::Object unused_link_candidates(const json::Object& graph, const fs::path& source,
+                                    const Options& options) {
+    std::map<std::string, std::string> types;
+    for (const auto& value : array(graph, "targets")) {
+        const auto& row = *value.getAsObject();
+        types[string(row, "name")] = string(row, "type");
+    }
+    const auto all = relations(graph);
+    const auto interface = edges(all, "interfaceLinkLibraries");
+    std::map<std::pair<std::string, std::string>, json::Object> selected;
+    for (const auto& value : array(graph, "edges")) {
+        const auto& edge = *value.getAsObject();
+        const auto from = string(edge, "from"), to = string(edge, "to");
+        if (edge.getString("kind") != "linkLibraries" || !name(from) || !name(to) ||
+            (types[from] != "EXECUTABLE" && types[from] != "SHARED_LIBRARY" && types[from] != "MODULE_LIBRARY") ||
+            types[to] != "STATIC_LIBRARY" || has(interface, from, to) ||
+            (!options.target.empty() && options.target != from) ||
+            (!options.dependency.empty() && options.dependency != to)) continue;
+        const auto file = edge.getString("file");
+        const auto line = edge.getInteger("line");
+        if (!file || !file->starts_with("<SOURCE>/") || !line || *line < 1) continue;
+        const fs::path path = file->drop_front(9).str();
+        if (path.is_absolute() || !within(absolute_path(source / path), absolute_path(source)) ||
+            !fs::is_regular_file(source / path) || path.string().find_first_of("\n\r\t") != std::string::npos ||
+            std::ranges::any_of(options.exclusions, [&](const fs::path& p) { return within(path, p); })) continue;
+        const auto token = literal_link(read_file(source / path), from, to, static_cast<std::size_t>(*line), true);
+        if (!token) continue;
+        selected.emplace(std::pair{from, to}, json::Object{{"target", from}, {"dependency", to},
+            {"file", path.generic_string()}, {"line", *line},
+            {"offset", static_cast<std::int64_t>(token->offset)},
+            {"length", static_cast<std::int64_t>(token->text.size())}});
+    }
+    json::Array rows;
+    for (auto& [key, value] : selected) rows.push_back(std::move(value));
+    return json::Object{{"candidates", std::move(rows)}, {"attempts", json::Array{}},
+        {"rule", "one private literal static-library link; unchanged compiler commands; removed archives must extract zero members; identical ELF from replaying the same baseline objects; full build and CTest"},
+        {"scope", "ELF LLD analysis; executable/shared/module consumers only; no public interface, shared-library or variable-list cleanup"}};
+}
 
 json::Object link_candidates(const json::Object& graph, const fs::path& source,
                              const Options& options) {

@@ -149,6 +149,17 @@ def retain_run_evidence(run, artifacts, report):
             destination = artifacts / "logs" / item.name
             destination.parent.mkdir(exist_ok=True)
             shutil.copyfile(item, destination)
+    if report.get('command') in ('prune-links', 'prune-deps'):
+        for item in (run / 'logs').glob('*.json'):
+            if item.is_file() and not item.is_symlink():
+                destination = artifacts / 'logs' / item.name
+                destination.parent.mkdir(exist_ok=True)
+                shutil.copyfile(item, destination)
+        for item in (run / 'dependency-trials').rglob('*'):
+            if item.is_file() and not item.is_symlink() and item.suffix in ('.log', '.json', '.tsv', '.patch'):
+                destination = artifacts / item.relative_to(run)
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(item, destination)
     for attempt in report.get("unity_attempts", []):
         # Only our fixed attempt labels are accepted as artifact paths.
         index = attempt.get("attempt")
@@ -195,8 +206,8 @@ def main():
     if not source.is_relative_to(workspace) or not (source / "CMakeLists.txt").is_file():
         raise ValueError("Source must be a CMake tree inside GITHUB_WORKSPACE")
     mode = os.environ.get("BUILDRAY_COMMAND", "measure")
-    if mode not in ("measure", "optimize", "headers", "profile", "pch", "deps", "prune-links", "unity"):
-        raise ValueError("command must be measure, optimize, headers, profile, pch, deps, prune-links or unity")
+    if mode not in ("measure", "optimize", "headers", "profile", "pch", "deps", "prune-links", "prune-deps", "unity"):
+        raise ValueError("command must be measure, optimize, headers, profile, pch, deps, prune-links, prune-deps or unity")
     fail_on_cycles = boolean("BUILDRAY_FAIL_ON_CYCLES", "false")
     if fail_on_cycles and mode != "deps":
         raise ValueError("fail-on-cycles requires command deps")
@@ -216,18 +227,18 @@ def main():
     incremental_only = boolean("BUILDRAY_INCREMENTAL_ONLY", "false")
     if not isinstance(rebuild_files, list) or not all(isinstance(item, str) and item for item in rebuild_files):
         raise ValueError("rebuild-files must be a JSON array of nonempty relative paths")
-    if (rebuild_files or incremental_only) and mode not in ("pch", "unity"):
-        raise ValueError("incremental options require command pch or unity")
+    if (rebuild_files or incremental_only) and mode not in ("pch", "unity", "prune-deps"):
+        raise ValueError("incremental options require command pch, unity or prune-deps")
     if incremental_only and not rebuild_files:
         raise ValueError("incremental-only requires rebuild-files")
     if auto_pch and runs < 3:
         raise ValueError("pch-auto requires at least three runs")
     link_target = os.environ.get("BUILDRAY_LINK_TARGET", "")
     link_dependency = os.environ.get("BUILDRAY_LINK_DEPENDENCY", "")
-    if mode != "prune-links" and (link_target or link_dependency):
-        raise ValueError("link-target and link-dependency require command prune-links")
-    if mode == "prune-links" and runs < 3:
-        raise ValueError("prune-links requires at least three runs")
+    if mode not in ("prune-links", "prune-deps") and (link_target or link_dependency):
+        raise ValueError("link-target and link-dependency require command prune-links or prune-deps")
+    if mode in ("prune-links", "prune-deps") and runs < 3:
+        raise ValueError("Link cleanup requires at least three runs")
     unity_target = os.environ.get("BUILDRAY_UNITY_TARGET", "")
     batch_size = integer("BUILDRAY_UNITY_BATCH_SIZE", "4", 32)
     unity_retries = integer("BUILDRAY_UNITY_RETRIES", "0", 8, minimum=0)
@@ -260,7 +271,7 @@ def main():
     exclusions = json.loads(os.environ.get("BUILDRAY_EXCLUDE_PATHS", "[]"))
     if not isinstance(exclusions, list) or not all(isinstance(item, str) and item for item in exclusions):
         raise ValueError("exclude-paths must be a JSON array of nonempty relative paths")
-    if exclusions and mode not in ("optimize", "headers", "prune-links"):
+    if exclusions and mode not in ("optimize", "headers", "prune-links", "prune-deps"):
         raise ValueError("exclude-paths requires command optimize, headers or prune-links")
     reference = os.environ.get("BUILDRAY_BASELINE_REF", "").strip()
     if reference and mode == "measure" and runs < 3:
@@ -287,7 +298,7 @@ def main():
             command.extend(["--clang-tidy", os.environ.get("BUILDRAY_CLANG_TIDY", "clang-tidy-21")])
         for path in exclusions:
             command.extend(["--exclude", path])
-        if mode == "prune-links":
+        if mode in ("prune-links", "prune-deps"):
             if link_target:
                 command.extend(["--target", link_target])
             if link_dependency:
@@ -303,7 +314,7 @@ def main():
             command.extend(["--max-header-edits", str(max_header_edits)])
             for path in header_paths:
                 command.extend(["--header-path", path])
-        if mode in ("deps", "headers", "unity") or (mode == "pch" and rebuild_files):
+        if mode in ("deps", "headers", "unity", "prune-links", "prune-deps") or (mode == "pch" and rebuild_files):
             command.extend(["--c-compiler", os.environ.get("BUILDRAY_C_COMPILER", "clang-21")])
         if mode == "deps":
             if fail_on_cycles:
@@ -354,15 +365,19 @@ def main():
                 if report.get("candidate"):
                     text += f"\nCandidate median: {report['candidate']['median_seconds']:.3f} s. Change: {report['wall_change_percent']:+.3f}% ({report['performance_result']}).\n"
                 text += f"\nPatch validated: {report.get('patch_validated', False)}. Recommended: {report.get('patch_recommended', False)}.\n"
-            if mode == "prune-links":
+            if mode in ("prune-links", "prune-deps"):
                 selected = report.get("selected_link")
                 if selected:
                     text += f"\nCMake candidate: `{selected['target']}` → `{selected['dependency']}`.\n"
                 else:
-                    text += "\nNo eligible redundant literal link; no patch or benchmark.\n"
+                    text += "\nNo confirmed eligible link removal; inspect links.json for rejected trials.\n"
                 if report.get("candidate"):
                     text += f"\nCandidate median: {report['candidate']['median_seconds']:.3f} s. Change: {report['wall_change_percent']:+.3f}% ({report['performance_result']}).\n"
                 text += f"\nPatch validated: {report.get('patch_validated', False)}. Recommended: {report.get('patch_recommended', False)}.\n"
+                if report.get('baseline', {}).get('linker_driver_wall_sum_median_seconds') is not None:
+                    before = report['baseline']['linker_driver_wall_sum_median_seconds']
+                    after = report['candidate']['linker_driver_wall_sum_median_seconds']
+                    text += f"\nLink-driver time sum, median: {before:.3f} → {after:.3f} s (parallel links may overlap).\n"
             if report.get("automatic_selection"):
                 selected = report["automatic_selection"]
                 text += f"\nAutomatic candidate: `{selected['header']}` on `{selected['target']}`. Selection profiling is outside the measurements.\n"

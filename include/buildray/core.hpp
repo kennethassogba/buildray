@@ -98,6 +98,13 @@ std::string comparison_markdown(const json::Object& report);
 int check_reports(const CheckOptions& options);
 int pipeline(const Options& options, const fs::path& executable);
 int launch(const std::vector<std::string>& args, bool trace = false, bool includes = false);
+int launch_link(const std::vector<std::string>& args);
+json::Object link_sample(const json::Array& records, const fs::path& source, const fs::path& build);
+void verify_link_coverage(const json::Object& graph, const fs::path& build,
+                          const json::Array& records);
+json::Object verify_unused_link_inputs(const fs::path& baseline_source, const fs::path& baseline_build,
+    const fs::path& candidate_source, const fs::path& candidate_build,
+    const json::Array& baseline_links, const fs::path& analysis, const fs::path& executable);
 // Returns a trace line's depth and path; a zero depth means ordinary diagnostics.
 std::pair<std::size_t, std::string> include_line(const std::string& line);
 json::Object dependency_graph(const fs::path& records, const fs::path& source,
@@ -107,6 +114,8 @@ std::string dependencies_dot(const json::Object& graph);
 json::Object cmake_dependencies(const fs::path& source, const fs::path& build);
 json::Object link_candidates(const json::Object& graph, const fs::path& source,
                              const Options& options);
+json::Object unused_link_candidates(const json::Object& graph, const fs::path& source,
+                                    const Options& options);
 void verify_link_removal(const json::Object& before, const json::Object& after,
                          const json::Object& selection);
 json::Object header_profile(const fs::path& records, const fs::path& source,

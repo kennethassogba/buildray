@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.30)
-project(buildray VERSION 0.10.0 LANGUAGES CXX)
+project(buildray VERSION 0.11.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 26)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -21,7 +21,7 @@ else()
     llvm_map_components_to_libnames(BUILDRAY_LLVM_LIBS Support)
 endif()
 
-add_library(buildray_core src/process.cpp src/core.cpp src/pipeline.cpp src/comparison.cpp src/profiling.cpp src/dependencies.cpp src/cmake.cpp src/header_cleanup.cpp src/unity.cpp)
+add_library(buildray_core src/process.cpp src/core.cpp src/pipeline.cpp src/comparison.cpp src/profiling.cpp src/dependencies.cpp src/cmake.cpp src/linking.cpp src/header_cleanup.cpp src/unity.cpp)
 target_compile_definitions(buildray_core PUBLIC BUILDRAY_VERSION="${PROJECT_VERSION}")
 target_include_directories(buildray_core PUBLIC include)
 target_include_directories(buildray_core SYSTEM PUBLIC ${LLVM_INCLUDE_DIRS})
@@ -81,6 +81,10 @@ if(BUILD_TESTING)
     add_test(NAME cmake_links COMMAND ${Python3_EXECUTABLE}
         ${CMAKE_CURRENT_SOURCE_DIR}/tests/cmake_cli.py $<TARGET_FILE:buildray> ${BUILDRAY_CLANGXX})
     set_tests_properties(cmake_links PROPERTIES TIMEOUT 180)
+    find_program(BUILDRAY_LLD NAMES ld.lld-21 ld.lld-20 ld.lld REQUIRED)
+    add_test(NAME unused_dependencies COMMAND ${Python3_EXECUTABLE}
+        ${CMAKE_CURRENT_SOURCE_DIR}/tests/unused_cli.py $<TARGET_FILE:buildray> ${BUILDRAY_CLANGXX} ${BUILDRAY_LLD})
+    set_tests_properties(unused_dependencies PROPERTIES TIMEOUT 240)
     add_test(NAME headers COMMAND ${Python3_EXECUTABLE}
         ${CMAKE_CURRENT_SOURCE_DIR}/tests/headers_cli.py $<TARGET_FILE:buildray>
         ${BUILDRAY_CLANGXX} ${BUILDRAY_CLANG_TIDY})

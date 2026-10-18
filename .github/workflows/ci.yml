@@ -5,6 +5,10 @@ on:
   pull_request:
   workflow_dispatch:
     inputs:
+      unused_dependencies:
+        description: Validate unused static-library dependencies on the three pinned corpus projects with a common LLD toolchain.
+        type: boolean
+        default: false
       incremental_corpus:
         description: Measure Unity and PCH incremental rebuilds on XGrammar, SentencePiece and MuJoCo.
         type: boolean
@@ -97,6 +101,9 @@ permissions:
   contents: read
 
 jobs:
+  unused-dependencies:
+    if: github.event_name == 'workflow_dispatch' && inputs.unused_dependencies
+    uses: ./.github/workflows/unused-dependencies.yml
   mujoco-linker-probe:
     if: github.event_name == 'workflow_dispatch' && inputs.mujoco_linker_probe
     uses: ./.github/workflows/mujoco-linker-probe.yml

@@ -9,7 +9,7 @@ inputs:
     description: CMake source directory relative to the checkout.
     default: '.'
   command:
-    description: measure, optimize, headers, profile, pch, unity, deps, or prune-links.
+    description: measure, optimize, headers, profile, pch, unity, deps, prune-links, or prune-deps.
     default: measure
   baseline-ref:
     description: Base Git revision for measure. Empty outside PRs means a standalone measurement.
@@ -63,16 +63,16 @@ inputs:
     description: Retry failed unity compiler groups with their original sources separate (0-8). Tests and link failures remain blocking.
     default: '0'
   rebuild-files:
-    description: For pch/unity, JSON array of original relative C/C++ source/header files to edit separately and measure incremental rebuilds.
+    description: For pch/unity/prune-deps, JSON array of original relative C/C++ source/header files to edit separately and measure incremental rebuilds.
     default: '[]'
   incremental-only:
     description: Skip repeated clean timings. Requires rebuild-files; full baseline/candidate build and test validation still runs.
     default: 'false'
   link-target:
-    description: Optional CMake target restriction for command prune-links.
+    description: Optional CMake target restriction for prune-links or prune-deps.
     default: ''
   link-dependency:
-    description: Optional direct dependency restriction for command prune-links. Fail if it is not an eligible redundant literal link.
+    description: Optional dependency restriction for prune-links or prune-deps. Fail if no validated eligible removal matches.
     default: ''
   forward-declarations:
     description: For headers, try replacing eligible project includes with simple class/struct declarations.

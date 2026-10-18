@@ -84,17 +84,19 @@ add_test(NAME works COMMAND sample)
         execute([sys.executable, script], env={**environment, **changes}, expected=1)
     assert not (source / "injected").exists()
 
-    for mode in ["profile", "pch", "deps"]:
+    for mode in ["profile", "pch", "deps", "prune-deps"]:
         output_file = root / (mode + "-outputs")
         extra = {"BUILDRAY_PCH_TARGET": "sample", "BUILDRAY_PCH_HEADERS": '["<vector>"]'} if mode == "pch" else {}
         execute([sys.executable, script], env={**environment, **extra,
-                "BUILDRAY_COMMAND": mode, "BUILDRAY_RUNS": "1", "GITHUB_OUTPUT": str(output_file)})
+                "BUILDRAY_COMMAND": mode, "BUILDRAY_RUNS": "3" if mode == "prune-deps" else "1", "GITHUB_OUTPUT": str(output_file)})
         result_fields = dict(line.split("=", 1) for line in output_file.read_text().splitlines())
         assert "baseline-sha" not in result_fields, "PR baseline applies only to measure"
-        key = "headers" if mode == "profile" else "dependencies" if mode == "deps" else "patch"
+        key = "headers" if mode == "profile" else "dependencies" if mode == "deps" else "links" if mode == "prune-deps" else "patch"
         assert Path(result_fields[key]).is_file()
         if mode == "deps":
             assert Path(result_fields["dependency-dot"]).is_file()
+        if mode == 'prune-deps':
+            assert list((Path(result_fields['artifact-path']) / 'logs').glob('*-linkers.json'))
         state = json.loads(Path(result_fields["report"]).read_text())
         assert state["status"] == "passed"
         assert execute(["git", "status", "--porcelain"], cwd=source) == status
