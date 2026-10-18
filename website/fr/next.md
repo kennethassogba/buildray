@@ -14,6 +14,13 @@ La prochaine priorité est d’expliquer pourquoi les cibles sont reconstruites,
 
 ## Ce qu’il faut mesurer ensuite {#what-to-measure-next}
 
+Plus tard, l’usage des symboles et des objets pourrait aider à proposer des
+cibles plus petites et spécialisées. Le linker sélectionne déjà les objets
+nécessaires dans une archive statique : une grosse bibliothèque ne prouve donc
+pas à elle seule du travail inutile. Un découpage utile devra réduire la
+compilation, le lien ou les rebuilds sans casser les consommateurs. Buildray ne
+propose pas encore ces découpages.
+
 Le nettoyage des liens enregistre maintenant les commandes et durées individuelles, ainsi que le nombre de liens incrémentaux. La suite consiste à expliquer quel chemin de dépendances déclenche chaque reconstruction, et à prendre en charge les déclarations CMake utilisant des variables sans en changer le sens.
 
 Les interfaces publiques demandent encore des vérifications entre consommateurs. Réduire la portée d’une dépendance `PUBLIC` ou séparer un header partagé d’une implémentation doit préserver les exigences reçues par les autres cibles.

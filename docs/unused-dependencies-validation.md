@@ -1,6 +1,6 @@
 # Unused dependency cleanup: measured results
 
-The [corpus run](https://github.com/kennethassogba/buildray/actions/runs/39084953086)
+The original [corpus run](https://github.com/kennethassogba/buildray/actions/runs/39084953086)
 uses the native `prune-deps` CLI through the GitHub Action. The
 [workflow](../.github/workflows/unused-dependencies.yml) pins XGrammar,
 SentencePiece and MuJoCo, enables their C++ tests and records the complete flags.
@@ -68,6 +68,30 @@ enabled and examples, simulate and Python test utilities disabled. Its baseline
 passes 3,519 CTest cases. None of the 14 attempted strategies confirms a removal.
 The workflow retains baseline-only clean and link-driver measurements, rejected
 trial reasons and complete test inventories in `unused-mujoco`.
+
+## Batched search regression
+
+The batch fixture contains 40 unused private libraries and one required library.
+Buildray profiles the consumer once, excludes the required archive from search,
+and removes all 40 unused links in one trial configuration. One additional
+configuration verifies the final combined patch. The complete candidate build
+and CTest then pass, and the generated patch is applied and built independently.
+
+| Work per clean fixture build | Baseline | Candidate |
+| --- | ---: | ---: |
+| Compiler invocations | 42 | 2 |
+| Link invocations | 1 | 1 |
+
+The unused archives are excluded from `all` unless needed by the executable,
+which explains the compilation reduction. This fixture tests batching and
+removed work; it is not a speedup estimate for the corpus projects above.
+
+The suite also checks multiple calls in one file, multiple consumers across
+files, compile-only requirements and interactions between removals. A three-trial
+budget retains one compatible removal and verifies it again. A time budget stops
+further trials after a running command finishes. Compiler response files block
+the search before any archive replay or trial configuration. The actual Action
+entry point forwards both budgets and retains the group evidence.
 
 ## Regression coverage
 

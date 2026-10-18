@@ -256,10 +256,38 @@ void verify_link_coverage(const json::Object& graph, const fs::path& build, cons
         throw std::runtime_error("Link coverage does not match active CMake executable/shared/module targets; custom linker launchers are unsupported");
 }
 
+json::Object profile_link_archives(const json::Object& link, const fs::path& source,
+                                   const fs::path& build, const fs::path& analysis) {
+    fs::create_directories(analysis);
+    const auto binary = analysis.parent_path() / "binaries" / (analysis.filename().string() + ".elf");
+    fs::create_directories(binary.parent_path());
+    const auto cwd = fs::path(text(link, "directory"));
+    replay(arguments(link), cwd, binary, analysis / "baseline.log", analysis / "archives.tsv");
+    json::Object archives;
+    for (const auto& [path, counts] : archive_stats(analysis / "archives.tsv", cwd))
+        archives[normalize(path.string(), source, build)] = json::Object{
+            {"members", static_cast<std::int64_t>(counts.first)}, {"extracted", static_cast<std::int64_t>(counts.second)}};
+    json::Array command;
+    for (const auto& arg : arguments(link)) command.push_back(normalize(arg, source, build));
+    return json::Object{{"output", normalize(text(link, "output"), source, build)},
+        {"archives", std::move(archives)}, {"baseline_elf", binary.string()},
+        {"command", std::move(command)}, {"evidence_directory", analysis.string()}};
+}
+
+void cache_link_compilations(const fs::path& source, const fs::path& build, json::Object& profiles) {
+    json::Array inventory;
+    for (const auto& command : compilations(source, build)) inventory.push_back(command);
+    profiles["compiler_inventory"] = std::move(inventory);
+}
+
 json::Object verify_unused_link_inputs(const fs::path& bs, const fs::path& bb,
     const fs::path& cs, const fs::path& cb, const json::Array& baseline_links,
-    const json::Object& baseline_graph, const fs::path& analysis, const fs::path& executable) {
-    if (compilations(bs, bb) != compilations(cs, cb))
+    const json::Object& baseline_graph, const fs::path& analysis, const fs::path& executable,
+    const json::Object& profiles) {
+    std::multiset<std::string> inventory;
+    for (const auto& command : *profiles.getArray("compiler_inventory"))
+        inventory.insert(command.getAsString()->str());
+    if (inventory != compilations(cs, cb))
         throw std::runtime_error("Dependency removal changed compiler commands or usage requirements");
     Commands before;
     std::map<std::string, const json::Object*> original;
@@ -292,29 +320,38 @@ json::Object verify_unused_link_inputs(const fs::path& bs, const fs::path& bb,
             throw std::runtime_error("Link command changed more than removing explicit static archives");
         const auto folder = analysis / std::to_string(index++);
         fs::create_directories(folder);
+        struct ReplayCleanup {
+            fs::path file;
+            ~ReplayCleanup() { std::error_code error; fs::remove(file, error); }
+        } replay_cleanup{folder / "candidate.elf"};
         const auto& row = *original.at(output);
         const auto cwd = fs::path(text(row, "directory"));
-        replay(arguments(row), cwd, folder / "baseline.elf", folder / "baseline.log", folder / "archives.tsv");
-        const auto stats = archive_stats(folder / "archives.tsv", cwd);
+        const auto* profile = profiles.getObject(output);
+        if (!profile || !profile->getObject("archives"))
+            throw std::runtime_error("No reusable baseline archive evidence for " + output);
+        json::Array baseline_command;
+        for (const auto& arg : argv) baseline_command.push_back(arg);
+        if (json::Value(std::move(baseline_command)) != *profile->get("command"))
+            throw std::runtime_error("Baseline link command changed since archive profiling");
+        const auto& stats = *profile->getObject("archives");
         json::Array archives;
         for (const auto& arg : removed) {
             const auto path = absolute_path(cwd / baseline_path(arg, bs, bb));
-            const auto item = stats.find(path);
-            if (item == stats.end() || item->second.second != 0)
+            const auto* item = stats.getObject(normalize(path.string(), bs, bb));
+            if (!item || item->getInteger("extracted") != 0)
                 throw std::runtime_error("Removed archive contributed objects or lacks extraction evidence: " + arg);
-            archives.push_back(json::Object{{"archive", arg}, {"members", static_cast<std::int64_t>(item->second.first)}, {"extracted", 0}});
+            archives.push_back(json::Object{{"archive", arg}, {"members", *item->getInteger("members")}, {"extracted", 0}});
             removed_paths.insert(normalize(path.string(), bs, bb));
         }
         auto candidate = found->second;
         for (auto& arg : candidate) arg = baseline_path(std::move(arg), bs, bb);
         replay(std::move(candidate), cwd, folder / "candidate.elf", folder / "candidate.log");
-        if (!identical_elf(folder / "baseline.elf", folder / "candidate.elf"))
+        if (!identical_elf(text(*profile, "baseline_elf"), folder / "candidate.elf"))
             throw std::runtime_error("Dependency removal changed the ELF binary when replaying identical baseline objects");
         evidence.push_back(json::Object{{"output", output}, {"removed_archives", std::move(archives)},
-            {"identical_elf", true}, {"evidence_directory", folder.string()}});
-        // Keep small logs/statistics, not another copy of each potentially large executable.
-        fs::remove(folder / "baseline.elf");
-        fs::remove(folder / "candidate.elf");
+            {"identical_elf", true}, {"baseline_evidence_directory", text(*profile, "evidence_directory")},
+            {"evidence_directory", folder.string()}});
+        // ReplayCleanup also removes a failed or interrupted replay's executable.
     }
     if (evidence.empty()) throw std::runtime_error("Declaration removal did not remove any actual linker inputs");
     const auto active_compilations = [](const fs::path& source, const fs::path& build) {

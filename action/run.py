@@ -135,7 +135,7 @@ def retain_run_evidence(run, artifacts, report):
                       ("incremental.md", "incremental-summary"),
                       ("headers.json", "headers"), ("dependencies.json", "dependencies"),
                       ("dependencies.dot", "dependency-dot"), ("selection.json", "selection"),
-                      ("links.json", "links"), ("cmake-before.json", "cmake-before"),
+                      ("links.json", "links"), ("archive-profile.json", "archive-profile"), ("cmake-before.json", "cmake-before"),
                       ("cmake-after.json", "cmake-after"), ("header-cleanup.json", "header-cleanup")]:
         item = run / name
         if item.is_file() and not item.is_symlink():
@@ -155,7 +155,7 @@ def retain_run_evidence(run, artifacts, report):
                 destination = artifacts / 'logs' / item.name
                 destination.parent.mkdir(exist_ok=True)
                 shutil.copyfile(item, destination)
-        for item in (run / 'dependency-trials').rglob('*'):
+        for item in [*(run / 'dependency-trials').rglob('*'), *(run / 'dependency-profiles').rglob('*')]:
             if item.is_file() and not item.is_symlink() and item.suffix in ('.log', '.json', '.tsv', '.patch'):
                 destination = artifacts / item.relative_to(run)
                 destination.parent.mkdir(parents=True, exist_ok=True)
@@ -239,6 +239,10 @@ def main():
         raise ValueError("link-target and link-dependency require command prune-links or prune-deps")
     if mode in ("prune-links", "prune-deps") and runs < 3:
         raise ValueError("Link cleanup requires at least three runs")
+    dependency_trials = integer("BUILDRAY_MAX_DEPENDENCY_TRIALS", "64", 10000)
+    dependency_seconds = integer("BUILDRAY_DEPENDENCY_TIME_BUDGET", "300", 86400)
+    if mode != "prune-deps" and (dependency_trials != 64 or dependency_seconds != 300):
+        raise ValueError("dependency search budgets require command prune-deps")
     unity_target = os.environ.get("BUILDRAY_UNITY_TARGET", "")
     batch_size = integer("BUILDRAY_UNITY_BATCH_SIZE", "4", 32)
     unity_retries = integer("BUILDRAY_UNITY_RETRIES", "0", 8, minimum=0)
@@ -303,6 +307,9 @@ def main():
                 command.extend(["--target", link_target])
             if link_dependency:
                 command.extend(["--dependency", link_dependency])
+        if mode == "prune-deps":
+            command.extend(["--max-dependency-trials", str(dependency_trials),
+                            "--dependency-time-budget", str(dependency_seconds)])
         if mode == "unity":
             command.extend(["--target", unity_target, "--batch-size", str(batch_size),
                             "--unity-retries", str(unity_retries)])
@@ -368,9 +375,15 @@ def main():
             if mode in ("prune-links", "prune-deps"):
                 selected = report.get("selected_link")
                 if selected:
-                    text += f"\nCMake candidate: `{selected['target']}` → `{selected['dependency']}`.\n"
+                    if mode == 'prune-deps':
+                        text += f"\nValidated link removals: {report.get('removed_links', 1)}.\n"
+                    else:
+                        text += f"\nCMake candidate: `{selected['target']}` → `{selected['dependency']}`.\n"
                 else:
                     text += "\nNo confirmed eligible link removal; inspect links.json for rejected trials.\n"
+                if report.get('dependency_search'):
+                    search = report['dependency_search']
+                    text += f"\nSearch: {search['profiled_links']} archive profiles, {search['configurations']} configurations, {search['cache_hits']} cached rejections. Budget exhausted: {search['budget_exhausted']}.\n"
                 if report.get("candidate"):
                     text += f"\nCandidate median: {report['candidate']['median_seconds']:.3f} s. Change: {report['wall_change_percent']:+.3f}% ({report['performance_result']}).\n"
                 text += f"\nPatch validated: {report.get('patch_validated', False)}. Recommended: {report.get('patch_recommended', False)}.\n"

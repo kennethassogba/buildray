@@ -206,13 +206,15 @@ std::optional<Token> literal_link(const std::string& source, const std::string& 
 
 json::Object unused_link_candidates(const json::Object& graph, const fs::path& source,
                                     const Options& options) {
-    std::map<std::string, std::string> types;
+    std::map<std::string, std::string> types, artifacts;
     for (const auto& value : array(graph, "targets")) {
         const auto& row = *value.getAsObject();
-        types[string(row, "name")] = string(row, "type");
+        const auto target = string(row, "name");
+        types[target] = string(row, "type");
+        if (const auto* files = row.getArray("artifacts"); files && files->size() == 1)
+            artifacts[target] = files->front().getAsString()->str();
     }
-    const auto all = relations(graph);
-    const auto interface = edges(all, "interfaceLinkLibraries");
+    const auto interface = edges(relations(graph), "interfaceLinkLibraries");
     std::map<std::pair<std::string, std::string>, json::Object> selected;
     for (const auto& value : array(graph, "edges")) {
         const auto& edge = *value.getAsObject();
@@ -220,6 +222,7 @@ json::Object unused_link_candidates(const json::Object& graph, const fs::path& s
         if (edge.getString("kind") != "linkLibraries" || !name(from) || !name(to) ||
             (types[from] != "EXECUTABLE" && types[from] != "SHARED_LIBRARY" && types[from] != "MODULE_LIBRARY") ||
             types[to] != "STATIC_LIBRARY" || has(interface, from, to) ||
+            !artifacts[from].starts_with("<BUILD>/") || !artifacts[to].starts_with("<BUILD>/") ||
             (!options.target.empty() && options.target != from) ||
             (!options.dependency.empty() && options.dependency != to)) continue;
         const auto file = edge.getString("file");
@@ -232,50 +235,72 @@ json::Object unused_link_candidates(const json::Object& graph, const fs::path& s
         const auto contents = read_file(source / path);
         const auto token = literal_link(contents, from, to, static_cast<std::size_t>(*line), true);
         if (!token) continue;
-        auto row = json::Object{{"target", from}, {"dependency", to},
-            {"file", path.generic_string()}, {"line", *line},
-            {"offset", static_cast<std::int64_t>(token->offset)},
-            {"length", static_cast<std::int64_t>(token->text.size())},
-            {"replacement", ""}, {"compile_only", false}};
         const auto call = literal_link(contents, from, to, static_cast<std::size_t>(*line), true, true);
-        const auto previous_line = contents.rfind('\n', call->offset);
-        const auto line_start = previous_line == std::string::npos ? 0 : previous_line + 1;
-        const auto prefix = contents.substr(line_start, call->offset - line_start);
-        if (prefix.find_first_not_of(" \t") != std::string::npos) continue;
-        const std::string indent = prefix.find('\t') == std::string::npos ? "  " : "\t";
-        const auto nested = prefix + indent;
-        const auto indent_call = [&](std::string command) {
-            for (auto pos = command.find('\n'); pos != std::string::npos;
-                 pos = command.find('\n', pos + 1 + indent.size()))
-                command.insert(pos + 1, indent);
-            return nested + command;
-        };
-        auto modified = call->text;
-        modified.replace(token->offset - call->offset, token->text.size(), "\"$<COMPILE_ONLY:" + to + ">\"");
-        row["compile_only_offset"] = static_cast<std::int64_t>(call->offset);
-        row["compile_only_length"] = static_cast<std::int64_t>(call->text.size());
-        row["compile_only_replacement"] = "if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.27)\n"
-            + nested + "cmake_policy(PUSH)\n" + nested + "cmake_policy(SET CMP0099 NEW)\n" +
-            indent_call(modified) + "\n" + nested + "cmake_policy(POP)\n" + prefix + "else()\n" +
-            indent_call(call->text) + "\n" + prefix + "endif()";
-        selected.emplace(std::pair{from, to}, std::move(row));
+        const auto newline = contents.rfind('\n', call->offset);
+        const auto begin = newline == std::string::npos ? 0 : newline + 1;
+        if (contents.substr(begin, call->offset - begin).find_first_not_of(" \t") != std::string::npos) continue;
+        selected.emplace(std::pair{from, to}, json::Object{{"target", from}, {"dependency", to},
+            {"file", path.generic_string()}, {"line", *line}, {"output", artifacts[from]},
+            {"archive", artifacts[to]}, {"offset", static_cast<std::int64_t>(token->offset)},
+            {"length", static_cast<std::int64_t>(token->text.size())},
+            {"call_offset", static_cast<std::int64_t>(call->offset)},
+            {"call_length", static_cast<std::int64_t>(call->text.size())}, {"compile_only", false}});
     }
     json::Array rows;
-    for (auto& [key, value] : selected) {
-        auto compile = json::Object(value);
-        compile["offset"] = *value.getInteger("compile_only_offset");
-        compile["length"] = *value.getInteger("compile_only_length");
-        compile["replacement"] = value.getString("compile_only_replacement")->str();
-        compile["compile_only"] = true;
-        for (auto* row : {&value, &compile}) {
-            row->erase("compile_only_offset"); row->erase("compile_only_length"); row->erase("compile_only_replacement");
-        }
-        rows.push_back(std::move(value));
-        rows.push_back(std::move(compile));
+    for (auto& [key, row] : selected) rows.push_back(std::move(row));
+    return json::Object{{"candidates", std::move(rows)},
+        {"candidate_links", static_cast<std::int64_t>(selected.size())}, {"attempts", json::Array{}},
+        {"rule", "global zero-extraction screening; cumulative batch trials; preserved compiler commands; identical ELF replay; final complete build and CTest"},
+        {"scope", "private literal static links in one ELF LLD configuration; unsupported declarations remain intact"}};
+}
+
+std::vector<Replacement> dependency_replacements(const fs::path& source, const json::Array& selections) {
+    using Call = std::pair<std::string, std::size_t>;
+    std::map<Call, std::vector<const json::Object*>> calls;
+    for (const auto& value : selections) {
+        const auto& row = *value.getAsObject();
+        calls[{string(row, "file"), static_cast<std::size_t>(*row.getInteger("call_offset"))}].push_back(&row);
     }
-    return json::Object{{"candidates", std::move(rows)}, {"candidate_links", static_cast<std::int64_t>(selected.size())}, {"attempts", json::Array{}},
-        {"rule", "one private literal static-library link; unchanged compiler commands; removed archives must extract zero members; identical ELF from replaying the same baseline objects; full build and CTest"},
-        {"scope", "ELF LLD analysis; executable/shared/module consumers only; delete or retain compile-only requirements; CMake <3.27 retains the original link; no public interface, shared-library or variable-list cleanup"}};
+    std::vector<Replacement> result;
+    for (auto& [key, rows] : calls) {
+        const auto contents = read_file(source / key.first);
+        const auto offset = key.second;
+        const auto length = static_cast<std::size_t>(*rows.front()->getInteger("call_length"));
+        if (offset > contents.size() || length > contents.size() - offset)
+            throw std::runtime_error("Invalid CMake call range");
+        const auto original = contents.substr(offset, length);
+        auto modified = original;
+        std::ranges::sort(rows, [](const auto* a, const auto* b) { return *a->getInteger("offset") > *b->getInteger("offset"); });
+        auto previous = offset + length;
+        bool compile_only = false;
+        for (const auto* row : rows) {
+            const auto start = static_cast<std::size_t>(*row->getInteger("offset"));
+            const auto size = static_cast<std::size_t>(*row->getInteger("length"));
+            if (start < offset || start > previous || size > previous - start)
+                throw std::runtime_error("Overlapping CMake dependency edits");
+            const bool keep = row->getBoolean("compile_only").value_or(false);
+            modified.replace(start - offset, size, keep ? "\"$<COMPILE_ONLY:" + string(*row, "dependency") + ">\"" : "");
+            previous = start;
+            compile_only |= keep;
+        }
+        if (compile_only) {
+            const auto newline = contents.rfind('\n', offset);
+            const auto begin = newline == std::string::npos ? 0 : newline + 1;
+            const auto prefix = contents.substr(begin, offset - begin);
+            const std::string indent = prefix.find('\t') == std::string::npos ? "  " : "\t";
+            const auto nested = prefix + indent;
+            const auto indent_call = [&](std::string command) {
+                for (auto pos = command.find('\n'); pos != std::string::npos;
+                     pos = command.find('\n', pos + 1 + indent.size())) command.insert(pos + 1, indent);
+                return nested + command;
+            };
+            modified = "if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.27)\n" + nested + "cmake_policy(PUSH)\n" +
+                nested + "cmake_policy(SET CMP0099 NEW)\n" + indent_call(modified) + "\n" + nested +
+                "cmake_policy(POP)\n" + prefix + "else()\n" + indent_call(original) + "\n" + prefix + "endif()";
+        }
+        result.push_back({key.first, offset, length, std::move(modified)});
+    }
+    return result;
 }
 
 json::Object link_candidates(const json::Object& graph, const fs::path& source,
@@ -364,18 +389,26 @@ json::Object link_candidates(const json::Object& graph, const fs::path& source,
 
 void verify_link_removal(const json::Object& before, const json::Object& after,
                          const json::Object& selection, bool compile_only) {
-    auto expected = relations(before);
-    const auto from = string(selection, "target"), to = string(selection, "dependency");
-    for (const auto* kind : {"linkLibraries", "compileDependencies", "interfaceLinkLibraries",
-                             "interfaceCompileDependencies"})
-        if (!compile_only || (std::string_view(kind) != "compileDependencies" &&
-                              std::string_view(kind) != "interfaceCompileDependencies"))
-            expected.erase({from, to, kind});
-    // Order-only dependencies may disappear with a direct link; all other
-    // relationships must remain, including raw linker fragments.
-    auto actual = relations(after);
-    expected.erase({from, to, "orderDependencies"});
-    actual.erase({from, to, "orderDependencies"});
+    auto row = json::Object(selection);
+    row["compile_only"] = compile_only;
+    json::Array rows;
+    rows.push_back(std::move(row));
+    verify_link_removals(before, after, rows);
+}
+
+void verify_link_removals(const json::Object& before, const json::Object& after,
+                          const json::Array& selections) {
+    auto expected = relations(before), actual = relations(after);
+    for (const auto& value : selections) {
+        const auto& row = *value.getAsObject();
+        const auto from = string(row, "target"), to = string(row, "dependency");
+        for (const auto* kind : {"linkLibraries", "compileDependencies", "interfaceLinkLibraries", "interfaceCompileDependencies"})
+            if (!row.getBoolean("compile_only").value_or(false) ||
+                (std::string_view(kind) != "compileDependencies" && std::string_view(kind) != "interfaceCompileDependencies"))
+                expected.erase({from, to, kind});
+        expected.erase({from, to, "orderDependencies"});
+        actual.erase({from, to, "orderDependencies"});
+    }
     if (actual != expected)
         throw std::runtime_error(
             "CMake removal changed unexpected target relationships or retained the direct link");

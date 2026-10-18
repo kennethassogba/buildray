@@ -2,7 +2,16 @@ name: Unused dependency corpus
 
 on:
   workflow_call:
+    inputs:
+      incremental_only:
+        type: boolean
+        default: false
   workflow_dispatch:
+    inputs:
+      incremental_only:
+        description: Keep full build and test validation; measure only incremental rebuild pairs.
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -74,6 +83,7 @@ jobs:
           runs: '3'
           jobs: ${{ matrix.jobs }}
           rebuild-files: ${{ matrix.rebuild_files }}
+          incremental-only: ${{ inputs.incremental_only }}
           exclude-paths: '["3rdparty", "third_party"]'
           cmake-args: ${{ env.UNUSED_CMAKE_ARGS }}
           artifact-name: unused-${{ matrix.project }}

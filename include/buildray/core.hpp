@@ -78,6 +78,8 @@ struct Options {
     unsigned unity_retries = 0;
     std::vector<fs::path> rebuild_files;
     bool incremental_only = false;
+    unsigned max_dependency_trials = 64;
+    unsigned dependency_time_budget = 300;
 };
 
 struct CheckOptions {
@@ -105,7 +107,10 @@ void verify_link_coverage(const json::Object& graph, const fs::path& build,
 json::Object verify_unused_link_inputs(const fs::path& baseline_source, const fs::path& baseline_build,
     const fs::path& candidate_source, const fs::path& candidate_build,
     const json::Array& baseline_links, const json::Object& baseline_graph,
-    const fs::path& analysis, const fs::path& executable);
+    const fs::path& analysis, const fs::path& executable, const json::Object& profiles);
+json::Object profile_link_archives(const json::Object& link, const fs::path& source,
+                                   const fs::path& build, const fs::path& analysis);
+void cache_link_compilations(const fs::path& source, const fs::path& build, json::Object& profiles);
 // Returns a trace line's depth and path; a zero depth means ordinary diagnostics.
 std::pair<std::size_t, std::string> include_line(const std::string& line);
 json::Object dependency_graph(const fs::path& records, const fs::path& source,
@@ -117,6 +122,10 @@ json::Object link_candidates(const json::Object& graph, const fs::path& source,
                              const Options& options);
 json::Object unused_link_candidates(const json::Object& graph, const fs::path& source,
                                     const Options& options);
+std::vector<Replacement> dependency_replacements(const fs::path& source,
+                                                 const json::Array& selections);
+void verify_link_removals(const json::Object& before, const json::Object& after,
+                          const json::Array& selections);
 void verify_link_removal(const json::Object& before, const json::Object& after,
                          const json::Object& selection, bool compile_only = false);
 json::Object header_profile(const fs::path& records, const fs::path& source,

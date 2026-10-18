@@ -50,6 +50,8 @@ Options:
   --batch-size N        unity: maximum sources per batch, 2..32 (default: 4)
   --unity-exclude PATH  unity: keep source files under this relative path separate; repeatable
   --unity-retries N     unity: retry failed compiler groups with their sources separate, 0..8 (default: 0)
+  --max-dependency-trials N  prune-deps: maximum search configurations, 1..10000 (default: 64)
+  --dependency-time-budget N  prune-deps: soft search budget in seconds, 1..86400 (default: 300)
   --dependency NAME     Link cleanup: restrict selection to this direct dependency
   --header HEADER       PCH header: <system> or source-root-relative path; repeatable
   --auto                pch: profile, select one project header/target, validate and measure
@@ -88,7 +90,11 @@ reconfigures, checks graph changes, builds and tests, then measures three or mor
 clean-build pairs. Outputs: cmake.patch, links.json, before/after CMake graphs.
 No eligible candidate completes without a patch or benchmark. This is configured
 graph redundancy, not proof that a library's symbols are unused.
-prune-deps tests private literal static-library dependencies with ELF LLD.
+prune-deps profiles archive extraction once per eligible consumer, screens used
+archives, then validates cumulative groups of private literal static dependencies.
+Failed groups are bisected; baseline evidence and rejected groups are cached.
+Search budgets stop new work; final combined validation and timings still run.
+Worst-case search is linear and capped, not guaranteed logarithmic.
 It preserves compiler commands, requires zero extracted members from every removed
 archive, and replays the link with identical baseline objects to require identical
 ELF bytes. Compile-only requirements can be retained; CMake <3.27 keeps the
@@ -198,12 +204,14 @@ buildray::Options parse(const std::vector<std::string>& args) {
             arg != "--clang-tidy" && arg != "--runs" && arg != "--jobs" &&
             arg != "--baseline-source" && arg != "--max-regression-percent" && arg != "--session" &&
             arg != "--target" && arg != "--header" && arg != "--c-compiler" && arg != "--exclude" && arg != "--dependency" &&
-            arg != "--header-path" && arg != "--max-header-edits" && arg != "--batch-size" && arg != "--unity-exclude" && arg != "--unity-retries" && arg != "--rebuild-file")
+            arg != "--header-path" && arg != "--max-header-edits" && arg != "--batch-size" && arg != "--unity-exclude" && arg != "--unity-retries" && arg != "--rebuild-file" && arg != "--max-dependency-trials" && arg != "--dependency-time-budget")
             throw std::runtime_error("Unknown option: " + arg);
         if (++i == args.size() || args[i].starts_with("--"))
             throw std::runtime_error("Missing value for " + arg);
         const auto& value = args[i];
         if (value.empty()) throw std::runtime_error("Empty value for " + arg);
+        if ((arg == "--max-dependency-trials" || arg == "--dependency-time-budget") && options.command != "prune-deps")
+            throw std::runtime_error(arg + " requires prune-deps");
         if (arg == "--max-header-edits" && options.command != "headers")
             throw std::runtime_error("--max-header-edits requires headers");
         if ((arg == "--batch-size" || arg == "--unity-exclude" || arg == "--unity-retries") && options.command != "unity")
@@ -224,6 +232,10 @@ buildray::Options parse(const std::vector<std::string>& args) {
             options.runs = number(value, 100);
         else if (arg == "--jobs")
             options.jobs = number(value, 1024);
+        else if (arg == "--max-dependency-trials")
+            options.max_dependency_trials = number(value, 10000);
+        else if (arg == "--dependency-time-budget")
+            options.dependency_time_budget = number(value, 86400);
         else if (arg == "--max-header-edits")
             options.max_header_edits = number(value, 1000);
         else if (arg == "--unity-retries")

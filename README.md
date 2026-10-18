@@ -198,12 +198,18 @@ buildray prune-deps --source /path/to/project --runs 3 --jobs 2 \
      -DCMAKE_MODULE_LINKER_FLAGS=--ld-path=/usr/lib/llvm-21/bin/ld.lld
 ```
 
-`prune-deps` removes one private static-library dependency only when it removes
+`prune-deps` screens private static-library dependencies together, then tests a
+combined patch. It profiles archive use once per affected program, reuses that
+evidence and splits failing groups. A removal is accepted only when it removes
 actual linker inputs, keeps compiler commands unchanged, and produces an identical
 ELF binary when replaying the link with the same objects. It also requires zero
 archive extractions, a complete build and the same passing CTest inventory. If a
 library only supplies compilation requirements, the patch preserves them with
 `COMPILE_ONLY` and retains the original link for CMake older than 3.27.
+
+The default search budget is 64 trial configurations and 300 seconds. Adjust it
+with `--max-dependency-trials` and `--dependency-time-budget`. The final combined
+verification, full build, tests and benchmarks are outside that budget.
 
 This mode needs ELF LLD, CMake 4.2+ and Ninja 1.13+. It records link counts and
 link-driver time in clean and incremental samples. With no confirmed candidate,

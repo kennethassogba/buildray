@@ -14,6 +14,12 @@ The next priority is to explain why targets rebuild, then extend dependency clea
 
 ## What to measure next
 
+Later, symbol and object usage could help suggest smaller, specialized targets.
+A static linker already selects the archive members it needs, so a large library
+alone is not evidence of wasted work. A useful split should reduce compilation,
+linking or rebuilds without breaking consumers. Buildray does not propose these
+splits yet.
+
 Link cleanup now records individual link-driver commands and durations, including incremental rebuild counts. The next step is to explain which dependency path caused each target to rebuild, and support variable-based CMake declarations without losing their meaning.
 
 Public dependency interfaces still need separate checks across consumers. Narrowing a `PUBLIC` dependency or separating a shared header from frequently edited implementation must preserve the requirements those consumers receive.

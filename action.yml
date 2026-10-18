@@ -74,6 +74,12 @@ inputs:
   link-dependency:
     description: Optional dependency restriction for prune-links or prune-deps. Fail if no validated eligible removal matches.
     default: ''
+  max-dependency-trials:
+    description: For prune-deps, maximum search configurations (1-10000). Final combined validation is mandatory and outside the search limit.
+    default: '64'
+  dependency-time-budget:
+    description: For prune-deps, soft search budget in seconds (1-86400). Running commands and final validation are not interrupted by this budget.
+    default: '300'
   forward-declarations:
     description: For headers, try replacing eligible project includes with simple class/struct declarations.
     default: 'false'
@@ -126,6 +132,9 @@ outputs:
   links:
     description: Redundant CMake link candidates and selected experiment.
     value: ${{ steps.run.outputs.links }}
+  archive-profile:
+    description: Cached baseline archive extraction statistics and compiler inventory for dependency search.
+    value: ${{ steps.run.outputs.archive-profile }}
   header-cleanup:
     description: Header findings, rejected proposals and validation counts.
     value: ${{ steps.run.outputs.header-cleanup }}
@@ -178,6 +187,8 @@ runs:
         BUILDRAY_INCREMENTAL_ONLY: ${{ inputs.incremental-only }}
         BUILDRAY_LINK_TARGET: ${{ inputs.link-target }}
         BUILDRAY_LINK_DEPENDENCY: ${{ inputs.link-dependency }}
+        BUILDRAY_MAX_DEPENDENCY_TRIALS: ${{ inputs.max-dependency-trials }}
+        BUILDRAY_DEPENDENCY_TIME_BUDGET: ${{ inputs.dependency-time-budget }}
         BUILDRAY_FORWARD_DECLARATIONS: ${{ inputs.forward-declarations }}
         BUILDRAY_HEADER_PATHS: ${{ inputs.header-paths }}
         BUILDRAY_MAX_HEADER_EDITS: ${{ inputs.max-header-edits }}

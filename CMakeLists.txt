@@ -85,6 +85,10 @@ if(BUILD_TESTING)
     add_test(NAME unused_dependencies COMMAND ${Python3_EXECUTABLE}
         ${CMAKE_CURRENT_SOURCE_DIR}/tests/unused_cli.py $<TARGET_FILE:buildray> ${BUILDRAY_CLANGXX} ${BUILDRAY_LLD})
     set_tests_properties(unused_dependencies PROPERTIES TIMEOUT 240)
+    add_test(NAME batched_dependencies COMMAND ${Python3_EXECUTABLE}
+        ${CMAKE_CURRENT_SOURCE_DIR}/tests/batched_dependencies_cli.py $<TARGET_FILE:buildray>
+        ${BUILDRAY_CLANGXX} ${BUILDRAY_LLD} ${CMAKE_CURRENT_SOURCE_DIR}/action/run.py)
+    set_tests_properties(batched_dependencies PROPERTIES TIMEOUT 360)
     add_test(NAME headers COMMAND ${Python3_EXECUTABLE}
         ${CMAKE_CURRENT_SOURCE_DIR}/tests/headers_cli.py $<TARGET_FILE:buildray>
         ${BUILDRAY_CLANGXX} ${BUILDRAY_CLANG_TIDY})
