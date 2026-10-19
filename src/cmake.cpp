@@ -217,7 +217,9 @@ Trace link_trace(const fs::path& path, const fs::path& source) {
         auto value = json::parse(line);
         if (!value) throw std::runtime_error("Invalid expanded CMake trace: " + llvm::toString(value.takeError()));
         const auto* row = value->getAsObject();
-        if (!row || row->getString("cmd") != "target_link_libraries") continue;
+        if (!row) continue;
+        const auto command = row->getString("cmd");
+        if (!command || !command->equals_insensitive("target_link_libraries")) continue;
         const auto file = row->getString("file");
         const auto number = row->getInteger("line");
         const auto* args = row->getArray("args");

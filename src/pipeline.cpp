@@ -1675,7 +1675,7 @@ int pipeline(const Options& options, const fs::path& executable) {
                 report["removed_links"] = 0;
                 report["validation_scope"] = "one configured CMake build; one redundant literal target link; original snapshot files only";
                 if (options.command == "prune-deps") {
-                    report["validation_scope"] = "one configured Ninja all build; combined private literal static dependency removals; compiler commands preserved; zero extracted members and byte-identical ELF replay; full build and CTest";
+                    report["validation_scope"] = "one configured Ninja all build; combined private static dependency removals with literal or traced variable arguments; compiler commands preserved; zero extracted members and byte-identical ELF replay; full build and CTest";
                     report["dependency_trials"] = json::Array(*plan.getArray("attempts"));
                     report["dependency_search"] = json::Object(*plan.getObject("search"));
                     report["dependency_screening"] = json::Array(*plan.getArray("screening"));

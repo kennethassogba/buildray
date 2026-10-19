@@ -1,0 +1,278 @@
+{
+  "buildray_revision": "0c165160839b3eac070a02e39e2611dc67c74860",
+  "method": "Complete baseline and candidate build/test validation; three alternating incremental pairs. No repeated clean timings.",
+  "runs": {
+    "highway": 39323921286,
+    "other_projects": 39323923513
+  },
+  "projects": {
+    "xgrammar": {
+      "revision": "7e269d56c74c89de52bc8c31e42191155416371f",
+      "compiler": "Ubuntu clang version 21.1.8 (++20251221032922+2078da43e25a-1~exp1~20251221153059.70)",
+      "cmake": "cmake version 4.2.3",
+      "ninja": "1.13.0.git.kitware.jobserver-pipe-1",
+      "cpu_model": "AMD EPYC 7763 64-Core Processor",
+      "cpu_affinity_count": 4,
+      "jobs": 2,
+      "cmake_args": [
+        "-DCMAKE_EXE_LINKER_FLAGS=--ld-path=/usr/lib/llvm-21/bin/ld.lld",
+        "-DCMAKE_SHARED_LINKER_FLAGS=--ld-path=/usr/lib/llvm-21/bin/ld.lld",
+        "-DCMAKE_MODULE_LINKER_FLAGS=--ld-path=/usr/lib/llvm-21/bin/ld.lld"
+      ],
+      "tests_required": true,
+      "validation": "build_and_tests_passed",
+      "baseline_tests_passed": 83,
+      "candidate_tests_passed": 83,
+      "baseline_skipped_tests": [],
+      "candidate_skipped_tests": [],
+      "configured_targets": 8,
+      "configured_executables": 1,
+      "eligible_links": 4,
+      "variable_links": 0,
+      "removed_links": 1,
+      "patch_validated": true,
+      "patch_recommended": false,
+      "clean_performance_result": "not_measured",
+      "search": {
+        "budget_exhausted": false,
+        "cache_hits": 0,
+        "configurations": 2,
+        "elapsed_seconds": 98.323491598,
+        "final_verifications": 1,
+        "profiled_links": 1,
+        "time_budget_seconds": 300,
+        "trial_limit": 64
+      },
+      "search_blocker": null,
+      "selections": [
+        {
+          "target": "xgrammar_test",
+          "dependency": "gmock",
+          "compile_only": true
+        }
+      ],
+      "incremental": [
+        {
+          "file": "cpp/earley_parser.cc",
+          "performance_result": "inconclusive",
+          "wall_change_percent": 0.6311040492683723,
+          "noise_threshold_seconds": 0.71537885476,
+          "baseline": {
+            "median_seconds": 35.768942738,
+            "mad_seconds": 0.22296819099999965,
+            "samples": [
+              {
+                "wall_seconds": 35.545974547,
+                "compiler_invocations": 1,
+                "linker_invocations": 1,
+                "linker_driver_wall_sum_seconds": 32.166212796,
+                "tests_passed": 83
+              },
+              {
+                "wall_seconds": 35.768942738,
+                "compiler_invocations": 1,
+                "linker_invocations": 1,
+                "linker_driver_wall_sum_seconds": 32.332590326,
+                "tests_passed": 83
+              },
+              {
+                "wall_seconds": 36.179904549,
+                "compiler_invocations": 1,
+                "linker_invocations": 1,
+                "linker_driver_wall_sum_seconds": 32.701588538,
+                "tests_passed": 83
+              }
+            ]
+          },
+          "candidate": {
+            "median_seconds": 35.994681984,
+            "mad_seconds": 0.09133696099999611,
+            "samples": [
+              {
+                "wall_seconds": 35.713499609,
+                "compiler_invocations": 1,
+                "linker_invocations": 1,
+                "linker_driver_wall_sum_seconds": 32.288332033,
+                "tests_passed": 83
+              },
+              {
+                "wall_seconds": 36.086018945,
+                "compiler_invocations": 1,
+                "linker_invocations": 1,
+                "linker_driver_wall_sum_seconds": 32.570569703,
+                "tests_passed": 83
+              },
+              {
+                "wall_seconds": 35.994681984,
+                "compiler_invocations": 1,
+                "linker_invocations": 1,
+                "linker_driver_wall_sum_seconds": 32.600203011,
+                "tests_passed": 83
+              }
+            ]
+          }
+        },
+        {
+          "file": "3rdparty/googletest/googlemock/src/gmock-all.cc",
+          "performance_result": "improved",
+          "wall_change_percent": -92.55357029098442,
+          "noise_threshold_seconds": 0.69536565446,
+          "baseline": {
+            "median_seconds": 34.768282723,
+            "mad_seconds": 0.046857513999995604,
+            "samples": [
+              {
+                "wall_seconds": 35.687925136,
+                "compiler_invocations": 1,
+                "linker_invocations": 1,
+                "linker_driver_wall_sum_seconds": 33.003706282,
+                "tests_passed": 83
+              },
+              {
+                "wall_seconds": 34.721425209,
+                "compiler_invocations": 1,
+                "linker_invocations": 1,
+                "linker_driver_wall_sum_seconds": 32.074541402,
+                "tests_passed": 83
+              },
+              {
+                "wall_seconds": 34.768282723,
+                "compiler_invocations": 1,
+                "linker_invocations": 1,
+                "linker_driver_wall_sum_seconds": 32.083363166,
+                "tests_passed": 83
+              }
+            ]
+          },
+          "candidate": {
+            "median_seconds": 2.588995734,
+            "mad_seconds": 0.015432432999999968,
+            "samples": [
+              {
+                "wall_seconds": 2.604428167,
+                "compiler_invocations": 1,
+                "linker_invocations": 0,
+                "linker_driver_wall_sum_seconds": 0,
+                "tests_passed": 83
+              },
+              {
+                "wall_seconds": 2.588995734,
+                "compiler_invocations": 1,
+                "linker_invocations": 0,
+                "linker_driver_wall_sum_seconds": 0,
+                "tests_passed": 83
+              },
+              {
+                "wall_seconds": 2.560816119,
+                "compiler_invocations": 1,
+                "linker_invocations": 0,
+                "linker_driver_wall_sum_seconds": 0,
+                "tests_passed": 83
+              }
+            ]
+          }
+        }
+      ],
+      "replay": {
+        "compiler_commands_unchanged": true,
+        "byte_identical_elf_links": 1,
+        "removed_archives": [
+          {
+            "archive": "lib/libgmock.a",
+            "extracted": 0,
+            "members": 1
+          }
+        ]
+      }
+    },
+    "sentencepiece": {
+      "revision": "e0cce7d37b065b5140349dbe12c6bcf6192fdd78",
+      "compiler": "Ubuntu clang version 21.1.8 (++20251221032922+2078da43e25a-1~exp1~20251221153059.70)",
+      "cmake": "cmake version 4.2.3",
+      "ninja": "1.13.0.git.kitware.jobserver-pipe-1",
+      "cpu_model": "AMD EPYC 9V45 96-Core Processor",
+      "cpu_affinity_count": 4,
+      "jobs": 2,
+      "cmake_args": [
+        "-DSPM_BUILD_TEST=ON",
+        "-DSPM_ENABLE_SHARED=OFF",
+        "-DSPM_ENABLE_TCMALLOC=OFF",
+        "-DCMAKE_EXE_LINKER_FLAGS=--ld-path=/usr/lib/llvm-21/bin/ld.lld",
+        "-DCMAKE_SHARED_LINKER_FLAGS=--ld-path=/usr/lib/llvm-21/bin/ld.lld",
+        "-DCMAKE_MODULE_LINKER_FLAGS=--ld-path=/usr/lib/llvm-21/bin/ld.lld"
+      ],
+      "tests_required": true,
+      "validation": "build_and_tests_passed",
+      "baseline_tests_passed": 1,
+      "candidate_tests_passed": null,
+      "baseline_skipped_tests": [],
+      "candidate_skipped_tests": [],
+      "configured_targets": 256,
+      "configured_executables": 7,
+      "eligible_links": 0,
+      "variable_links": 0,
+      "removed_links": 0,
+      "patch_validated": false,
+      "patch_recommended": false,
+      "clean_performance_result": "no_changes",
+      "search": {
+        "budget_exhausted": false,
+        "cache_hits": 0,
+        "configurations": 0,
+        "elapsed_seconds": 0.047495686,
+        "final_verifications": 0,
+        "profiled_links": 0,
+        "time_budget_seconds": 300,
+        "trial_limit": 64
+      },
+      "search_blocker": null,
+      "selections": [],
+      "incremental": []
+    },
+    "mujoco": {
+      "revision": "651bae11c3c38efe483f033b4b7e869e7ce3f4ec",
+      "compiler": "Ubuntu clang version 21.1.8 (++20251221032922+2078da43e25a-1~exp1~20251221153059.70)",
+      "cmake": "cmake version 4.2.3",
+      "ninja": "1.13.0.git.kitware.jobserver-pipe-1",
+      "cpu_model": "AMD EPYC 9V45 96-Core Processor",
+      "cpu_affinity_count": 4,
+      "jobs": 4,
+      "cmake_args": [
+        "-DMUJOCO_BUILD_EXAMPLES=OFF",
+        "-DMUJOCO_BUILD_SIMULATE=OFF",
+        "-DMUJOCO_BUILD_TESTS=ON",
+        "-DMUJOCO_TEST_PYTHON_UTIL=OFF",
+        "-DCMAKE_EXE_LINKER_FLAGS=--ld-path=/usr/lib/llvm-21/bin/ld.lld",
+        "-DCMAKE_SHARED_LINKER_FLAGS=--ld-path=/usr/lib/llvm-21/bin/ld.lld",
+        "-DCMAKE_MODULE_LINKER_FLAGS=--ld-path=/usr/lib/llvm-21/bin/ld.lld"
+      ],
+      "tests_required": true,
+      "validation": "build_and_tests_passed",
+      "baseline_tests_passed": 3519,
+      "candidate_tests_passed": null,
+      "baseline_skipped_tests": [],
+      "candidate_skipped_tests": [],
+      "configured_targets": 368,
+      "configured_executables": 91,
+      "eligible_links": 236,
+      "variable_links": 231,
+      "removed_links": 0,
+      "patch_validated": false,
+      "patch_recommended": false,
+      "clean_performance_result": "no_changes",
+      "search": {
+        "budget_exhausted": false,
+        "cache_hits": 0,
+        "configurations": 0,
+        "elapsed_seconds": 0.218956815,
+        "final_verifications": 0,
+        "profiled_links": 0,
+        "time_budget_seconds": 300,
+        "trial_limit": 64
+      },
+      "search_blocker": "Compiler response files are not supported by dependency cleanup",
+      "selections": [],
+      "incremental": []
+    }
+  }
+}

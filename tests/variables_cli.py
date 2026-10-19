@@ -59,7 +59,7 @@ if(WITH_EXTRA)
   list(APPEND deps extra)
 endif()
 function(link_sample name)
-  target_link_libraries("${name}"
+  TARGET_LINK_LIBRARIES("${name}"
     PRIVATE ${deps}
   ) # keep comment
 endfunction()

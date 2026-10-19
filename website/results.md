@@ -43,9 +43,11 @@ Both variants use the same setting to work around temporary dependencies emitted
 
 ## Dependency cleanup so far
 
-The grouped search removes 40 unused library links in one trial on a test project, followed by a final check. Real-project results are more limited: removing XGrammar's unused `gmock` link gives no measurable speedup, SentencePiece has no supported candidate, and no removal is confirmed on MuJoCo. This does not establish performance at scale. [Dependency results and limits](https://github.com/kennethassogba/buildray/blob/main/docs/unused-dependencies-validation.md).
+The grouped search removes 40 unused library links in one trial on a test project, including when the libraries come from a CMake variable. A final check verifies the combined patch. [Dependency results and limits](https://github.com/kennethassogba/buildray/blob/main/docs/unused-dependencies-validation.md).
 
-On Google Highway, Buildray checks 17 links across 15 programs and validates one removal. The full build passes 2,784 tests, keeping the same 23 intentional skips. The measured `vqsort.cc` rebuild stays inconclusive: 4.415 → 4.448 s. That edit affects a different library from the removed link; most test dependencies still use unsupported CMake variables.
+On XGrammar, removing the unused `gmock` link avoids a roughly 32-second LTO link when `gmock-all.cc` changes: rebuild time falls from 34.768 to 2.589 s, with all 83 tests passing. Editing the parser stays inconclusive at 35.769 → 35.995 s. This gain applies to changes in GoogleMock; it does not establish a faster clean build. SentencePiece still has no supported candidate because its programs use aliases. MuJoCo passes 3,519 tests, but response files block the search.
+
+The first Google Highway run checked 17 links across 15 programs and validated one removal. The full build passed 2,784 tests, keeping the same 23 intentional skips. The measured `vqsort.cc` rebuild stayed inconclusive: 4.415 → 4.448 s. That edit affects a different library from the removed link; that version could not handle the variables in most test dependencies.
 
 A separate build of the core and examples, with tests disabled, checks an edit to the library concerned. It avoids one link (13 → 12), but its timings remain inconclusive: 4.433 → 4.027 s. These measurements do not establish an overall speedup.
 

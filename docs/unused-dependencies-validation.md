@@ -16,6 +16,37 @@ in some targets; these results describe the common LLD profile, not its default
 linker. PCH, Unity and compiler caches are disabled. Configuration, analysis,
 link replays and tests are outside build timings.
 
+## Follow-up with CMake variables
+
+The [19 October corpus run](https://github.com/kennethassogba/buildray/actions/runs/39323923513)
+uses Buildray `0c16516` on the same pinned projects. Target names and library
+lists can now come from variables, including in loops and functions. It keeps
+full build and test validation and measures three alternating incremental pairs;
+there are no new clean-build timings.
+
+| Project and edited file | Before → after | What changed |
+| --- | ---: | --- |
+| XGrammar, `cpp/earley_parser.cc` | 35.769 → 35.995 s | Inconclusive; one link on both sides |
+| XGrammar, `3rdparty/googletest/googlemock/src/gmock-all.cc` | 34.768 → 2.589 s | One link avoided; improved |
+| SentencePiece | Not measured | No supported candidate; executable links use aliases |
+| MuJoCo | Not measured | 236 eligible links; compiler response files block the search |
+
+XGrammar again validates the unused `gmock` link, preserving its compilation
+requirements with `COMPILE_ONLY`. All 83 CTest cases pass before, after and after
+each edit. The archive contributes no objects and same-object link replay is
+byte-identical. Search takes 98.323 seconds: one link profile, two trial
+configurations and one final verification. Removing the link avoids roughly
+32 seconds of LTO when GoogleMock changes. It does not speed up the parse source
+edit or establish a clean-build gain. GoogleMock itself still compiles.
+
+For the GoogleMock edit, medians are 34.768 and 2.589 seconds, MADs 0.047 and
+0.015 seconds, and the noise threshold is 0.695 seconds. Each sample compiles
+one file; link counts fall from one to zero in all three pairs. This is a
+benefit for changes to a vendored dependency, not a general XGrammar speedup.
+
+SentencePiece passes its CTest entry; MuJoCo passes 3,519 CTest cases. Neither
+produces a candidate patch. Their baseline success is not removal validation.
+
 ## XGrammar: valid removal, no measured speedup
 
 Revision `7e269d56c74c89de52bc8c31e42191155416371f` is also upstream main when
@@ -60,7 +91,8 @@ sum of its six link-driver invocations is 0.313 s.
 
 There is no eligible literal private dependency in this configuration. The
 project uses aliases for its static libraries and exports requirements through
-interfaces and variable lists. Those cases are outside this implementation.
+interfaces and variable lists. Those cases were outside the original search;
+aliases and public interfaces remain unsupported.
 This is a baseline profile, with no candidate and no claimed gain. It does not
 establish that every dependency is necessary.
 
@@ -85,7 +117,7 @@ intentionally skipped. `--allow-baseline-skips` requires the same skipped names
 after the patch and every measured edit. All eight JUnit runs match.
 
 The configured graph has 126 executables. Buildray recognizes 17 eligible links
-across 15 of them; most test links use CMake variables and remain unsupported.
+across 15 of them; that version did not handle the variables in most test links.
 Archive profiling finds one removable link: `sum_array_simple` to `hwy`.
 Deleting it changes compilation requirements, so the patch retains those with
 `COMPILE_ONLY`. The archive contributes zero objects, replay produces an identical

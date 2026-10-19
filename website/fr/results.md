@@ -43,9 +43,11 @@ Ces mesures utilisent un réglage commun aux deux versions pour contourner des d
 
 ## Le nettoyage des dépendances aujourd’hui {#dependency-cleanup-so-far}
 
-La recherche par groupes retire 40 liens inutiles en un essai sur un projet de test, puis effectue une vérification finale. Sur les vrais projets, les résultats restent limités : retirer le lien inutilisé vers `gmock` dans XGrammar ne donne aucun gain mesurable, SentencePiece n’a aucun candidat pris en charge et aucun retrait n’est confirmé sur MuJoCo. Cela ne valide pas encore les performances à grande échelle. [Résultats et limites](https://github.com/kennethassogba/buildray/blob/main/docs/unused-dependencies-validation.md).
+La recherche par groupes retire 40 liens inutiles en un essai sur un projet de test, y compris quand les bibliothèques viennent d’une variable CMake. Une vérification finale contrôle le patch combiné. [Résultats et limites](https://github.com/kennethassogba/buildray/blob/main/docs/unused-dependencies-validation.md).
 
-Sur Google Highway, Buildray examine 17 liens dans 15 programmes et valide un retrait. Le build complet passe 2 784 tests ; 23 restent volontairement ignorés dans les deux versions. Le rebuild mesuré de `vqsort.cc` reste non concluant : 4,415 → 4,448 s. Ce fichier appartient à une autre bibliothèque que celle retirée ; la plupart des dépendances des tests utilisent encore des variables CMake non prises en charge.
+Sur XGrammar, retirer le lien inutilisé vers `gmock` évite environ 32 secondes de lien LTO quand `gmock-all.cc` change : le rebuild passe de 34,768 à 2,589 s, avec les 83 tests réussis. L’edit du parseur reste non concluant à 35,769 → 35,995 s. Le gain concerne les changements dans GoogleMock ; il ne démontre pas un build complet plus rapide. SentencePiece reste sans candidat pris en charge, car ses programmes utilisent des alias. MuJoCo passe 3 519 tests, mais les fichiers de réponse bloquent la recherche.
+
+Le premier essai Google Highway examinait 17 liens dans 15 programmes et validait un retrait. Le build complet passait 2 784 tests ; 23 restaient volontairement ignorés dans les deux versions. Le rebuild mesuré de `vqsort.cc` restait non concluant : 4,415 → 4,448 s. Ce fichier appartient à une autre bibliothèque que celle retirée ; cette version ne traitait pas les variables utilisées par la plupart des dépendances des tests.
 
 Un essai séparé sur le cœur et les exemples, sans tests, modifie la bibliothèque concernée. Il évite une étape de lien (13 → 12), mais les temps restent non concluants : 4,433 → 4,027 s. Ces mesures ne démontrent pas de gain global.
 
