@@ -59,7 +59,9 @@ if(WITH_EXTRA)
   list(APPEND deps extra)
 endif()
 function(link_sample name)
-  target_link_libraries("${name}" PRIVATE ${deps}) # keep comment
+  target_link_libraries("${name}"
+    PRIVATE ${deps}
+  ) # keep comment
 endfunction()
 foreach(suffix IN ITEMS one two)
   add_executable(sample_${suffix} main.cpp)
@@ -86,6 +88,13 @@ target_compile_definitions(dead INTERFACE USAGE_REQUIREMENT=1)
     assert (changed / 'one.txt').read_text() == 'needed;dead;extra'
     run('cmake', '--build', changed, '--parallel', 2)
     run('ctest', '--test-dir', changed, '--output-on-failure')
+    # Exercise the compatibility fallback without requiring an old local CMake.
+    cmake.write_text(cmake.read_text().replace('AND CMAKE_VERSION VERSION_GREATER_EQUAL 3.27', 'AND FALSE'))
+    legacy = root / 'legacy-version'
+    run('cmake', '-S', source, '-B', legacy, '-G', 'Ninja', f'-DCMAKE_CXX_COMPILER={compiler}')
+    assert (legacy / 'one.txt').read_text() == 'needed;dead'
+    run('cmake', '--build', legacy, '--parallel', 2)
+    run('ctest', '--test-dir', legacy, '--output-on-failure')
 
     work, result = invoke('all-consumers', loop)
     assert result['patch_validated'] and result['removed_links'] == 2
@@ -110,6 +119,22 @@ add_test(NAME works COMMAND sample)
     build = apply(work, 'forty-variables')
     assert 'set(deps needed ' + ' '.join(names) + ')' in cmake.read_text()
 
+    # Different dependencies in one variable share a source offset. A rejected
+    # removal must not poison the cache entry for another library in that list.
+    interaction = prefix + '''add_executable(sample main.cpp)
+set(libs needed dead extra)
+target_link_libraries(sample PRIVATE ${libs})
+get_target_property(deps sample LINK_LIBRARIES)
+if(NOT "dead" IN_LIST deps)
+  target_compile_definitions(sample PRIVATE UNEXPECTED_CHANGE=1)
+endif()
+add_test(NAME works COMMAND sample)
+'''
+    work, result = invoke('independent-cache-entries', interaction)
+    assert result['patch_validated'] and result['removed_links'] == 1
+    assert result['selected_link']['dependency'] == 'extra'
+    apply(work, 'independent-cache-entries')
+
     # Configuration keywords, generator expressions and PUBLIC lists stay intact.
     simple = prefix + '''add_executable(sample main.cpp)
 set(deps CONTENTS)
@@ -121,5 +146,17 @@ add_test(NAME works COMMAND sample)
                          ('public', 'needed PUBLIC dead')]:
         work, result = invoke(label, simple.replace('CONTENTS', value))
         assert not result['patch_validated'] and not (work / 'cmake.patch').exists()
+
+    repeated = prefix + '''add_executable(sample main.cpp)
+function(link_again)
+  set(deps needed dead)
+  target_link_libraries(sample PRIVATE ${deps})
+endfunction()
+link_again()
+link_again()
+add_test(NAME works COMMAND sample)
+'''
+    work, result = invoke('repeated-call', repeated)
+    assert not result['patch_validated'] and not (work / 'cmake.patch').exists()
 
 print('CMake variable checks passed: scoped lists, loops, forty removals and fallback configurations')

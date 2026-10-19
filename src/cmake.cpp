@@ -232,7 +232,7 @@ Trace link_trace(const fs::path& path, const fs::path& source) {
 
 // Read CMake's evaluated arguments instead of trying to interpret its variable
 // scopes, functions or loops. Guard the patch with those exact expansions so
-// other executions and configurations retain the original declaration.
+// other expansions retain the original declaration.
 std::optional<json::Object> variable_link(const std::string& source, const std::string& target,
                                          const std::string& dependency, std::size_t line,
                                          const std::vector<json::Array>& executions) {
