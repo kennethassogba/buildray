@@ -29,7 +29,7 @@ jobs:
             repository: mlc-ai/xgrammar
             revision: 7e269d56c74c89de52bc8c31e42191155416371f
             jobs: '2'
-            rebuild_files: '["cpp/earley_parser.cc"]'
+            rebuild_files: '["cpp/earley_parser.cc", "3rdparty/googletest/googlemock/src/gmock-all.cc"]'
             cmake_args: '[]'
           - project: sentencepiece
             repository: google/sentencepiece
@@ -87,3 +87,10 @@ jobs:
           exclude-paths: '["3rdparty", "third_party"]'
           cmake-args: ${{ env.UNUSED_CMAKE_ARGS }}
           artifact-name: unused-${{ matrix.project }}
+      - name: Keep raw logs if validation fails or is cancelled
+        if: failure() || cancelled()
+        uses: actions/upload-artifact@v7
+        with:
+          name: unused-${{ matrix.project }}-incomplete-logs
+          path: ${{ runner.temp }}/buildray-action-*/run/logs/
+          if-no-files-found: warn

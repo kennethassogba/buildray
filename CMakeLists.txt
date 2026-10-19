@@ -89,6 +89,10 @@ if(BUILD_TESTING)
         ${CMAKE_CURRENT_SOURCE_DIR}/tests/batched_dependencies_cli.py $<TARGET_FILE:buildray>
         ${BUILDRAY_CLANGXX} ${BUILDRAY_LLD} ${CMAKE_CURRENT_SOURCE_DIR}/action/run.py)
     set_tests_properties(batched_dependencies PROPERTIES TIMEOUT 360)
+    add_test(NAME cmake_variables COMMAND ${Python3_EXECUTABLE}
+        ${CMAKE_CURRENT_SOURCE_DIR}/tests/variables_cli.py $<TARGET_FILE:buildray>
+        ${BUILDRAY_CLANGXX} ${BUILDRAY_LLD})
+    set_tests_properties(cmake_variables PROPERTIES TIMEOUT 240)
     add_test(NAME headers COMMAND ${Python3_EXECUTABLE}
         ${CMAKE_CURRENT_SOURCE_DIR}/tests/headers_cli.py $<TARGET_FILE:buildray>
         ${BUILDRAY_CLANGXX} ${BUILDRAY_CLANG_TIDY})

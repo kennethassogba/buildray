@@ -40,7 +40,8 @@ jobs:
           jobs: '4'
           incremental-only: 'true'
           allow-baseline-skips: 'true'
-          rebuild-files: '["hwy/contrib/sort/vqsort.cc"]'
+          dependency-time-budget: '1200'
+          rebuild-files: '["hwy/contrib/sort/vqsort.cc", "hwy/targets.cc"]'
           cmake-args: >-
             ["-DHWY_ENABLE_TESTS=ON", "-DHWY_ENABLE_EXAMPLES=ON",
              "-DHWY_ENABLE_CONTRIB=ON", "-DHWY_TEST_STANDALONE=OFF",

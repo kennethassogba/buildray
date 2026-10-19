@@ -120,7 +120,10 @@ endif()
 ''', reason='outside the removed archives')
     rejected('public', replacement=original.replace('PRIVATE dead', 'PUBLIC dead'))
     rejected('shared', replacement=original.replace('dead STATIC', 'dead SHARED'))
-    rejected('variable', replacement=original.replace('target_link_libraries(sample PRIVATE dead)', 'set(deps dead)\ntarget_link_libraries(sample PRIVATE ${deps})'))
+    cmake.write_text(original.replace('target_link_libraries(sample PRIVATE dead)',
+                                    'set(deps dead)\ntarget_link_libraries(sample PRIVATE ${deps})'))
+    _, variable = invoke('variable')
+    assert variable['patch_validated'] and variable['removed_links'] == 1
     cmake.write_text(original)
     _, excluded = invoke('excluded', '--exclude', 'CMakeLists.txt')
     assert excluded['performance_result'] == 'no_changes'

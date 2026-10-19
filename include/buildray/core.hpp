@@ -123,7 +123,8 @@ json::Object cmake_dependencies(const fs::path& source, const fs::path& build);
 json::Object link_candidates(const json::Object& graph, const fs::path& source,
                              const Options& options);
 json::Object unused_link_candidates(const json::Object& graph, const fs::path& source,
-                                    const Options& options);
+                                    const Options& options, const fs::path& trace,
+                                    const fs::path& traced_source);
 std::vector<Replacement> dependency_replacements(const fs::path& source,
                                                  const json::Array& selections);
 void verify_link_removals(const json::Object& before, const json::Object& after,

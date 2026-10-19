@@ -117,6 +117,9 @@ void configure(const Options& options, const Variant& variant, const fs::path& e
                                   "-DCMAKE_BUILD_TYPE=Release",
                                   "-DBUILD_TESTING=ON"};
     args.insert(args.end(), options.cmake_args.begin(), options.cmake_args.end());
+    if (options.command == "prune-deps")
+        args.insert(args.end(), {"--trace-expand", "--trace-format=json-v1",
+            "--trace-redirect=" + (variant.build / "cmake-trace.jsonl").string()});
     const std::vector<std::string> controlled{
         "-DCMAKE_CXX_COMPILER=" + options.compiler, "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
         "-DCMAKE_UNITY_BUILD=OFF", "-DCMAKE_DISABLE_PRECOMPILE_HEADERS=ON",
@@ -1100,7 +1103,8 @@ json::Object unused_plan(const Options& options, const Variant& baseline, const 
                          const fs::path& work, const fs::path& executable, const json::Object& before) {
     const auto started = std::chrono::steady_clock::now();
     const auto elapsed = [&] { return std::chrono::duration<double>(std::chrono::steady_clock::now() - started).count(); };
-    auto plan = unused_link_candidates(before, candidate.source, options);
+    auto plan = unused_link_candidates(before, candidate.source, options,
+        baseline.build / "cmake-trace.jsonl", baseline.source);
     const auto links_doc = read_json(work / "logs/baseline-linkers.json");
     const auto& links = *links_doc.getAsArray();
     json::Object profiles;
@@ -1223,6 +1227,7 @@ json::Object unused_plan(const Options& options, const Variant& baseline, const 
         for (const auto& value : proposed) {
             const auto& row = *value.getAsObject();
             keys.push_back(row.getString("file")->str() + ":" + std::to_string(*row.getInteger("offset")) +
+                ":" + row.getString("target")->str() + ":" + row.getString("dependency")->str() +
                 (row.getBoolean("compile_only").value_or(false) ? ":compile" : ":delete"));
         }
         std::ranges::sort(keys);

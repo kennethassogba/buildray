@@ -61,12 +61,19 @@ it does not mean every candidate was examined.
 
 ## What it checks
 
-Buildray tries literal private static-library dependencies of executable,
+Buildray tries private static-library dependencies of executable,
 shared-library and module targets. It tries deleting the declaration first. If
 the library supplies headers, macros or other compilation requirements, it also
 tries keeping those requirements with CMake's
 [`COMPILE_ONLY` expression](https://cmake.org/cmake/help/latest/manual/cmake-generator-expressions.7.html#genex:COMPILE_ONLY). That
 patch keeps the original link on CMake versions older than 3.27.
+
+CMake variables can hold target names or library lists, including in functions
+and loops. Buildray reads their evaluated arguments from CMake's expanded trace.
+The patch guards each changed call with the exact target and list values tested;
+other expansions run the original command. It leaves shared variable definitions
+unchanged. Plain names, quoted variables and lists of names are supported;
+generator expressions, configuration keywords and repeated ambiguous calls stay intact.
 
 Each trial must pass checks 1–4. The final combined patch must pass all five:
 
@@ -93,7 +100,7 @@ run still fail. The Action exposes the same policy as `allow-baseline-skips` and
 retains the JUnit evidence.
 
 A subsequent build or test failure is blocking. Public
-interfaces, shared-library dependencies, aliases, variable lists, response files and
+interfaces, shared-library dependencies, aliases, response files and
 ambiguous declarations are outside this scope. Unsupported cases are skipped or
 rejected; they are not evidence that those dependencies are necessary.
 

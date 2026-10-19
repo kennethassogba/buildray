@@ -1,11 +1,19 @@
 # Buildray
 
-Measure C++ builds, find costly headers, and validate include cleanup or PCH patches.
+Find what slows down your C++ builds, try a change, and measure whether it helps.
+Buildray runs from the CLI or GitHub Actions and leaves your source tree untouched.
 
 **[Read the guide · English / Français](https://kennethassogba.github.io/buildray/)**
 for a short explanation of builds, PCH, Unity, dependency cleanup and the measurements.
 
 Buildray is written in **C++26**. It supports Linux, Clang, CMake and Ninja.
+
+## Accepted contributions
+
+Testing Buildray on other projects has led to these merged fixes:
+
+- [SentencePiece #1350](https://github.com/google/sentencepiece/pull/1350): removed two unused includes. No build-time gain claimed.
+- [Highway #3497](https://github.com/google/highway/pull/3497): fixed a missing `main` that prevented `iguana_test` from linking in standalone mode.
 
 ## Build
 
@@ -88,7 +96,7 @@ buildray headers --source /path/to/project --forward-declarations \
   --compiler clang++-21 --clang-tidy clang-tidy-21 --runs 3 --jobs 2
 ```
 
-`headers` removes unused includes from observed project headers. With
+`headers` removes unused includes from the project headers used in the build. With
 `--forward-declarations`, it also tries replacing a direct project include with
 class or struct declarations derived from Clang's AST. It checks standalone
 headers, checks every observed C/C++ user, then builds, links, tests and
@@ -121,12 +129,11 @@ candidate time. The patch is recommended only when the measured gain exceeds noi
 See [the workflow and limitations](docs/profiling.md). Both modes are also available
 through the GitHub Action.
 
-`pch --auto` profiles first, then selects one project header with the highest
-inclusive parse cost within a target, requiring at least two compilations using
-that header. `--target` can restrict the search. It runs the same validated PCH
-experiment and requires at least three build pairs. Profiling is outside those
-measurements. Selection does not establish a gain; only the measured result can
-recommend the patch. `selection.json` records the decision and its metrics.
+`pch --auto` measures header costs, then picks the most expensive project header
+used by at least two compilations in a target. Use `--target` to narrow the search.
+It tests the selected PCH with at least three build pairs; profiling time stays
+outside the comparison. `selection.json` explains the choice. Buildray recommends
+the patch only if the measured gain exceeds noise.
 
 ## Unity builds
 
@@ -212,6 +219,11 @@ ELF binary when replaying the link with the same objects. It also requires zero
 archive extractions, a complete build and the same passing CTest inventory. If a
 library only supplies compilation requirements, the patch preserves them with
 `COMPILE_ONLY` and retains the original link for CMake older than 3.27.
+
+Library lists and target names can use CMake variables, including inside loops
+and functions. Buildray reads CMake's evaluated arguments and changes only the
+tested targets and list values. Other values keep the original declaration;
+shared variable definitions stay unchanged.
 
 The default search budget is 64 trial configurations and 300 seconds. Adjust it
 with `--max-dependency-trials` and `--dependency-time-budget`. The final combined
@@ -351,10 +363,10 @@ failures, missing/skipped tests, coverage, symlink refusal, argument quoting,
 measurements and interruption. Analyzer stubs only force false positives in
 failure-path tests.
 
-The real-project check uses unmodified tinyxml2 11.0.0. See
+The CI check uses unmodified tinyxml2 11.0.0. See
 [validation evidence](docs/validation.md) for commands, scope and observed results.
 [AI corpus](docs/corpus.md) records the next projects and their contribution constraints.
-[Profiling and PCH evidence](docs/profiling-validation.md) covers the new commands,
+[Profiling and PCH evidence](docs/profiling-validation.md) covers both commands,
 including candidates with no measured benefit.
 [Dependency graph evidence](docs/dependency-validation.md) covers MuJoCo and XGrammar.
 [Automatic PCH and cleanup evidence](docs/automatic-validation.md) covers the

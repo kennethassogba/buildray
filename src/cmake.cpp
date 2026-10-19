@@ -1,8 +1,10 @@
 #include <algorithm>
 #include <cctype>
+#include <fstream>
 #include <map>
 #include <optional>
 #include <queue>
+#include <regex>
 #include <set>
 #include <stdexcept>
 #include <string_view>
@@ -202,10 +204,112 @@ std::optional<Token> literal_link(const std::string& source, const std::string& 
     }
     return std::nullopt;
 }
+
+using Location = std::pair<std::string, std::size_t>;
+using Trace = std::map<Location, std::vector<json::Array>>;
+
+Trace link_trace(const fs::path& path, const fs::path& source) {
+    std::ifstream input(path);
+    if (!input) throw std::runtime_error("Missing expanded CMake trace: " + path.string());
+    Trace result;
+    std::string line;
+    while (std::getline(input, line)) {
+        auto value = json::parse(line);
+        if (!value) throw std::runtime_error("Invalid expanded CMake trace: " + llvm::toString(value.takeError()));
+        const auto* row = value->getAsObject();
+        if (!row || row->getString("cmd") != "target_link_libraries") continue;
+        const auto file = row->getString("file");
+        const auto number = row->getInteger("line");
+        const auto* args = row->getArray("args");
+        if (!file || !number || *number < 1 || !args) continue;
+        const auto absolute = absolute_path(file->str());
+        if (!within(absolute, source)) continue;
+        result[{absolute.lexically_relative(source).generic_string(), static_cast<std::size_t>(*number)}]
+            .push_back(json::Array(*args));
+    }
+    return result;
+}
+
+// Read CMake's evaluated arguments instead of trying to interpret its variable
+// scopes, functions or loops. Guard the patch with those exact expansions so
+// other executions and configurations retain the original declaration.
+std::optional<json::Object> variable_link(const std::string& source, const std::string& target,
+                                         const std::string& dependency, std::size_t line,
+                                         const std::vector<json::Array>& executions) {
+    const auto all = tokens(source);
+    static const std::regex expression(R"((?:[A-Za-z0-9_:.+\-]|\$\{[A-Za-z_][A-Za-z0-9_]*\})+)");
+    for (std::size_t i = 0; i + 2 < all.size(); ++i) {
+        auto command = all[i].text;
+        std::ranges::transform(command, command.begin(), [](unsigned char c) { return std::tolower(c); });
+        if (all[i].line != line || command != "target_link_libraries" || all[i + 1].text != "(") continue;
+        const auto start = i + 2;
+        auto end = start;
+        while (end < all.size() && all[end].text != ")") ++end;
+        if (end == all.size()) return std::nullopt;
+        std::vector<std::string> expressions;
+        bool variable = false;
+        for (auto j = start; j < end; ++j) {
+            auto text = all[j].text;
+            if (text.size() >= 2 && text.front() == '"' && text.back() == '"') text = text.substr(1, text.size() - 2);
+            if (!std::regex_match(text, expression)) return std::nullopt;
+            variable |= text.find("${") != std::string::npos;
+            expressions.push_back(std::move(text));
+        }
+        if (!variable) return std::nullopt;
+        std::optional<json::Object> selected;
+        for (const auto& args : executions) {
+            if (args.size() != expressions.size() || args.empty() || args.front().getAsString() != target) continue;
+            json::Array expanded;
+            std::string condition;
+            bool safe = true;
+            for (std::size_t j = 0; j < args.size(); ++j) {
+                const auto value = args[j].getAsString();
+                if (!value) { safe = false; break; }
+                std::size_t pos = 0;
+                while (pos < value->size()) {
+                    const auto stop = value->find(';', pos);
+                    const auto word = value->substr(pos, stop == llvm::StringRef::npos ? value->size() - pos : stop - pos).str();
+                    if (!word.empty()) {
+                        if (!name(word) || word == "debug" || word == "optimized" || word == "general" ||
+                            word == "LINK_PRIVATE" || word == "LINK_PUBLIC" || word == "LINK_INTERFACE_LIBRARIES") safe = false;
+                        expanded.push_back(word);
+                    }
+                    if (stop == llvm::StringRef::npos) break;
+                    pos = stop + 1;
+                }
+                if (expressions[j].find("${") != std::string::npos) {
+                    if (!condition.empty()) condition += " AND ";
+                    condition += "\"" + expressions[j] + "\" STREQUAL \"" + value->str() + "\"";
+                } else if (expressions[j] != *value) safe = false;
+            }
+            if (!safe || expanded.empty() || expanded.front().getAsString() != target) continue;
+            std::string scope;
+            unsigned matches = 0;
+            for (std::size_t j = 1; j < expanded.size(); ++j) {
+                const auto word = expanded[j].getAsString()->str();
+                if (word == "PRIVATE" || word == "PUBLIC" || word == "INTERFACE") scope = word;
+                else if (word == dependency) {
+                    if (scope == "PUBLIC" || scope == "INTERFACE") { safe = false; break; }
+                    ++matches;
+                }
+            }
+            if (!safe || matches != 1) continue;
+            if (selected) return std::nullopt; // Repeated declarations need a separate proof.
+            selected = json::Object{{"expanded_arguments", std::move(expanded)}, {"condition", condition},
+                {"offset", static_cast<std::int64_t>(all[i].offset)}, {"length", 0},
+                {"call_offset", static_cast<std::int64_t>(all[i].offset)},
+                {"call_length", static_cast<std::int64_t>(all[end].offset + 1 - all[i].offset)}};
+        }
+        return selected;
+    }
+    return std::nullopt;
+}
 }  // namespace
 
 json::Object unused_link_candidates(const json::Object& graph, const fs::path& source,
-                                    const Options& options) {
+                                    const Options& options, const fs::path& trace,
+                                    const fs::path& traced_source) {
+    const auto executions = link_trace(trace, absolute_path(traced_source));
     std::map<std::string, std::string> types, artifacts;
     for (const auto& value : array(graph, "targets")) {
         const auto& row = *value.getAsObject();
@@ -234,24 +338,39 @@ json::Object unused_link_candidates(const json::Object& graph, const fs::path& s
             std::ranges::any_of(options.exclusions, [&](const fs::path& p) { return within(path, p); })) continue;
         const auto contents = read_file(source / path);
         const auto token = literal_link(contents, from, to, static_cast<std::size_t>(*line), true);
-        if (!token) continue;
-        const auto call = literal_link(contents, from, to, static_cast<std::size_t>(*line), true, true);
-        const auto newline = contents.rfind('\n', call->offset);
+        json::Object declaration;
+        if (token) {
+            const auto call = literal_link(contents, from, to, static_cast<std::size_t>(*line), true, true);
+            declaration = json::Object{{"offset", static_cast<std::int64_t>(token->offset)},
+                {"length", static_cast<std::int64_t>(token->text.size())},
+                {"call_offset", static_cast<std::int64_t>(call->offset)},
+                {"call_length", static_cast<std::int64_t>(call->text.size())}};
+        } else {
+            const auto found = executions.find({path.generic_string(), static_cast<std::size_t>(*line)});
+            if (found == executions.end()) continue;
+            auto expanded = variable_link(contents, from, to, static_cast<std::size_t>(*line), found->second);
+            if (!expanded) continue;
+            declaration = std::move(*expanded);
+        }
+        const auto call_offset = static_cast<std::size_t>(*declaration.getInteger("call_offset"));
+        const auto newline = contents.rfind('\n', call_offset);
         const auto begin = newline == std::string::npos ? 0 : newline + 1;
-        if (contents.substr(begin, call->offset - begin).find_first_not_of(" \t") != std::string::npos) continue;
-        selected.emplace(std::pair{from, to}, json::Object{{"target", from}, {"dependency", to},
-            {"file", path.generic_string()}, {"line", *line}, {"output", artifacts[from]},
-            {"archive", artifacts[to]}, {"offset", static_cast<std::int64_t>(token->offset)},
-            {"length", static_cast<std::int64_t>(token->text.size())},
-            {"call_offset", static_cast<std::int64_t>(call->offset)},
-            {"call_length", static_cast<std::int64_t>(call->text.size())}, {"compile_only", false}});
+        if (contents.substr(begin, call_offset - begin).find_first_not_of(" \t") != std::string::npos) continue;
+        declaration["target"] = from;
+        declaration["dependency"] = to;
+        declaration["file"] = path.generic_string();
+        declaration["line"] = *line;
+        declaration["output"] = artifacts[from];
+        declaration["archive"] = artifacts[to];
+        declaration["compile_only"] = false;
+        selected.emplace(std::pair{from, to}, std::move(declaration));
     }
     json::Array rows;
     for (auto& [key, row] : selected) rows.push_back(std::move(row));
     return json::Object{{"candidates", std::move(rows)},
         {"candidate_links", static_cast<std::int64_t>(selected.size())}, {"attempts", json::Array{}},
         {"rule", "global zero-extraction screening; cumulative batch trials; preserved compiler commands; identical ELF replay; final complete build and CTest"},
-        {"scope", "private literal static links in one ELF LLD configuration; unsupported declarations remain intact"}};
+        {"scope", "private static links with literal or traced variable arguments in one ELF LLD configuration; other expansions retain the original declaration"}};
 }
 
 std::vector<Replacement> dependency_replacements(const fs::path& source, const json::Array& selections) {
@@ -269,6 +388,52 @@ std::vector<Replacement> dependency_replacements(const fs::path& source, const j
         if (offset > contents.size() || length > contents.size() - offset)
             throw std::runtime_error("Invalid CMake call range");
         const auto original = contents.substr(offset, length);
+        if (rows.front()->getArray("expanded_arguments")) {
+            const auto newline = contents.rfind('\n', offset);
+            const auto begin = newline == std::string::npos ? 0 : newline + 1;
+            const auto prefix = contents.substr(begin, offset - begin);
+            const std::string indent = prefix.find('\t') == std::string::npos ? "  " : "\t";
+            const auto nested = prefix + indent;
+            std::map<std::string, std::vector<const json::Object*>> variants;
+            for (const auto* row : rows) variants[string(*row, "condition")].push_back(row);
+            std::string modified;
+            for (const auto& [condition, edits] : variants) {
+                const auto& args = *edits.front()->getArray("expanded_arguments");
+                std::map<std::string, bool> removals;
+                bool compile_only = false;
+                for (const auto* row : edits) {
+                    const bool keep = row->getBoolean("compile_only").value_or(false);
+                    removals[string(*row, "dependency")] = keep;
+                    compile_only |= keep;
+                    if (args != *row->getArray("expanded_arguments"))
+                        throw std::runtime_error("Conflicting expanded CMake calls");
+                }
+                std::string call = "target_link_libraries(";
+                for (const auto& arg : args) {
+                    const auto word = arg.getAsString()->str();
+                    const auto found = removals.find(word);
+                    if (found != removals.end()) {
+                        if (found->second) call += " \"$<COMPILE_ONLY:" + word + ">\"";
+                    } else {
+                        if (call.back() != '(') call += ' ';
+                        call += word;
+                    }
+                }
+                call += ')';
+                modified += (modified.empty() ? "if(" : prefix + "elseif(") + condition;
+                if (compile_only) modified += " AND CMAKE_VERSION VERSION_GREATER_EQUAL 3.27";
+                modified += ")\n";
+                if (compile_only) modified += nested + "cmake_policy(PUSH)\n" + nested + "cmake_policy(SET CMP0099 NEW)\n";
+                modified += nested + call + '\n';
+                if (compile_only) modified += nested + "cmake_policy(POP)\n";
+            }
+            auto fallback = original;
+            for (auto pos = fallback.find('\n'); pos != std::string::npos;
+                 pos = fallback.find('\n', pos + 1 + indent.size())) fallback.insert(pos + 1, indent);
+            modified += prefix + "else()\n" + nested + fallback + '\n' + prefix + "endif()";
+            result.push_back({key.first, offset, length, std::move(modified)});
+            continue;
+        }
         auto modified = original;
         std::ranges::sort(rows, [](const auto* a, const auto* b) { return *a->getInteger("offset") > *b->getInteger("offset"); });
         auto previous = offset + length;
