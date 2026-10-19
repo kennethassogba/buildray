@@ -231,7 +231,8 @@ verification, full build, tests and benchmarks are outside that budget.
 
 This mode needs ELF LLD, CMake 4.2+ and Ninja 1.13+. It records link counts and
 link-driver time in clean and incremental samples. With no confirmed candidate,
-it records baseline-only clean timings without claiming a gain. See
+it records baseline-only clean timings unless `--incremental-only` skips them.
+No gain is claimed. See
 [selection, validation and limits](docs/unused-dependencies.md).
 
 ## What optimize does
@@ -300,6 +301,10 @@ For `optimize`, `headers`, `prune-links`, `prune-deps`, `unity` and `pch`, `perf
 threshold is the larger of 2% of baseline time and three times the larger MAD.
 This is a reporting heuristic, not a statistical significance test. A noisy
 runner can produce an inconclusive result even when the candidate median is lower.
+
+With `--incremental-only` and a validated patch, the top-level result is
+`not_measured` and `patch_recommended` stays false. Each edited file has its own
+measurements and verdict in `incremental.scenarios`.
 
 Timings cover full builds with a warm filesystem cache, fixed parallelism and
 compiler caches disabled. Unity builds are disabled except on the selected `unity`
