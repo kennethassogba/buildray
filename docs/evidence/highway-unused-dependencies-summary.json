@@ -1,0 +1,279 @@
+{
+  "project": "google/highway",
+  "project_revision": "1693ca7926ed12c5520623564e465cff97d93374",
+  "buildray_revision": "e908f6d4df86916df0055f889a86e5ec8717f634",
+  "run_url": "https://github.com/kennethassogba/buildray/actions/runs/39172124526",
+  "status": "passed",
+  "patch_validated": true,
+  "patch_recommended": false,
+  "clean_build_performance_result": "not_measured",
+  "compiler_version": "Ubuntu clang version 22.1.8 (++20260714014902+ca7933e47d3a-1~exp1~20260714135019.80)\nTarget: x86_64-pc-linux-gnu\nThread model: posix\nInstalledDir: /usr/lib/llvm-22/bin\n",
+  "cmake_version": "cmake version 4.2.3\n\nCMake suite maintained and supported by Kitware (kitware.com/cmake).\n",
+  "cpu_model": "AMD EPYC 7763 64-Core Processor",
+  "jobs": 4,
+  "cmake_args": [
+    "-DHWY_ENABLE_TESTS=ON",
+    "-DHWY_ENABLE_EXAMPLES=ON",
+    "-DHWY_ENABLE_CONTRIB=ON",
+    "-DHWY_TEST_STANDALONE=OFF",
+    "-DBUILD_SHARED_LIBS=OFF",
+    "-DCMAKE_EXE_LINKER_FLAGS=--ld-path=/usr/lib/llvm-21/bin/ld.lld",
+    "-DCMAKE_SHARED_LINKER_FLAGS=--ld-path=/usr/lib/llvm-21/bin/ld.lld",
+    "-DCMAKE_MODULE_LINKER_FLAGS=--ld-path=/usr/lib/llvm-21/bin/ld.lld"
+  ],
+  "configured_targets": 162,
+  "configured_executables": 126,
+  "eligible_links": 17,
+  "removed_links": 1,
+  "search": {
+    "budget_exhausted": false,
+    "cache_hits": 0,
+    "configurations": 2,
+    "elapsed_seconds": 7.689926792,
+    "final_verifications": 1,
+    "profiled_links": 15,
+    "time_budget_seconds": 300,
+    "trial_limit": 64
+  },
+  "screening": {
+    "contributes_objects": 16,
+    "candidate": 1
+  },
+  "selection": [
+    {
+      "archive": "<BUILD>/libhwy.a",
+      "call_length": 51,
+      "call_offset": 26798,
+      "compile_only": true,
+      "dependency": "hwy",
+      "file": "CMakeLists.txt",
+      "length": 3,
+      "line": 818,
+      "offset": 26845,
+      "output": "<BUILD>/examples/sum_array_simple",
+      "target": "sum_array_simple"
+    }
+  ],
+  "link_evidence": {
+    "changed_links": [
+      {
+        "baseline_evidence_directory": "dependency-profiles/14",
+        "evidence_directory": "dependency-trials/final/link-replay/0",
+        "identical_elf": true,
+        "output": "<BUILD>/examples/sum_array_simple",
+        "removed_archives": [
+          {
+            "archive": "libhwy.a",
+            "extracted": 0,
+            "members": 11
+          }
+        ]
+      }
+    ],
+    "compiler_commands_unchanged": true,
+    "omitted_archive_compilations": [],
+    "scope": "ELF LLD archive extraction and byte-identical link replay using the same baseline objects; one configured build"
+  },
+  "tests_passed_per_run": 2784,
+  "baseline_skipped_tests": [
+    "Cuckoo2x2TestGroup/Cuckoo2x2Test.TestMultipleSizes/EMU128",
+    "Cuckoo2x2TestGroup/Cuckoo2x2Test.TestScalarContains/EMU128",
+    "Cuckoo2x2TestGroup/Cuckoo2x2Test.TestSimdContains/EMU128",
+    "HashTestGroup/HashTest.TestAllAvalanche/EMU128",
+    "HashTestGroup/HashTest.TestAllBias/EMU128",
+    "HashTestGroup/HashTest.TestAllBijection/AVX2",
+    "HashTestGroup/HashTest.TestAllBijection/EMU128",
+    "HashTestGroup/HashTest.TestAllBijection64/EMU128",
+    "HashTestGroup/HashTest.TestAllBuckets/EMU128",
+    "HashTestGroup/HashTest.TestAllEdgeCases/EMU128",
+    "HashTestGroup/HashTest.TestAllEdgeCases64/EMU128",
+    "HashTestGroup/HashTest.TestAllLanesEqual/EMU128",
+    "HashTestGroup/HashTest.TestAllMasked/EMU128",
+    "IguanaTestGroup/IguanaTest.TestLongLiteralRunSplit/EMU128",
+    "IguanaTestGroup/IguanaTest.TestLongLiteralRunSplit/SSE4",
+    "PhastTestGroup/PhastTest.TestDisjointSlicesNeverCollide/EMU128",
+    "PhastTestGroup/PhastTest.TestMultipleSizes/EMU128",
+    "PhastTestGroup/PhastTest.TestQueryConsistency/EMU128",
+    "PhastTestGroup/PhastTest.TestSliceBoundIsTight/EMU128",
+    "PhastTestGroup/PhastTest.TestSliceInvariant/EMU128",
+    "ShardMulTestGroup/ShardMulTest.TestShardMulCollisionFree/EMU128",
+    "ShardMulTestGroup/ShardMulTest.TestShardMulExtraOutputs/EMU128",
+    "ShardMulTestGroup/ShardMulTest.TestShardMulTwoVec/EMU128"
+  ],
+  "verified_junit_files": [
+    "baseline-tests.xml",
+    "candidate-tests.xml",
+    "incremental-0-baseline-0-tests.xml",
+    "incremental-0-baseline-1-tests.xml",
+    "incremental-0-baseline-2-tests.xml",
+    "incremental-0-candidate-0-tests.xml",
+    "incremental-0-candidate-1-tests.xml",
+    "incremental-0-candidate-2-tests.xml"
+  ],
+  "incremental": {
+    "file": "hwy/contrib/sort/vqsort.cc",
+    "performance_result": "inconclusive",
+    "wall_change_percent": 0.7507115061005001,
+    "noise_threshold_seconds": 0.09905600999999908,
+    "input_restored": true,
+    "baseline": {
+      "linker_driver_wall_sum_median_seconds": 7.5069345520000015,
+      "linker_invocations_median": 113,
+      "mad_seconds": 0.002702973999999969,
+      "max_seconds": 4.511180414,
+      "median_seconds": 4.414595318,
+      "min_seconds": 4.411892344,
+      "samples": [
+        {
+          "wall_seconds": 4.414595318,
+          "compiler_invocations": 1,
+          "linker_invocations": 113,
+          "tests_passed": 2784,
+          "log_prefix": "logs/incremental-0-baseline-0"
+        },
+        {
+          "wall_seconds": 4.511180414,
+          "compiler_invocations": 1,
+          "linker_invocations": 113,
+          "tests_passed": 2784,
+          "log_prefix": "logs/incremental-0-baseline-1"
+        },
+        {
+          "wall_seconds": 4.411892344,
+          "compiler_invocations": 1,
+          "linker_invocations": 113,
+          "tests_passed": 2784,
+          "log_prefix": "logs/incremental-0-baseline-2"
+        }
+      ]
+    },
+    "candidate": {
+      "linker_driver_wall_sum_median_seconds": 7.6168846729999995,
+      "linker_invocations_median": 113,
+      "mad_seconds": 0.033018669999999695,
+      "max_seconds": 4.480754863,
+      "median_seconds": 4.447736193,
+      "min_seconds": 4.407030745,
+      "samples": [
+        {
+          "wall_seconds": 4.407030745,
+          "compiler_invocations": 1,
+          "linker_invocations": 113,
+          "tests_passed": 2784,
+          "log_prefix": "logs/incremental-0-candidate-0"
+        },
+        {
+          "wall_seconds": 4.447736193,
+          "compiler_invocations": 1,
+          "linker_invocations": 113,
+          "tests_passed": 2784,
+          "log_prefix": "logs/incremental-0-candidate-1"
+        },
+        {
+          "wall_seconds": 4.480754863,
+          "compiler_invocations": 1,
+          "linker_invocations": 113,
+          "tests_passed": 2784,
+          "log_prefix": "logs/incremental-0-candidate-2"
+        }
+      ]
+    }
+  },
+  "limits": [
+    "Only literal private static links are eligible; variable-based test links remain unsupported.",
+    "The vqsort edit affects hwy_contrib, not the removed hwy link. It does not measure that link removal directly.",
+    "No repeated clean timings; one confirmed removal does not validate batching many removals on a real project."
+  ],
+  "core_build_only_check": {
+    "validation": "build_only",
+    "compiler_version": "Ubuntu clang version 21.1.8 (6ubuntu1)\nTarget: x86_64-pc-linux-gnu\nThread model: posix\nInstalledDir: /usr/lib/llvm-21/bin\n",
+    "cpu_model": "Intel(R) Core(TM) i7-8650U CPU @ 1.90GHz",
+    "cpu_affinity_count": 8,
+    "jobs": 2,
+    "cmake_args": [
+      "-DHWY_ENABLE_TESTS=OFF",
+      "-DHWY_ENABLE_EXAMPLES=ON",
+      "-DHWY_ENABLE_CONTRIB=OFF",
+      "-DBUILD_SHARED_LIBS=OFF",
+      "-DCMAKE_EXE_LINKER_FLAGS=--ld-path=/tmp/buildray-lld/root/usr/lib/llvm-21/bin/ld.lld",
+      "-DCMAKE_SHARED_LINKER_FLAGS=--ld-path=/tmp/buildray-lld/root/usr/lib/llvm-21/bin/ld.lld",
+      "-DCMAKE_MODULE_LINKER_FLAGS=--ld-path=/tmp/buildray-lld/root/usr/lib/llvm-21/bin/ld.lld"
+    ],
+    "environment_flags": {
+      "CFLAGS": "",
+      "CXXFLAGS": "--gcc-install-dir=/usr/lib/gcc/x86_64-linux-gnu/15",
+      "LDFLAGS": ""
+    },
+    "same_patch_as_full_ci": true,
+    "tests_passed": 0,
+    "file": "hwy/targets.cc",
+    "performance_result": "inconclusive",
+    "wall_change_percent": -9.162983200660001,
+    "noise_threshold_seconds": 0.9507357779999985,
+    "input_restored": true,
+    "baseline": {
+      "linker_driver_wall_sum_median_seconds": 1.9022503610000003,
+      "linker_invocations_median": 13,
+      "mad_seconds": 0.13003848599999923,
+      "max_seconds": 4.562759589,
+      "median_seconds": 4.432721103,
+      "min_seconds": 3.877128814,
+      "samples": [
+        {
+          "wall_seconds": 4.432721103,
+          "compiler_invocations": 1,
+          "linker_invocations": 13,
+          "tests_passed": 0
+        },
+        {
+          "wall_seconds": 3.877128814,
+          "compiler_invocations": 1,
+          "linker_invocations": 13,
+          "tests_passed": 0
+        },
+        {
+          "wall_seconds": 4.562759589,
+          "compiler_invocations": 1,
+          "linker_invocations": 13,
+          "tests_passed": 0
+        }
+      ]
+    },
+    "candidate": {
+      "linker_driver_wall_sum_median_seconds": 1.8173670100000001,
+      "linker_invocations_median": 12,
+      "mad_seconds": 0.3169119259999995,
+      "max_seconds": 4.567867005,
+      "median_seconds": 4.026551613,
+      "min_seconds": 3.709639687,
+      "samples": [
+        {
+          "wall_seconds": 4.567867005,
+          "compiler_invocations": 1,
+          "linker_invocations": 12,
+          "tests_passed": 0
+        },
+        {
+          "wall_seconds": 3.709639687,
+          "compiler_invocations": 1,
+          "linker_invocations": 12,
+          "tests_passed": 0
+        },
+        {
+          "wall_seconds": 4.026551613,
+          "compiler_invocations": 1,
+          "linker_invocations": 12,
+          "tests_passed": 0
+        }
+      ]
+    },
+    "original_source_unchanged": true,
+    "independent_patch_check": {
+      "applied": true,
+      "target_built": "sum_array_simple",
+      "baseline_output": "Sum: 525825.000000",
+      "candidate_output": "Sum: 525825.000000",
+      "independently_applied_output": "Sum: 525825.000000"
+    }
+  }
+}

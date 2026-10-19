@@ -1,9 +1,6 @@
 name: Prune dependencies on Highway
 
-on:
-  pull_request:
-    paths: ['.github/workflows/prune-highway.yml']
-  workflow_dispatch:
+on: workflow_dispatch
 
 permissions:
   contents: read

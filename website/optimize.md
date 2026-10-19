@@ -65,7 +65,7 @@ This mode needs ELF LLD, selected explicitly for both variants. If a library onl
 
 The search defaults to 64 trial configurations and 300 seconds. Change these with `--max-dependency-trials` and `--dependency-time-budget`. The final build and tests still run after the search budget is reached.
 
-If your project deliberately skips some tests, use `--allow-baseline-skips`. Buildray records those tests separately and requires the same skipped names after each change, including incremental edits. Skipped tests never count as passed; disabled tests, failures and a run with no passing tests still block validation.
+If your project deliberately skips some tests, use `--allow-baseline-skips`. Buildray records those tests separately and requires the same skipped names after the patch and each measured file edit. Skipped tests never count as passed. Disabled tests, failures and an all-skipped test run still block validation.
 
 ## Keep a validated patch
 

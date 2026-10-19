@@ -11,7 +11,7 @@ validation, measures incremental pairs when a patch is found, and skips repeated
 clean timings. Its artifacts contain archive-profile and trial-configuration
 counts. The clean-build timings below come from the original run.
 
-Both variants use Clang 21 and ELF LLD explicitly. MuJoCo normally selects gold
+The original and batched corpus runs use Clang 21 and ELF LLD explicitly. MuJoCo normally selects gold
 in some targets; these results describe the common LLD profile, not its default
 linker. PCH, Unity and compiler caches are disabled. Configuration, analysis,
 link replays and tests are outside build timings.
@@ -74,6 +74,45 @@ enabled and examples, simulate and Python test utilities disabled. Its baseline
 passes 3,519 CTest cases. None of the 14 attempted strategies confirms a removal.
 The workflow retains baseline-only clean and link-driver measurements, rejected
 trial reasons and complete test inventories in `unused-mujoco`.
+
+## Google Highway: one valid removal, limited coverage
+
+The [full Highway run](https://github.com/kennethassogba/buildray/actions/runs/39172124526)
+uses revision `1693ca7926ed12c5520623564e465cff97d93374`, Clang 22.1.8, LLD 21,
+four build jobs and static libraries. Tests, examples and contrib are enabled;
+the project uses GoogleTest. Of 2,807 registered tests, 2,784 pass and 23 are
+intentionally skipped. `--allow-baseline-skips` requires the same skipped names
+after the patch and every measured edit. All eight JUnit runs match.
+
+The configured graph has 126 executables. Buildray recognizes 17 eligible links
+across 15 of them; most test links use CMake variables and remain unsupported.
+Archive profiling finds one removable link: `sum_array_simple` to `hwy`.
+Deleting it changes compilation requirements, so the patch retains those with
+`COMPILE_ONLY`. The archive contributes zero objects, replay produces an identical
+ELF binary, and the complete candidate build and tests pass.
+
+Search checks take 7.690 seconds: 15 link profiles, two trial configurations and
+one final verification. This excludes the two full builds, tests and timings.
+One confirmed removal does not establish batching performance for many unused
+dependencies on a real project.
+
+Three alternating edits to `hwy/contrib/sort/vqsort.cc` give medians of 4.415 s
+and 4.448 s (MAD 0.003 s and 0.033 s). Both variants compile once and link 113
+programs. The result is inconclusive. This file belongs to `hwy_contrib`, so the
+probe does not exercise the removed `hwy` link. No repeated clean timings were run.
+
+A separate local check builds the core library and examples, with tests and
+contrib disabled, using Clang 21 and two jobs. The patch is identical to the
+fully tested CI patch. Editing `hwy/targets.cc` now avoids one link in every
+pair: 13 → 12, with one compilation on both sides. Medians are 4.433 → 4.027 s,
+but MADs of 0.130 s and 0.317 s give a 0.951 s noise threshold. The result remains
+inconclusive; fewer links are confirmed, a reliable time saving is not.
+The actual patch was also applied to a fresh source export, built for
+`sum_array_simple` and run. Original, candidate and independently patched examples
+all print `Sum: 525825.000000`. The input tree remains byte-for-byte unchanged.
+
+The [compact evidence](evidence/highway-unused-dependencies-summary.json) and
+[validated patch](evidence/highway-unused-dependencies.patch) are retained.
 
 ## Batched search regression
 

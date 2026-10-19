@@ -45,6 +45,10 @@ Both variants use the same setting to work around temporary dependencies emitted
 
 The grouped search removes 40 unused library links in one trial on a test project, followed by a final check. Real-project results are more limited: removing XGrammar's unused `gmock` link gives no measurable speedup, SentencePiece has no supported candidate, and no removal is confirmed on MuJoCo. This does not establish performance at scale. [Dependency results and limits](https://github.com/kennethassogba/buildray/blob/main/docs/unused-dependencies-validation.md).
 
+On Google Highway, Buildray checks 17 links across 15 programs and validates one removal. The full build passes 2,784 tests, keeping the same 23 intentional skips. The measured `vqsort.cc` rebuild stays inconclusive: 4.415 → 4.448 s. That edit affects a different library from the removed link; most test dependencies still use unsupported CMake variables.
+
+A separate build of the core and examples, with tests disabled, checks an edit to the library concerned. It avoids one link (13 → 12), but its timings remain inconclusive: 4.433 → 4.027 s. These measurements do not establish an overall speedup.
+
 ## Limits of the evidence
 
 Tests cover the supplied configuration. They do not replace validation on other platforms or of a library's consumers. Three pairs and a variation threshold are a screening method, not a statistical study.

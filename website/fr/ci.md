@@ -22,7 +22,7 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
-      - uses: kennethassogba/buildray@6c3490dd8dc239bf0b70d5ea746e4c525acb7f6a
+      - uses: kennethassogba/buildray@e908f6d4df86916df0055f889a86e5ec8717f634
         with:
           source: .
           cmake-args: '["-DBUILD_TESTING=ON"]'

@@ -45,6 +45,10 @@ Ces mesures utilisent un réglage commun aux deux versions pour contourner des d
 
 La recherche par groupes retire 40 liens inutiles en un essai sur un projet de test, puis effectue une vérification finale. Sur les vrais projets, les résultats restent limités : retirer le lien inutilisé vers `gmock` dans XGrammar ne donne aucun gain mesurable, SentencePiece n’a aucun candidat pris en charge et aucun retrait n’est confirmé sur MuJoCo. Cela ne valide pas encore les performances à grande échelle. [Résultats et limites](https://github.com/kennethassogba/buildray/blob/main/docs/unused-dependencies-validation.md).
 
+Sur Google Highway, Buildray examine 17 liens dans 15 programmes et valide un retrait. Le build complet passe 2 784 tests ; 23 restent volontairement ignorés dans les deux versions. Le rebuild mesuré de `vqsort.cc` reste non concluant : 4,415 → 4,448 s. Ce fichier appartient à une autre bibliothèque que celle retirée ; la plupart des dépendances des tests utilisent encore des variables CMake non prises en charge.
+
+Un essai séparé sur le cœur et les exemples, sans tests, modifie la bibliothèque concernée. Il évite une étape de lien (13 → 12), mais les temps restent non concluants : 4,433 → 4,027 s. Ces mesures ne démontrent pas de gain global.
+
 ## Les limites à garder en tête {#limits-of-the-evidence}
 
 Les tests couvrent la configuration fournie. Ils ne remplacent pas la validation des autres plateformes et des consommateurs d’une bibliothèque. Trois paires et un seuil de variation restent une méthode de tri, pas une étude statistique.
