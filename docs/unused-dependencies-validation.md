@@ -26,10 +26,34 @@ there are no new clean-build timings.
 
 | Project and edited file | Before → after | What changed |
 | --- | ---: | --- |
+| Highway, `hwy/contrib/sort/vqsort.cc` | 4.537 → 3.581 s | 113 → 81 links; 21.07% faster |
+| Highway, `hwy/targets.cc` | 4.637 → 4.626 s | Inconclusive; 126 links on both sides |
 | XGrammar, `cpp/earley_parser.cc` | 35.769 → 35.995 s | Inconclusive; one link on both sides |
 | XGrammar, `3rdparty/googletest/googlemock/src/gmock-all.cc` | 34.768 → 2.589 s | One link avoided; improved |
 | SentencePiece | Not measured | No supported candidate; executable links use aliases |
 | MuJoCo | Not measured | 236 eligible links; compiler response files block the search |
+
+The [Highway run](https://github.com/kennethassogba/buildray/actions/runs/39323921286)
+uses the same revision and full configuration as the first Highway check below.
+Variable support expands coverage from 17 to 572 eligible links across 126
+programs; 555 come from variable-based calls. Screening finds 119 zero-extraction
+candidates. The final patch removes 35 links across 35 programs: 32 to
+`hwy_contrib` and three to `hwy_test`.
+Compiler commands stay unchanged, and all 35 changed links produce byte-identical
+ELF output when replayed with the same objects.
+
+Both full builds and all 12 incremental samples pass 2,784 tests with the same
+23 skips. All 14 JUnit inventories were checked independently. After a
+`vqsort.cc` edit, every sample compiles once and link counts fall from 113 to 81.
+The medians are 4.537 and 3.581 seconds, MADs 0.014 and 0.001 seconds, with a
+0.091-second noise threshold. The core-library edit stays inconclusive.
+
+Search takes 186.976 seconds: 126 link profiles, 64 trial configurations, seven
+cached rejections and one final verification. It reaches the trial limit, so
+this is a validated subset. Most rejections involve CMake dropping another
+`libhwy.a` input, which the current proof conservatively refuses when that
+archive supplies objects. The [exact patch](evidence/highway-variable-dependencies.patch)
+also applies independently to the unmodified pinned CMake file.
 
 XGrammar again validates the unused `gmock` link, preserving its compilation
 requirements with `COMPILE_ONLY`. All 83 CTest cases pass before, after and after
@@ -47,7 +71,13 @@ benefit for changes to a vendored dependency, not a general XGrammar speedup.
 SentencePiece passes its CTest entry; MuJoCo passes 3,519 CTest cases. Neither
 produces a candidate patch. Their baseline success is not removal validation.
 
+The [compact evidence](evidence/cmake-variables-summary.json) retains machine and
+toolchain details, search counts, extraction checks and all raw timing pairs for
+the four projects. Medians, MADs and verdicts were recomputed from those samples.
+
 ## XGrammar: valid removal, no measured speedup
+
+These are the original clean-build and parser-edit measurements.
 
 Revision `7e269d56c74c89de52bc8c31e42191155416371f` is also upstream main when
 checked on 18 October 2026. Python bindings are disabled and C++ tests enabled.
@@ -73,7 +103,7 @@ the default build, so removing this link saves no compilation here.
 
 The link command includes `-flto=auto`; its roughly 31 seconds dominate this
 incremental edit. Removing an archive that supplies no objects does not remove
-that LTO work. No upstream PR is proposed for this patch without a measured gain.
+that LTO work.
 
 The [raw report](evidence/xgrammar-unused-dependencies-report.json),
 [plan and evidence](evidence/xgrammar-unused-dependencies-plan.json) and
@@ -108,6 +138,8 @@ The workflow retains baseline-only clean and link-driver measurements, rejected
 trial reasons and complete test inventories in `unused-mujoco`.
 
 ## Google Highway: one valid removal, limited coverage
+
+These are the original results, before variable support.
 
 The [full Highway run](https://github.com/kennethassogba/buildray/actions/runs/39172124526)
 uses revision `1693ca7926ed12c5520623564e465cff97d93374`, Clang 22.1.8, LLD 21,

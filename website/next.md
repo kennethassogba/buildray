@@ -2,15 +2,17 @@
 title: What comes next
 ---
 
-# Test dependency cleanup at scale
+# Broaden dependency cleanup {#test-dependency-cleanup-at-scale}
 
-`prune-deps` already tests removals in groups. A test project with 40 unused libraries needs one trial and a final check. The Highway run validates one removal across 15 profiled programs, with 2,784 passing tests and 23 unchanged skips. Most of its test dependencies use CMake variables, which the search cannot handle yet. The real-project runs have not demonstrated an overall build-time gain.
+`prune-deps` handles target names and library lists stored in CMake variables, including loops and functions. A test project with 40 unused libraries still needs one trial and a final check. Shared variable definitions stay unchanged.
+
+On XGrammar, removing an unused dependency avoids a roughly 32-second link after a GoogleMock source edit. The parser edit remains inconclusive. This is a targeted rebuild gain. Dependency cleanup has not yet shown a clean-build speedup on these projects.
 
 ## Next steps
 
-1. Support library lists and target names expressed through CMake variables, then repeat the Highway search on the test programs it currently skips.
-2. Support compiler response files: lists of arguments stored in `.rsp` files. They currently block the search on MuJoCo.
-3. Validate groups of confirmed unused dependencies on those projects, recording search cost and rebuilds avoided. One removal does not establish performance at scale.
+1. Reduce repeated rejections on Highway. The search validates 35 removals but reaches its 64-trial limit, mostly on repeated `libhwy.a` entries in link commands. Keep the same binary checks while distinguishing redundant copies from a library removed entirely.
+2. Support compiler response files: lists of arguments stored in `.rsp` files. They block the search on MuJoCo, where 236 links are now eligible.
+3. Resolve CMake aliases, which still exclude SentencePiece's executable links from the search.
 
 The [dependency results](https://github.com/kennethassogba/buildray/blob/main/docs/unused-dependencies-validation.md) separate the test project from the real-project measurements. No eligible removal means the supported search found none, not that every dependency is necessary.
 

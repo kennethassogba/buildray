@@ -1,11 +1,427 @@
 {
   "buildray_revision": "0c165160839b3eac070a02e39e2611dc67c74860",
-  "method": "Complete baseline and candidate build/test validation; three alternating incremental pairs. No repeated clean timings.",
+  "method": "Complete baseline build/tests; candidate build/tests and three alternating incremental pairs when a patch is found. No repeated clean timings.",
+  "cli_validation": {
+    "revision": "42ad4e2bbf88e162fdfb4604619a48e80267d7cb",
+    "run_id": 39328811517,
+    "release_suites_passed": 14,
+    "asan_ubsan_suites_passed": 14
+  },
   "runs": {
     "highway": 39323921286,
     "other_projects": 39323923513
   },
   "projects": {
+    "highway": {
+      "revision": "1693ca7926ed12c5520623564e465cff97d93374",
+      "compiler": "Ubuntu clang version 22.1.8 (++20260714014902+ca7933e47d3a-1~exp1~20260714135019.80)",
+      "cmake": "cmake version 4.2.3",
+      "ninja": "1.13.0.git.kitware.jobserver-pipe-1",
+      "cpu_model": "AMD EPYC 7763 64-Core Processor",
+      "cpu_affinity_count": 4,
+      "jobs": 4,
+      "cmake_args": [
+        "-DHWY_ENABLE_TESTS=ON",
+        "-DHWY_ENABLE_EXAMPLES=ON",
+        "-DHWY_ENABLE_CONTRIB=ON",
+        "-DHWY_TEST_STANDALONE=OFF",
+        "-DBUILD_SHARED_LIBS=OFF",
+        "-DCMAKE_EXE_LINKER_FLAGS=--ld-path=/usr/lib/llvm-21/bin/ld.lld",
+        "-DCMAKE_SHARED_LINKER_FLAGS=--ld-path=/usr/lib/llvm-21/bin/ld.lld",
+        "-DCMAKE_MODULE_LINKER_FLAGS=--ld-path=/usr/lib/llvm-21/bin/ld.lld"
+      ],
+      "tests_required": true,
+      "validation": "build_and_tests_passed",
+      "baseline_tests_passed": 2784,
+      "candidate_tests_passed": 2784,
+      "baseline_skipped_tests": [
+        "Cuckoo2x2TestGroup/Cuckoo2x2Test.TestMultipleSizes/EMU128",
+        "Cuckoo2x2TestGroup/Cuckoo2x2Test.TestScalarContains/EMU128",
+        "Cuckoo2x2TestGroup/Cuckoo2x2Test.TestSimdContains/EMU128",
+        "HashTestGroup/HashTest.TestAllAvalanche/EMU128",
+        "HashTestGroup/HashTest.TestAllBias/EMU128",
+        "HashTestGroup/HashTest.TestAllBijection/AVX2",
+        "HashTestGroup/HashTest.TestAllBijection/EMU128",
+        "HashTestGroup/HashTest.TestAllBijection64/EMU128",
+        "HashTestGroup/HashTest.TestAllBuckets/EMU128",
+        "HashTestGroup/HashTest.TestAllEdgeCases/EMU128",
+        "HashTestGroup/HashTest.TestAllEdgeCases64/EMU128",
+        "HashTestGroup/HashTest.TestAllLanesEqual/EMU128",
+        "HashTestGroup/HashTest.TestAllMasked/EMU128",
+        "IguanaTestGroup/IguanaTest.TestLongLiteralRunSplit/EMU128",
+        "IguanaTestGroup/IguanaTest.TestLongLiteralRunSplit/SSE4",
+        "PhastTestGroup/PhastTest.TestDisjointSlicesNeverCollide/EMU128",
+        "PhastTestGroup/PhastTest.TestMultipleSizes/EMU128",
+        "PhastTestGroup/PhastTest.TestQueryConsistency/EMU128",
+        "PhastTestGroup/PhastTest.TestSliceBoundIsTight/EMU128",
+        "PhastTestGroup/PhastTest.TestSliceInvariant/EMU128",
+        "ShardMulTestGroup/ShardMulTest.TestShardMulCollisionFree/EMU128",
+        "ShardMulTestGroup/ShardMulTest.TestShardMulExtraOutputs/EMU128",
+        "ShardMulTestGroup/ShardMulTest.TestShardMulTwoVec/EMU128"
+      ],
+      "candidate_skipped_tests": [
+        "Cuckoo2x2TestGroup/Cuckoo2x2Test.TestMultipleSizes/EMU128",
+        "Cuckoo2x2TestGroup/Cuckoo2x2Test.TestScalarContains/EMU128",
+        "Cuckoo2x2TestGroup/Cuckoo2x2Test.TestSimdContains/EMU128",
+        "HashTestGroup/HashTest.TestAllAvalanche/EMU128",
+        "HashTestGroup/HashTest.TestAllBias/EMU128",
+        "HashTestGroup/HashTest.TestAllBijection/AVX2",
+        "HashTestGroup/HashTest.TestAllBijection/EMU128",
+        "HashTestGroup/HashTest.TestAllBijection64/EMU128",
+        "HashTestGroup/HashTest.TestAllBuckets/EMU128",
+        "HashTestGroup/HashTest.TestAllEdgeCases/EMU128",
+        "HashTestGroup/HashTest.TestAllEdgeCases64/EMU128",
+        "HashTestGroup/HashTest.TestAllLanesEqual/EMU128",
+        "HashTestGroup/HashTest.TestAllMasked/EMU128",
+        "IguanaTestGroup/IguanaTest.TestLongLiteralRunSplit/EMU128",
+        "IguanaTestGroup/IguanaTest.TestLongLiteralRunSplit/SSE4",
+        "PhastTestGroup/PhastTest.TestDisjointSlicesNeverCollide/EMU128",
+        "PhastTestGroup/PhastTest.TestMultipleSizes/EMU128",
+        "PhastTestGroup/PhastTest.TestQueryConsistency/EMU128",
+        "PhastTestGroup/PhastTest.TestSliceBoundIsTight/EMU128",
+        "PhastTestGroup/PhastTest.TestSliceInvariant/EMU128",
+        "ShardMulTestGroup/ShardMulTest.TestShardMulCollisionFree/EMU128",
+        "ShardMulTestGroup/ShardMulTest.TestShardMulExtraOutputs/EMU128",
+        "ShardMulTestGroup/ShardMulTest.TestShardMulTwoVec/EMU128"
+      ],
+      "configured_targets": 162,
+      "configured_executables": 126,
+      "eligible_links": 572,
+      "variable_links": 555,
+      "removed_links": 35,
+      "distinct_removed_libraries": 2,
+      "affected_consumers": 35,
+      "patch_validated": true,
+      "patch_recommended": false,
+      "performance_result": "not_measured",
+      "clean_timings_measured": false,
+      "search": {
+        "budget_exhausted": true,
+        "cache_hits": 7,
+        "configurations": 64,
+        "elapsed_seconds": 186.976143766,
+        "final_verifications": 1,
+        "profiled_links": 126,
+        "time_budget_seconds": 1200,
+        "trial_limit": 64
+      },
+      "search_blocker": null,
+      "selections": [
+        {
+          "target": "abort_test",
+          "dependency": "hwy_contrib",
+          "compile_only": false
+        },
+        {
+          "target": "algo_bench",
+          "dependency": "hwy_contrib",
+          "compile_only": false
+        },
+        {
+          "target": "aligned_allocator_test",
+          "dependency": "hwy_contrib",
+          "compile_only": false
+        },
+        {
+          "target": "ans_test",
+          "dependency": "hwy_test",
+          "compile_only": false
+        },
+        {
+          "target": "arithmetic_test",
+          "dependency": "hwy_contrib",
+          "compile_only": false
+        },
+        {
+          "target": "base64_test",
+          "dependency": "hwy_contrib",
+          "compile_only": false
+        },
+        {
+          "target": "base_test",
+          "dependency": "hwy_contrib",
+          "compile_only": false
+        },
+        {
+          "target": "bench_sort",
+          "dependency": "hwy_test",
+          "compile_only": false
+        },
+        {
+          "target": "bit_pack_test",
+          "dependency": "hwy_contrib",
+          "compile_only": false
+        },
+        {
+          "target": "bit_permute_test",
+          "dependency": "hwy_contrib",
+          "compile_only": false
+        },
+        {
+          "target": "bit_set_test",
+          "dependency": "hwy_contrib",
+          "compile_only": false
+        },
+        {
+          "target": "blockwise_combine_test",
+          "dependency": "hwy_contrib",
+          "compile_only": false
+        },
+        {
+          "target": "blockwise_shift_test",
+          "dependency": "hwy_contrib",
+          "compile_only": false
+        },
+        {
+          "target": "blockwise_test",
+          "dependency": "hwy_contrib",
+          "compile_only": false
+        },
+        {
+          "target": "cast_test",
+          "dependency": "hwy_contrib",
+          "compile_only": false
+        },
+        {
+          "target": "combine_test",
+          "dependency": "hwy_contrib",
+          "compile_only": false
+        },
+        {
+          "target": "compare_128_test",
+          "dependency": "hwy_contrib",
+          "compile_only": false
+        },
+        {
+          "target": "compare_test",
+          "dependency": "hwy_contrib",
+          "compile_only": false
+        },
+        {
+          "target": "complex_arithmetic_test",
+          "dependency": "hwy_contrib",
+          "compile_only": false
+        },
+        {
+          "target": "compress_test",
+          "dependency": "hwy_contrib",
+          "compile_only": false
+        },
+        {
+          "target": "concat_test",
+          "dependency": "hwy_contrib",
+          "compile_only": false
+        },
+        {
+          "target": "convert_test",
+          "dependency": "hwy_contrib",
+          "compile_only": false
+        },
+        {
+          "target": "copy_test",
+          "dependency": "hwy_contrib",
+          "compile_only": false
+        },
+        {
+          "target": "count_test",
+          "dependency": "hwy_contrib",
+          "compile_only": false
+        },
+        {
+          "target": "count_value_test",
+          "dependency": "hwy_contrib",
+          "compile_only": false
+        },
+        {
+          "target": "crc_test",
+          "dependency": "hwy_contrib",
+          "compile_only": false
+        },
+        {
+          "target": "crypto_test",
+          "dependency": "hwy_contrib",
+          "compile_only": false
+        },
+        {
+          "target": "cuckoo2x2_test",
+          "dependency": "hwy_test",
+          "compile_only": false
+        },
+        {
+          "target": "demote_test",
+          "dependency": "hwy_contrib",
+          "compile_only": false
+        },
+        {
+          "target": "div_test",
+          "dependency": "hwy_contrib",
+          "compile_only": false
+        },
+        {
+          "target": "dot_test",
+          "dependency": "hwy_contrib",
+          "compile_only": false
+        },
+        {
+          "target": "dup128_vec_test",
+          "dependency": "hwy_contrib",
+          "compile_only": false
+        },
+        {
+          "target": "expand_test",
+          "dependency": "hwy_contrib",
+          "compile_only": false
+        },
+        {
+          "target": "f16_math_test",
+          "dependency": "hwy_contrib",
+          "compile_only": false
+        },
+        {
+          "target": "fast_math_test",
+          "dependency": "hwy_contrib",
+          "compile_only": false
+        }
+      ],
+      "incremental": [
+        {
+          "file": "hwy/contrib/sort/vqsort.cc",
+          "performance_result": "improved",
+          "wall_change_percent": -21.071822225622906,
+          "noise_threshold_seconds": 0.09074890152000001,
+          "baseline": {
+            "median_seconds": 4.537445076,
+            "mad_seconds": 0.014339792000000351,
+            "samples": [
+              {
+                "wall_seconds": 4.551784868,
+                "compiler_invocations": 1,
+                "linker_invocations": 113,
+                "linker_driver_wall_sum_seconds": 7.905021935000001,
+                "tests_passed": 2784
+              },
+              {
+                "wall_seconds": 4.537445076,
+                "compiler_invocations": 1,
+                "linker_invocations": 113,
+                "linker_driver_wall_sum_seconds": 7.888208565,
+                "tests_passed": 2784
+              },
+              {
+                "wall_seconds": 4.51016409,
+                "compiler_invocations": 1,
+                "linker_invocations": 113,
+                "linker_driver_wall_sum_seconds": 7.803669647999998,
+                "tests_passed": 2784
+              }
+            ]
+          },
+          "candidate": {
+            "median_seconds": 3.581322716,
+            "mad_seconds": 0.0005743090000001061,
+            "samples": [
+              {
+                "wall_seconds": 3.581897025,
+                "compiler_invocations": 1,
+                "linker_invocations": 81,
+                "linker_driver_wall_sum_seconds": 5.606846821000002,
+                "tests_passed": 2784
+              },
+              {
+                "wall_seconds": 3.581322716,
+                "compiler_invocations": 1,
+                "linker_invocations": 81,
+                "linker_driver_wall_sum_seconds": 5.661346769000001,
+                "tests_passed": 2784
+              },
+              {
+                "wall_seconds": 3.565083946,
+                "compiler_invocations": 1,
+                "linker_invocations": 81,
+                "linker_driver_wall_sum_seconds": 5.671652434,
+                "tests_passed": 2784
+              }
+            ]
+          }
+        },
+        {
+          "file": "hwy/targets.cc",
+          "performance_result": "inconclusive",
+          "wall_change_percent": -0.24463176917229398,
+          "noise_threshold_seconds": 0.09274533752,
+          "baseline": {
+            "median_seconds": 4.637266876,
+            "mad_seconds": 0.009820914999999708,
+            "samples": [
+              {
+                "wall_seconds": 4.627445961,
+                "compiler_invocations": 1,
+                "linker_invocations": 126,
+                "linker_driver_wall_sum_seconds": 8.488399941000006,
+                "tests_passed": 2784
+              },
+              {
+                "wall_seconds": 4.66598421,
+                "compiler_invocations": 1,
+                "linker_invocations": 126,
+                "linker_driver_wall_sum_seconds": 8.507679564,
+                "tests_passed": 2784
+              },
+              {
+                "wall_seconds": 4.637266876,
+                "compiler_invocations": 1,
+                "linker_invocations": 126,
+                "linker_driver_wall_sum_seconds": 8.454925236000005,
+                "tests_passed": 2784
+              }
+            ]
+          },
+          "candidate": {
+            "median_seconds": 4.625922648,
+            "mad_seconds": 0.003412039000000533,
+            "samples": [
+              {
+                "wall_seconds": 4.622510609,
+                "compiler_invocations": 1,
+                "linker_invocations": 126,
+                "linker_driver_wall_sum_seconds": 8.445192204000001,
+                "tests_passed": 2784
+              },
+              {
+                "wall_seconds": 4.625922648,
+                "compiler_invocations": 1,
+                "linker_invocations": 126,
+                "linker_driver_wall_sum_seconds": 8.445840297,
+                "tests_passed": 2784
+              },
+              {
+                "wall_seconds": 4.638308792,
+                "compiler_invocations": 1,
+                "linker_invocations": 126,
+                "linker_driver_wall_sum_seconds": 8.42689397,
+                "tests_passed": 2784
+              }
+            ]
+          }
+        }
+      ],
+      "replay": {
+        "compiler_commands_unchanged": true,
+        "byte_identical_elf_links": 35,
+        "removed_archives": {
+          "libhwy_contrib.a": {
+            "members": 35,
+            "extracted": 0,
+            "removed_from_links": 32
+          },
+          "libhwy_test.a": {
+            "members": 1,
+            "extracted": 0,
+            "removed_from_links": 3
+          }
+        }
+      }
+    },
     "xgrammar": {
       "revision": "7e269d56c74c89de52bc8c31e42191155416371f",
       "compiler": "Ubuntu clang version 21.1.8 (++20251221032922+2078da43e25a-1~exp1~20251221153059.70)",
@@ -30,9 +446,12 @@
       "eligible_links": 4,
       "variable_links": 0,
       "removed_links": 1,
+      "distinct_removed_libraries": 1,
+      "affected_consumers": 1,
       "patch_validated": true,
       "patch_recommended": false,
-      "clean_performance_result": "not_measured",
+      "performance_result": "not_measured",
+      "clean_timings_measured": false,
       "search": {
         "budget_exhausted": false,
         "cache_hits": 0,
@@ -176,13 +595,13 @@
       "replay": {
         "compiler_commands_unchanged": true,
         "byte_identical_elf_links": 1,
-        "removed_archives": [
-          {
-            "archive": "lib/libgmock.a",
+        "removed_archives": {
+          "lib/libgmock.a": {
+            "members": 1,
             "extracted": 0,
-            "members": 1
+            "removed_from_links": 1
           }
-        ]
+        }
       }
     },
     "sentencepiece": {
@@ -212,9 +631,12 @@
       "eligible_links": 0,
       "variable_links": 0,
       "removed_links": 0,
+      "distinct_removed_libraries": 0,
+      "affected_consumers": 0,
       "patch_validated": false,
       "patch_recommended": false,
-      "clean_performance_result": "no_changes",
+      "performance_result": "no_changes",
+      "clean_timings_measured": false,
       "search": {
         "budget_exhausted": false,
         "cache_hits": 0,
@@ -257,9 +679,12 @@
       "eligible_links": 236,
       "variable_links": 231,
       "removed_links": 0,
+      "distinct_removed_libraries": 0,
+      "affected_consumers": 0,
       "patch_validated": false,
       "patch_recommended": false,
-      "clean_performance_result": "no_changes",
+      "performance_result": "no_changes",
+      "clean_timings_measured": false,
       "search": {
         "budget_exhausted": false,
         "cache_hits": 0,

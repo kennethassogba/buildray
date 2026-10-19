@@ -47,9 +47,7 @@ The grouped search removes 40 unused library links in one trial on a test projec
 
 On XGrammar, removing the unused `gmock` link avoids a roughly 32-second LTO link when `gmock-all.cc` changes: rebuild time falls from 34.768 to 2.589 s, with all 83 tests passing. Editing the parser stays inconclusive at 35.769 → 35.995 s. This gain applies to changes in GoogleMock; it does not establish a faster clean build. SentencePiece still has no supported candidate because its programs use aliases. MuJoCo passes 3,519 tests, but response files block the search.
 
-The first Google Highway run checked 17 links across 15 programs and validated one removal. The full build passed 2,784 tests, keeping the same 23 intentional skips. The measured `vqsort.cc` rebuild stayed inconclusive: 4.415 → 4.448 s. That edit affects a different library from the removed link; that version could not handle the variables in most test dependencies.
-
-A separate build of the core and examples, with tests disabled, checks an edit to the library concerned. It avoids one link (13 → 12), but its timings remain inconclusive: 4.433 → 4.027 s. These measurements do not establish an overall speedup.
+On Highway, variable support expands coverage from 17 to 572 eligible links. Buildray validates 35 removals across 35 programs, with 2,784 passing tests and the same 23 skips throughout. Editing `vqsort.cc` now takes 4.537 → 3.581 s, a 21.07% gain, with 32 fewer links in every pair. Editing `targets.cc` stays inconclusive at 4.637 → 4.626 s. The search reaches its 64-trial limit, so this is a validated subset. There are no new clean-build timings. [Run and artifacts](https://github.com/kennethassogba/buildray/actions/runs/39323921286).
 
 ## Limits of the evidence
 
