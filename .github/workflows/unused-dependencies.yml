@@ -1,96 +1,54 @@
-name: Unused dependency corpus
-
+name: Validate upstream patches
 on:
-  workflow_call:
-    inputs:
-      incremental_only:
-        type: boolean
-        default: false
   workflow_dispatch:
     inputs:
       incremental_only:
-        description: Keep full build and test validation; measure only incremental rebuild pairs.
         type: boolean
-        default: false
-
+        default: true
 permissions:
   contents: read
-
 jobs:
-  evaluate:
-    name: ${{ matrix.project }}
+  highway:
     runs-on: ubuntu-24.04
-    timeout-minutes: 240
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - project: xgrammar
-            repository: mlc-ai/xgrammar
-            revision: 7e269d56c74c89de52bc8c31e42191155416371f
-            jobs: '2'
-            rebuild_files: '["cpp/earley_parser.cc", "3rdparty/googletest/googlemock/src/gmock-all.cc"]'
-            cmake_args: '[]'
-          - project: sentencepiece
-            repository: google/sentencepiece
-            revision: e0cce7d37b065b5140349dbe12c6bcf6192fdd78
-            jobs: '2'
-            rebuild_files: '["src/sentencepiece_processor.cc"]'
-            cmake_args: '["-DSPM_BUILD_TEST=ON", "-DSPM_ENABLE_SHARED=OFF", "-DSPM_ENABLE_TCMALLOC=OFF"]'
-          - project: mujoco
-            repository: google-deepmind/mujoco
-            revision: 651bae11c3c38efe483f033b4b7e869e7ce3f4ec
-            jobs: '4'
-            rebuild_files: '["src/user/user_model.cc"]'
-            cmake_args: '["-DMUJOCO_BUILD_EXAMPLES=OFF", "-DMUJOCO_BUILD_SIMULATE=OFF", "-DMUJOCO_BUILD_TESTS=ON", "-DMUJOCO_TEST_PYTHON_UTIL=OFF"]'
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-python@v7
-        with:
-          python-version: '3.12'
       - uses: actions/checkout@v6
         with:
-          repository: ${{ matrix.repository }}
-          ref: ${{ matrix.revision }}
-          path: fixtures/${{ matrix.project }}
+          repository: kennethassogba/highway
+          ref: abfced9
+          path: fixtures/highway
           persist-credentials: false
-      - name: Prepare XGrammar tests
-        if: matrix.project == 'xgrammar'
-        working-directory: fixtures/xgrammar
+      - name: Install tools
         run: |
-          git submodule update --init --depth 1 3rdparty/dlpack 3rdparty/googletest
-          printf '%s\n' 'set(XGRAMMAR_BUILD_PYTHON_BINDINGS OFF)' 'set(XGRAMMAR_BUILD_CXX_TESTS ON)' > config.cmake
-      - name: Prepare MuJoCo locale
-        if: matrix.project == 'mujoco'
-        run: sudo locale-gen de_DE.UTF-8
-      - name: Select a common LLD toolchain for both variants
-        env:
-          PROJECT_ARGS: ${{ matrix.cmake_args }}
-        run: |
-          python3 - <<'PY'
-          import json, os
-          args = json.loads(os.environ['PROJECT_ARGS'])
-          for kind in ['EXE', 'SHARED', 'MODULE']:
-              args.append(f'-DCMAKE_{kind}_LINKER_FLAGS=--ld-path=/usr/lib/llvm-21/bin/ld.lld')
-          with open(os.environ['GITHUB_ENV'], 'a') as stream:
-              stream.write('UNUSED_CMAKE_ARGS=' + json.dumps(args) + '\n')
-          PY
-      - name: Validate and measure unused static dependencies
-        uses: ./
+          bash action/install.sh
+          echo 'deb https://apt.llvm.org/noble/ llvm-toolchain-noble-22 main' | sudo tee /etc/apt/sources.list.d/highway-llvm22.list
+          sudo apt-get update
+          sudo apt-get install -y clang-22
+      - name: Build and test the 35 changed programs
+        run: python3 tests/corpus/review_patches.py highway
+      - uses: actions/upload-artifact@v7
+        if: always()
         with:
-          command: prune-deps
-          source: fixtures/${{ matrix.project }}
-          runs: '3'
-          jobs: ${{ matrix.jobs }}
-          rebuild-files: ${{ matrix.rebuild_files }}
-          incremental-only: ${{ inputs.incremental_only }}
-          exclude-paths: '["3rdparty", "third_party"]'
-          cmake-args: ${{ env.UNUSED_CMAKE_ARGS }}
-          artifact-name: unused-${{ matrix.project }}
-      - name: Keep raw logs if validation fails or is cancelled
-        if: failure() || cancelled()
-        uses: actions/upload-artifact@v7
+          name: highway-upstream-validation
+          path: review-results/
+  sentencepiece:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6
         with:
-          name: unused-${{ matrix.project }}-incomplete-logs
-          path: ${{ runner.temp }}/buildray-action-*/run/logs/
-          if-no-files-found: warn
+          repository: kennethassogba/sentencepiece
+          ref: 920eec3
+          path: fixtures/sentencepiece
+          persist-credentials: false
+      - name: Install tools
+        run: bash action/install.sh
+      - name: Validate PCH off and on; measure source and header edits
+        run: python3 tests/corpus/review_patches.py sentencepiece
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: sentencepiece-upstream-validation
+          path: review-results/
