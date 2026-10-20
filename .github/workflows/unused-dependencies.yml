@@ -1,5 +1,10 @@
 name: Validate upstream patches
 on:
+  workflow_call:
+    inputs:
+      incremental_only:
+        type: boolean
+        default: true
   workflow_dispatch:
     inputs:
       incremental_only:
@@ -16,7 +21,7 @@ jobs:
       - uses: actions/checkout@v6
         with:
           repository: kennethassogba/highway
-          ref: abfced9
+          ref: abfced9c16b295e68ae2e88dc3f278426790f654
           path: fixtures/highway
           persist-credentials: false
       - name: Install tools
@@ -40,7 +45,7 @@ jobs:
       - uses: actions/checkout@v6
         with:
           repository: kennethassogba/sentencepiece
-          ref: 920eec3
+          ref: 920eec39156f8a0774bd7960034888ac7402e1a2
           path: fixtures/sentencepiece
           persist-credentials: false
       - name: Install tools
