@@ -4,7 +4,7 @@ Find what slows down your C++ builds, try a change, and measure whether it helps
 Buildray runs from the CLI or GitHub Actions and leaves your source tree untouched.
 
 **[Read the guide · English / Français](https://kennethassogba.github.io/buildray/)**
-for a short explanation of builds, PCH, Unity, dependency cleanup and the measurements.
+for a short explanation of builds, include and dependency cleanup, and the measurements.
 
 Buildray is written in **C++26**. It supports Linux, Clang, CMake and Ninja.
 
@@ -107,14 +107,10 @@ proposals and validation counts. Passing validation does not establish a speedup
 the measured gain must exceed noise before Buildray recommends the patch.
 [Selection rules, limits and Action usage](docs/header-cleanup.md).
 
-## Header costs and PCH
+## Header costs
 
 ```bash
 buildray profile --source /path/to/project --compiler clang++-21 --jobs 2
-buildray pch --source /path/to/project --target my_library \
-  --header '<vector>' --header 'include/common.hpp' \
-  --compiler clang++-21 --runs 5 --jobs 2
-buildray pch --auto --source /path/to/project --compiler clang++-21 --runs 3 --jobs 2
 ```
 
 `profile` builds and tests an isolated copy with Clang time traces. `headers.json`
@@ -122,18 +118,11 @@ and `headers.md` rank headers by inclusive parse time; the JSON also groups them
 by CMake target. Nested headers overlap, so these costs cannot be added to predict
 a speedup. Trace overhead is kept out of benchmark results.
 
-`pch` takes a target and repeatable headers, generates `pch.patch`, and builds and
-tests both variants. It alternates clean builds with PCH disabled in the baseline
-and enabled only for the selected candidate target. PCH generation counts toward
-candidate time. The patch is recommended only when the measured gain exceeds noise.
-See [the workflow and limitations](docs/profiling.md). Both modes are also available
-through the GitHub Action.
-
-`pch --auto` measures header costs, then picks the most expensive project header
-used by at least two compilations in a target. Use `--target` to narrow the search.
-It tests the selected PCH with at least three build pairs; profiling time stays
-outside the comparison. `selection.json` explains the choice. Buildray recommends
-the patch only if the measured gain exceeds noise.
+Prefer include and dependency cleanup first. PCH experiments require an explicit
+`pch` command and are disabled in routine corpus benchmarks. Applying a generated
+`pch.patch` also leaves PCH off; `-DBUILDRAY_PCH=ON` enables it. Consider PCH only
+when the absolute time saved justifies the added build configuration.
+See [the optional PCH experiment](docs/profiling.md).
 
 ## Unity builds
 

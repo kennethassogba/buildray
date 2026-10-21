@@ -77,6 +77,7 @@ Both require at least three samples. Reports and Markdown summaries are retained
 
 profile runs one instrumented build with Clang time traces and CTest, then ranks
 headers by inclusive parse time and target. Profiling overhead is not a benchmark.
+PCH is opt-in. Applying pch.patch leaves it off; enable with -DBUILDRAY_PCH=ON.
 pch tests a private C++ PCH on one target, validates it, and alternates clean
 builds against a baseline with PCH disabled. Outputs: pch.patch and report.json.
 PCH generation is included in candidate timings. Neither command edits your tree.

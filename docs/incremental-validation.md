@@ -179,8 +179,9 @@ The native regression suite passes all ten suites in Release and Debug with
 ASan/UBSan; [CI at the verified code checkpoint](https://github.com/kennethassogba/buildray/actions/runs/39071272800)
 also exercises the composite Action and tinyxml2.
 
-Trigger the opt-in corpus with `incremental_corpus=true`. Optional
-`incremental_project` and `incremental_mode` inputs restrict a rerun. The
+Trigger the opt-in corpus with `incremental_corpus=true`; it defaults to Unity.
+Set `incremental_mode=pch` or `all` explicitly to include PCH.
+`incremental_project` restricts a rerun. The
 [workflow](../.github/workflows/incremental.yml) fixes the revisions, targets,
 headers, file choices, parallelism and CMake arguments.
 For MuJoCo in this toolchain, also set `incremental_linker_deps=off`.

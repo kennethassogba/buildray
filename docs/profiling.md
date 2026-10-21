@@ -1,5 +1,8 @@
 # Header profiling and PCH experiments
 
+PCH is optional and disabled by default. Prefer include and dependency cleanup;
+consider PCH only when measured absolute savings justify the added configuration.
+
 Buildray 0.3 adds `profile` and `pch`. The CLI remains C++26; the inspected project
 keeps its own language standard.
 
@@ -69,7 +72,11 @@ because the experiment completed; inspect its recommendation before applying it.
 ```bash
 git apply --check /tmp/project-pch/pch.patch
 git apply /tmp/project-pch/pch.patch
+cmake -S . -B build -DBUILDRAY_PCH=ON
 ```
+
+Applying the patch alone leaves PCH disabled. Set `BUILDRAY_PCH=OFF` to turn it
+off again. Buildray enables it only in the candidate of an explicit `pch` run.
 
 Only the chosen configuration is validated. Test other platforms and feature
 flags separately. A forced PCH can affect macros or hide missing includes in

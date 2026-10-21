@@ -4,7 +4,7 @@ title: Choose an optimization
 
 # Choose what to try
 
-Find where the build spends time first. Run one experiment at a time so you can tell what caused the result.
+Start with unused includes and dependencies. Check the time saved in builds you actually run, not just the percentage. Run one experiment at a time so you can tell what caused the result.
 
 ## Find expensive headers
 
@@ -27,26 +27,23 @@ buildray headers --source /path/to/project \
 
 Excluded paths still build and run tests, but their contents are not edited. Files generated or downloaded during configuration are also excluded from edits.
 
-## Try PCH or Unity
+## Try Unity {#try-pch-or-unity}
 
 ```bash
-buildray pch --auto --source /path/to/project \
-  --compiler clang++-21 --runs 3 --jobs 2
-
 buildray unity --source /path/to/project --target my_library \
   --batch-size 4 --runs 3 --jobs 2 \
   --rebuild-file src/model.cc --rebuild-file include/model.h
 ```
 
-`pch --auto` profiles the project and selects a header on one target. It tests one proposal; the profile alone does not establish a gain. To choose explicitly, replace `--auto` with `--target my_library --header 'include/common.h'`.
-
-Unity produces a CMake option that defaults to off. After applying the patch, `-DBUILDRAY_UNITY=ON` enables the tested groups. Add `--rebuild-file` to either mode to measure files you often edit.
+Unity produces a CMake option that defaults to off. After applying the patch, `-DBUILDRAY_UNITY=ON` enables the tested groups. Add `--rebuild-file` to measure files you often edit.
 
 For Unity or a manually selected PCH, replace `--jobs` with
 `--job-levels 1,2,4,8` to compare job counts. This cannot be combined with `--auto` or Unity retries. Buildray runs each level sequentially, validates the same
 candidate and keeps its measurements separate. The report marks job counts
 above the machine's detected CPU capacity. See the
 [parallelism reference](https://github.com/kennethassogba/buildray/blob/main/docs/parallelism.md).
+
+PCH is an optional experiment, disabled by default. Applying its patch also leaves it off; `-DBUILDRAY_PCH=ON` enables it. Consider it only when the absolute time saved justifies the added configuration. The [PCH reference](https://github.com/kennethassogba/buildray/blob/main/docs/profiling.md) covers explicit experiments.
 
 ## Examine dependencies
 

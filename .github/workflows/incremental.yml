@@ -8,7 +8,7 @@ on:
         default: all
       mode:
         type: string
-        default: all
+        default: unity
       linker_deps:
         type: string
         default: default

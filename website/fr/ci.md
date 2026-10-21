@@ -44,13 +44,14 @@ L’Action n’applique pas le patch et n’ouvre pas de PR. Les sources et les 
 Dans l’étape Buildray, ajoutez par exemple ces entrées à `with` :
 
 ```yaml
-command: pch
-pch-auto: 'true'
+command: optimize
 runs: '3'
 jobs: '2'
 ```
 
 Les expériences d’optimisation comparent le projet avec sa propre copie modifiée. Elles ignorent `baseline-ref`, qui sert à la comparaison entre révisions.
+
+Le PCH est désactivé par défaut. Il demande un choix explicite, `command: pch` ; le nettoyage des includes et des dépendances ne l’active pas.
 
 Si le projet ignore volontairement certains tests à l’exécution, `allow-baseline-skips: 'true'` permet de conserver ces mêmes exceptions pendant la validation. Elles sont comptées séparément des tests réussis. Par défaut, tout test ignoré bloque la validation.
 

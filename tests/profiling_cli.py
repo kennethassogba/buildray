@@ -83,10 +83,23 @@ int main() { return answer() + second(); }
     run("git", "apply", "--check", patch, cwd=source)
     run("git", "apply", patch, cwd=source)
     assert (source / "CMakeLists.txt").read_bytes() == (pch / "candidate-source/CMakeLists.txt").read_bytes()
-    # A patch must work outside Buildray, including on the C source in this target.
-    run("cmake", "-S", source, "-B", root / "applied", "-G", "Ninja", f"-DCMAKE_CXX_COMPILER={compiler}")
+    # Applying the patch does not enable PCH. The user must opt in explicitly.
+    run("cmake", "-S", source, "-B", root / "applied", "-G", "Ninja",
+        f"-DCMAKE_CXX_COMPILER={compiler}", "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON")
     run("cmake", "--build", root / "applied", "--parallel", 2)
     run("ctest", "--test-dir", root / "applied", "--output-on-failure")
+    commands = json.loads((root / "applied/compile_commands.json").read_text())
+    assert not any("cmake_pch" in entry["command"] for entry in commands)
+    # Explicit activation still works outside Buildray, including on the C source.
+    run("cmake", "-S", source, "-B", root / "applied", "-DBUILDRAY_PCH=ON")
+    run("cmake", "--build", root / "applied", "--parallel", 2)
+    run("ctest", "--test-dir", root / "applied", "--output-on-failure")
+    commands = json.loads((root / "applied/compile_commands.json").read_text())
+    assert any("cmake_pch" in entry["command"] for entry in commands)
+    run("cmake", "-S", source, "-B", root / "applied", "-DBUILDRAY_PCH=OFF")
+    run("cmake", "--build", root / "applied", "--parallel", 2)
+    commands = json.loads((root / "applied/compile_commands.json").read_text())
+    assert not any("cmake_pch" in entry["command"] for entry in commands)
     run("git", "apply", "--reverse", patch, cwd=source)
     assert digest(source) == original
     records = json.loads((pch / "logs/candidate-0-compilers.json").read_text())
@@ -149,6 +162,7 @@ return second() + third();
     run(binary, "profile", "--auto", expected=2)
     run(binary, "pch", "--auto", "--header", "<vector>", expected=2)
     run(binary, "pch", "--auto", "--runs", 1, expected=2)
+    invoke("profile", "pch-override", "--", "-DBUILDRAY_PCH=ON", expected=1)
 
     empty = root / "headerless-source"
     empty.mkdir()

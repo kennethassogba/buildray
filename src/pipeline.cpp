@@ -78,7 +78,7 @@ void check_cmake_args(const std::vector<std::string>& args) {
                                             "CMAKE_EXPORT_COMPILE_COMMANDS",
                                             "CMAKE_UNITY_BUILD",
                                             "CMAKE_DISABLE_PRECOMPILE_HEADERS",
-                                            "CMAKE_GENERATOR", "BUILDRAY_UNITY"};
+                                            "CMAKE_GENERATOR", "BUILDRAY_UNITY", "BUILDRAY_PCH"};
     for (const auto& arg : args) {
         if (!arg.starts_with("-D") || arg.find('=') == std::string::npos)
             throw std::runtime_error("CMake arguments must use -DNAME=VALUE: " + arg);
@@ -125,6 +125,8 @@ void configure(const Options& options, const Variant& variant, const fs::path& e
         "-DCMAKE_UNITY_BUILD=OFF", "-DCMAKE_DISABLE_PRECOMPILE_HEADERS=ON",
         "-DCMAKE_CXX_COMPILER_LAUNCHER=" + launcher(executable, variant.records, variant.trace, variant.dependencies)};
     args.insert(args.end(), controlled.begin(), controlled.end());
+    if (options.command == "pch")
+        args.push_back("-DBUILDRAY_PCH=" + std::string(variant.pch_target.empty() ? "OFF" : "ON"));
     if (variant.dependencies || link_experiment(options) || options.command == "headers" || options.command == "unity" ||
         (options.command == "pch" && !options.rebuild_files.empty()))
         args.push_back("-DCMAKE_C_COMPILER=" + options.c_compiler);

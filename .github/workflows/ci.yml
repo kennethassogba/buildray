@@ -22,7 +22,7 @@ on:
         type: boolean
         default: false
       incremental_corpus:
-        description: Measure Unity and PCH incremental rebuilds on XGrammar, SentencePiece and MuJoCo.
+        description: Measure Unity incremental rebuilds; PCH requires selecting pch or all explicitly.
         type: boolean
         default: false
       incremental_project:
@@ -33,8 +33,8 @@ on:
       incremental_mode:
         description: Optimization to evaluate in the incremental corpus.
         type: choice
-        options: ['all', 'unity', 'pch']
-        default: 'all'
+        options: ['unity', 'pch', 'all']
+        default: 'unity'
       incremental_linker_deps:
         description: MuJoCo linker-generated dependency files; off is an explicit common setting for both variants.
         type: choice
@@ -53,7 +53,7 @@ on:
         type: boolean
         default: false
       ai_corpus:
-        description: Profile headers and benchmark a PCH on pinned SentencePiece (several clean builds).
+        description: Profile pinned SentencePiece; PCH benchmarks require pch_experiments.
         type: boolean
         default: false
       profile_headers:
@@ -70,6 +70,10 @@ on:
         default: '["<string>", "<vector>", "<memory>", "<algorithm>", "<unordered_map>"]'
       pch_auto:
         description: Automatically profile and select a PCH header; pch-target optionally restricts the target.
+        type: boolean
+        default: false
+      pch_experiments:
+        description: Explicitly enable PCH benchmarks on tinyxml2 and, when ai_corpus is selected, SentencePiece.
         type: boolean
         default: false
       dependency_corpus:
@@ -203,10 +207,13 @@ jobs:
           build/buildray optimize --source "$RUNNER_TEMP/tinyxml2" --work-dir "$RUNNER_TEMP/tinyxml2-result" --compiler clang++-21 --clang-tidy clang-tidy-21 --runs 3 --jobs 2 -- -Dtinyxml2_BUILD_TESTING=ON
           git -C "$RUNNER_TEMP/tinyxml2" apply --check "$RUNNER_TEMP/tinyxml2-result/includes.patch"
           python tests/check_real_project.py "$RUNNER_TEMP/tinyxml2-result/report.json"
-      - name: Profile headers and validate a PCH on tinyxml2
+      - name: Profile headers on tinyxml2
         if: matrix.build_type == 'Release'
         run: |
           build/buildray profile --source "$RUNNER_TEMP/tinyxml2" --work-dir "$RUNNER_TEMP/tinyxml2-headers" --compiler clang++-21 -- -Dtinyxml2_BUILD_TESTING=ON
+      - name: Validate an explicitly requested PCH on tinyxml2
+        if: matrix.build_type == 'Release' && github.event_name == 'workflow_dispatch' && inputs.pch_experiments
+        run: |
           build/buildray pch --source "$RUNNER_TEMP/tinyxml2" --work-dir "$RUNNER_TEMP/tinyxml2-pch" --target xmltest --header '<string>' --header '<vector>' --compiler clang++-21 --runs 3 --jobs 2 -- -Dtinyxml2_BUILD_TESTING=ON
           git -C "$RUNNER_TEMP/tinyxml2" apply --check "$RUNNER_TEMP/tinyxml2-pch/pch.patch"
       - name: Retain evidence
@@ -249,6 +256,7 @@ jobs:
           cmake-args: '["-DSPM_BUILD_TEST=ON", "-DSPM_ENABLE_SHARED=OFF", "-DSPM_ENABLE_TCMALLOC=OFF"]'
           artifact-name: sentencepiece-v0.2.2-headers
       - name: Validate and measure a PCH on the AI corpus
+        if: inputs.pch_experiments
         uses: ./
         with:
           source: fixtures/sentencepiece

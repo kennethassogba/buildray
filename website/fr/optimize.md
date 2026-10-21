@@ -4,7 +4,7 @@ title: Choisir une optimisation
 
 # Choisir quoi essayer {#choose-what-to-try}
 
-Cherchez d’abord où le build passe son temps. Faites une expérience à la fois pour comprendre ce qui a produit le résultat.
+Commencez par les includes et les dépendances inutiles. Vérifiez le temps gagné sur les builds que vous lancez réellement, pas seulement le pourcentage. Faites une expérience à la fois pour comprendre ce qui a produit le résultat.
 
 ## Repérer les headers coûteux {#find-expensive-headers}
 
@@ -28,26 +28,23 @@ buildray headers --source /chemin/du/projet \
 
 Les chemins exclus restent compilés et testés, mais leur contenu n’est pas modifié. Les fichiers générés ou téléchargés pendant la configuration sont également exclus des modifications.
 
-## Essayer un PCH ou Unity {#try-pch-or-unity}
+## Essayer Unity {#try-pch-or-unity}
 
 ```bash
-buildray pch --auto --source /chemin/du/projet \
-  --compiler clang++-21 --runs 3 --jobs 2
-
 buildray unity --source /chemin/du/projet --target ma_bibliotheque \
   --batch-size 4 --runs 3 --jobs 2 \
   --rebuild-file src/model.cc --rebuild-file include/model.h
 ```
 
-`pch --auto` profile le projet puis choisit un header sur une cible. Il teste une proposition ; le profil ne prouve pas qu’elle fera gagner du temps. Vous pouvez choisir vous-même avec `--target ma_bibliotheque --header 'include/common.h'` à la place de `--auto`.
-
-Unity produit une option CMake désactivée par défaut. Après application du patch, `-DBUILDRAY_UNITY=ON` active les groupes testés. Ajoutez `--rebuild-file` aux deux modes pour mesurer les fichiers que vous modifiez souvent.
+Unity produit une option CMake désactivée par défaut. Après application du patch, `-DBUILDRAY_UNITY=ON` active les groupes testés. Ajoutez `--rebuild-file` pour mesurer les fichiers que vous modifiez souvent.
 
 Pour Unity ou un PCH choisi manuellement, remplacez `--jobs` par
 `--job-levels 1,2,4,8` pour comparer plusieurs nombres de jobs. Cette option ne se combine pas avec `--auto` ni les tentatives de regroupement Unity. Buildray exécute les niveaux l’un après l’autre, valide
 le même patch et garde leurs mesures séparées. Le rapport signale les niveaux
 qui dépassent la capacité CPU détectée. Voir la
 [référence du parallélisme](https://github.com/kennethassogba/buildray/blob/main/docs/parallelism.md).
+
+Le PCH reste une expérience facultative, désactivée par défaut. Appliquer son patch ne l’active pas ; il faut choisir `-DBUILDRAY_PCH=ON`. Ne l’envisagez que si le temps gagné justifie la configuration ajoutée. La [référence PCH](https://github.com/kennethassogba/buildray/blob/main/docs/profiling.md) décrit ces essais explicites.
 
 ## Examiner les dépendances {#examine-dependencies}
 

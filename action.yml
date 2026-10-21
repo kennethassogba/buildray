@@ -48,7 +48,7 @@ inputs:
     description: JSON array of system headers such as <vector> or source-root-relative header paths.
     default: '[]'
   pch-auto:
-    description: Profile and select one project-header PCH candidate, then validate and measure it. Requires command pch, empty pch-headers and at least 3 runs.
+    description: Opt-in PCH selection. Requires explicit command pch, empty pch-headers and at least 3 runs. Generated patches keep PCH disabled by default.
     default: 'false'
   unity-target:
     description: CMake target for command unity. Only this target gets unity batches.

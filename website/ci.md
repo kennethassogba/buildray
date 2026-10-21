@@ -44,13 +44,14 @@ The Action does not apply patches or open PRs. Sources and tests execute project
 For example, add these inputs to the Buildray step's `with` block:
 
 ```yaml
-command: pch
-pch-auto: 'true'
+command: optimize
 runs: '3'
 jobs: '2'
 ```
 
 Optimization experiments compare the project with its patched copy. They ignore `baseline-ref`, which is used for revision comparisons.
+
+PCH is disabled by default. It requires an explicit `command: pch`; include and dependency cleanup do not enable it.
 
 For a project with intentional runtime skips, `allow-baseline-skips: 'true'` permits the same skipped tests throughout validation. They are reported separately from passing tests. The default refuses all skips.
 

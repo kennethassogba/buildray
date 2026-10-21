@@ -84,7 +84,8 @@ Action inputs are `rebuild-files` (a JSON array of relative paths) and
 `incremental-only` (`'true'` or `'false'`). The `incremental` output points to
 the retained JSON. The job summary lists completed scenarios and their results.
 
-The opt-in `incremental_corpus` CI input runs Unity and PCH separately on pinned
-XGrammar, SentencePiece and MuJoCo revisions. Each uses three single-file
+The opt-in `incremental_corpus` CI input defaults to Unity on pinned
+XGrammar, SentencePiece and MuJoCo revisions. Select `incremental_mode=pch`
+or `all` explicitly to include PCH. Each uses three single-file
 scenarios and three alternating pairs per scenario. The workflow records the
 specific target, PCH header, Unity exclusions, build flags and test scope.

@@ -84,7 +84,7 @@ add_test(NAME works COMMAND sample)
         run('git', 'apply', '--check', work / f'{mode}.patch', cwd=applied)
         run('git', 'apply', work / f'{mode}.patch', cwd=applied)
         build = root / (mode + '-build')
-        extra = ['-DBUILDRAY_UNITY=ON'] if mode == 'unity' else []
+        extra = ['-DBUILDRAY_UNITY=ON'] if mode == 'unity' else ['-DBUILDRAY_PCH=ON']
         run('cmake', '-S', applied, '-B', build, '-G', 'Ninja', f'-DCMAKE_CXX_COMPILER={compiler}', *extra)
         run('cmake', '--build', build, '--parallel', '2')
         run('ctest', '--test-dir', build, '--output-on-failure')

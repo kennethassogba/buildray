@@ -7,6 +7,10 @@ Buildray 0.3 also exposes [header profiling and PCH experiments](profiling.md)
 through the CLI and Action. Those modes ignore `baseline-ref`; only `measure`
 compares Git revisions and enforces a regression budget.
 
+Routine CI does not run corpus PCH benchmarks. Select `pch_experiments: true`
+when dispatching `ci.yml` to request them. The incremental corpus defaults to
+Unity; choosing `pch` or `all` explicitly includes PCH experiments.
+
 ## GitHub Action
 
 Use Ubuntu 24.04 for automatic dependency installation. The action installs

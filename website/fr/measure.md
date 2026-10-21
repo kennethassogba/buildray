@@ -30,8 +30,8 @@ Pour recommander une optimisation, Buildray demande au moins trois paires de bui
 ## Mesurer le travail quotidien {#measure-everyday-edits}
 
 ```bash
-buildray pch --source /chemin/du/projet \
-  --target ma_bibliotheque --header include/common.h \
+buildray unity --source /chemin/du/projet \
+  --target ma_bibliotheque --batch-size 4 \
   --rebuild-file src/model.cc --rebuild-file include/model.h \
   --incremental-only --runs 3 --jobs 2
 ```

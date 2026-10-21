@@ -232,7 +232,7 @@ std::string pch_cmake(const Options& options, const fs::path& source) {
         includes += "  \"$<$<COMPILE_LANGUAGE:CXX>:" + expression + ">\"\n";
     }
     const auto& target = options.target;
-    return "\n# Buildray: private PCH experiment, validated for the measured configuration.\n"
+    const std::string experiment =
            "if(NOT TARGET " + target + ")\n  message(FATAL_ERROR \"Buildray PCH target does not exist\")\nendif()\n"
            "get_target_property(_buildray_pch_type " + target + " TYPE)\n"
            "get_target_property(_buildray_pch_imported " + target + " IMPORTED)\n"
@@ -244,5 +244,12 @@ std::string pch_cmake(const Options& options, const fs::path& source) {
            "  message(FATAL_ERROR \"Buildray requires a local compiled target without an existing PCH\")\nendif()\n"
            "set_property(TARGET " + target + " PROPERTY DISABLE_PRECOMPILE_HEADERS OFF)\n"
            "target_precompile_headers(" + target + " PRIVATE\n" + includes + ")\n";
+    std::string guarded =
+        "\n# Buildray: optional PCH experiment.\n"
+        "option(BUILDRAY_PCH \"Enable the measured Buildray PCH\" OFF)\n"
+        "if(BUILDRAY_PCH)\n";
+    std::istringstream lines(experiment);
+    for (std::string line; std::getline(lines, line);) guarded += "  " + line + '\n';
+    return guarded + "endif()\n";
 }
 }  // namespace buildray

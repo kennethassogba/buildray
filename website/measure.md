@@ -30,8 +30,8 @@ To recommend an optimization, Buildray requires at least three build pairs and a
 ## Measure everyday edits
 
 ```bash
-buildray pch --source /path/to/project \
-  --target my_library --header include/common.h \
+buildray unity --source /path/to/project \
+  --target my_library --batch-size 4 \
   --rebuild-file src/model.cc --rebuild-file include/model.h \
   --incremental-only --runs 3 --jobs 2
 ```
